@@ -1,0 +1,39 @@
+{
+    "SDKType": "1",
+    "bv": "40.00",
+    "chipInfoList": [
+        "wireless SoC/beken/Wi-Fi/BK7231N"
+    ],
+    "feature": "https://images.tuyacn.com/smart/sdk/447f08d3c26812dcc5f7e4d9ebdb35e31aecd688.json",
+    "offShelfReasonCN": "",
+    "offShelfReasonEN": "",
+    "sdkDescCN": "wifi通用开发框架，用于所有wifi的联网控制类的设备开发，包括电工、照明、门锁、家电、传感类产品开发。",
+    "sdkDescEN": "WiFi universal development framework, used for the development of all single WiFi network control devices, including electrical, lighting, door locks, home appliances，sensor and other product development.",
+    "sdkId": 99040,
+    "sdkName": "tuyaos-iot-bk7231n-wifi-ble-com",
+    "sdkVerDescCN": "1、提供极致的配网体验，在使用蓝牙配网的情况下，仅需 10s 即可完成设备配置，配网速度提升 40%；\n2、支持 IPv4 与 IPv6 双栈，优化网络延迟，为开发者提供更好的性能与安全性。",
+    "sdkVerDescEN": "1. Providing an ultimate network configuration experience, when using Bluetooth pairing, the device setup can be completed in just 10 seconds, speeding up network configuration by 40%.\n2. Supporting both IPv4 and IPv6 dual-stack, optimizing network latency, and offering developers better performance and security.",
+    "sdkVersion": "3.9.0",
+    "sdkVersionFileSize": "59337209",
+    "sdkVersionMd5": "62537b03fce1237709e0e20247bb3c3e",
+    "sdkVersionOffShelf": false,
+    "tuyaosVersion": "TuyaOS-3.9.0",
+    "typeCode": "EmbeddedPackage-Networking:Wifi",
+    "typeNameCN": "联网单品开发:Wi-Fi设备开发包",
+    "typeNameEN": "Networked Product Development:Wi-Fi Device Development Kit",
+    "quickStartDemoName": "",
+    "quickStartDemoAddr": "",
+    "typeDemoName": [],
+    "typeDemoAddr": [],
+    "package": {
+        "MainPackage": {
+            "Name": "tuyaos-iot_3.9.0_bk7231n_wifi-ble-com_1.3.5.tar.gz"
+        },
+        "Packages": [],
+        "CurrentPackage": {
+            "Name": "tuyaos-iot_3.9.0_bk7231n_wifi-ble-com_1.3.5.tar.gz"
+        }
+    },
+    "sdkVersionId": "365012",
+    "id": 99040
+}

@@ -1,0 +1,6 @@
+*.bin
+*.map
+output/
+docs/
+*.zip
+*.tar

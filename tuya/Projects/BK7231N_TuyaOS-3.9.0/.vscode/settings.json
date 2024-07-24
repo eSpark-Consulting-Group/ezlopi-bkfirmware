@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "options.h": "c",
+        "tuya_iot_wifi_api.h": "c",
+        "sys_config.h": "c",
+        "tuya_error_code.h": "c"
+    }
+}

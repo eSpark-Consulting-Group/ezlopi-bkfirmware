@@ -1,0 +1,2 @@
+#define ENABLE_LOG n
+#define ENABLE_LOG_OUTPUT_FORMAT n

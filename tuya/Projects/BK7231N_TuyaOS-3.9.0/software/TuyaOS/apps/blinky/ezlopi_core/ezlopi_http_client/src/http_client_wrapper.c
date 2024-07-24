@@ -1,0 +1,228 @@
+#include "tuya_error_code.h"
+#include "http_client_interface.h"
+#include "transport_interface.h"
+#include "core_http_client.h"
+#include "tuya_tls_custom.h"
+#include "tal_log.h"
+#include "cert.h"
+
+
+#define log_debug   TAL_PR_DEBUG
+#define log_error   TAL_PR_ERR
+
+#define HEADER_BUFFER_LENGTH (255)
+
+// VOID event_callback(TY_TLS_EVENT_E arg1, VOID* arg2)
+// {
+//      TAL_PR_DEBUG("Event Callback called!\n");
+// }
+
+// INT_T send_callback(VOID* arg1, CONST BYTE_T *arg2, SIZE_T arg3)
+// {
+//      TAL_PR_DEBUG("Send Callback called!\n");
+// }
+
+// INT_T recv_callback(VOID* arg1, BYTE_T *arg2, SIZE_T arg3)
+// {
+//      TAL_PR_DEBUG("Recv Callback called!\n");
+// }
+
+
+static http_client_status_t core_http_request_send( 
+                                const TransportInterface_t * pTransportInterface,
+                                const HTTPRequestInfo_t * requestInfo,
+                                http_client_header_t* headers,
+                                uint8_t headers_count,
+                                const uint8_t * pRequestBodyBuf,
+                                size_t reqBodyBufLen,
+                                HTTPResponse_t * response)
+{
+    /* Represents header data that will be sent in an HTTP request. */
+    HTTPRequestHeaders_t requestHeaders;
+
+    /* Return value of all methods from the HTTP Client library API. */
+    HTTPStatus_t httpStatus = HTTPSuccess;
+
+    if (NULL == requestInfo || NULL == response) {
+        return HTTP_CLIENT_SERIALIZE_FAULT;
+    }
+    /* Initialize all HTTP Client library API structs to 0. */
+    ( void ) memset( &requestHeaders, 0, sizeof( requestHeaders ) );
+    /* Set the buffer used for storing request headers. */
+    requestHeaders.bufferLen = HEADER_BUFFER_LENGTH + headers_count * 32;
+    requestHeaders.pBuffer = tal_malloc(requestHeaders.bufferLen);
+    if (requestHeaders.pBuffer == NULL) {
+        return HTTP_CLIENT_MALLOC_FAULT;
+    }
+
+    httpStatus = HTTPClient_InitializeRequestHeaders( &requestHeaders,
+                                                      requestInfo );
+    int i;
+    for(i = 0; i < headers_count; i++) {
+        log_debug("HTTP header add key:value\r\nkey=%s : value=%s", headers[i].key, headers[i].value);
+        httpStatus |= HTTPClient_AddHeader( &requestHeaders,
+                                            headers[i].key,
+                                            strlen(headers[i].key),
+                                            headers[i].value,
+                                            strlen(headers[i].value));
+    }
+
+    if( httpStatus != HTTPSuccess ) {
+        log_error("HTTP header error:%d", httpStatus);
+        tal_free(requestHeaders.pBuffer);
+        return HTTP_CLIENT_SERIALIZE_FAULT;
+    }
+
+    log_debug( "Sending HTTP %.*s request to %.*s%.*s",
+                ( int32_t ) requestInfo->methodLen, requestInfo->pMethod,
+                ( int32_t ) requestInfo->hostLen, requestInfo->pHost,
+                ( int32_t ) requestInfo->pathLen, requestInfo->pPath ) ;
+
+    /* Send the request and receive the response. */
+    httpStatus = HTTPClient_Request( pTransportInterface,
+                                  &requestHeaders,
+                                  (uint8_t*)pRequestBodyBuf,
+                                  reqBodyBufLen,
+                                  response,
+                                  0 );
+
+    /* Release headers buffer */
+    tal_free(requestHeaders.pBuffer);
+
+    if( httpStatus != HTTPSuccess ) {
+        log_error( "Failed to send HTTP %.*s request to %.*s%.*s: Error=%s.",
+                    ( int32_t ) requestInfo->methodLen, requestInfo->pMethod,
+                    ( int32_t ) requestInfo->hostLen, requestInfo->pHost,
+                    ( int32_t ) requestInfo->pathLen, requestInfo->pPath,
+                    HTTPClient_strerror( httpStatus ));
+        return HTTP_CLIENT_SEND_FAULT;
+    }
+
+    log_debug("Response Headers:\r\n%.*s\r\n"
+            "Response Status:\r\n%u\r\n"
+            "Response Body:\r\n%.*s\r\n",
+            ( int32_t ) response->headersLen, response->pHeaders,
+            response->statusCode,
+            ( int32_t ) response->bodyLen, response->pBody );
+
+    return HTTP_CLIENT_SUCCESS;
+}
+
+http_client_status_t http_client_request( const http_client_request_t* request, 
+                                    http_client_response_t* response)
+{
+    http_client_status_t rt = HTTP_CLIENT_SUCCESS;
+
+    /* TLS pre init */
+    NetworkContext_t network;
+    // network = tuya_transporter_create_custom(TRANSPORT_TYPE_TLS, NULL);
+    network = tuya_tls_transporter_create_custom();
+    if (NULL == network) {
+        return HTTP_CLIENT_MALLOC_FAULT;
+    }
+    log_error("tuya_transporter_create success!\n");
+
+
+    tuya_tls_config_t   tls_config = {
+        .ca_cert      = (char *)request->cacert,
+        .ca_cert_size = request->cacert_len,
+        .hostname     = (char *)request->host,
+        .port         = request->port,
+        .timeout      = request->timeout_ms,
+        .mode         = TUYA_TLS_SERVER_CERT_MODE,
+        .verify       = true,
+        .client_cert  = SHARED_KEY,
+        .client_cert_size = strlen(SHARED_KEY),
+        .client_pkey  = SSL_PRIVATE_KEY,
+        .client_pkey_size = strlen(SSL_PRIVATE_KEY),
+        .f_recv       = NULL,
+        .f_send       = NULL,
+        .exception_cb = NULL
+    };
+
+    int ret = tuya_transporter_ctrl_custom(network, TUYA_TRANSPORTER_SET_TLS_CONFIG, &tls_config);
+    if (OPRT_OK != rt) {
+        log_error("network_tls_init fail:%d", rt);
+        return rt;
+    }
+    log_error("tuya_transporter_ctrl success!\n");
+
+    //error comming from this funtion
+    ret = tuya_transporter_connect_custom(network, tls_config.hostname, tls_config.port, tls_config.timeout);
+    if (OPRT_OK != ret) {
+        tuya_transporter_close_custom(network);
+        tuya_transporter_destroy_custom(network);
+        return HTTP_CLIENT_SEND_FAULT;
+    }
+    log_error("tuya_transporter_connect success!\n");
+
+
+    log_debug("tls connencted!");
+    /* http client TransportInterface */
+    TransportInterface_t pTransportInterface = {
+        .pNetworkContext = (NetworkContext_t*)&network,
+        .recv = (TransportRecv_t)NetworkTransportRecv,
+        .send = (TransportSend_t)NetworkTransportSend
+    };
+
+    /* http client request object make */
+    HTTPRequestInfo_t requestInfo = {
+        .pMethod = request->method,
+        .methodLen = strlen(request->method),
+        .pHost = request->host,
+        .hostLen = strlen(request->host),
+        .pPath = request->path,
+        .pathLen = strlen(request->path),
+    };
+
+    HTTPResponse_t http_response = {0};
+
+    /* HTTP request send */
+    log_debug("http request send!");
+    rt = core_http_request_send( (const TransportInterface_t*)&pTransportInterface,
+                                 (const HTTPRequestInfo_t*)&requestInfo,
+                                 request->headers,
+                                 request->headers_count,
+                                 (const uint8_t*)request->body,
+                                 request->body_length,
+                                 &http_response );
+    log_error("Core Https request send done!\n");    
+
+    /* tls disconnect */
+    tuya_transporter_close_custom(network);
+    tuya_transporter_destroy_custom(network);
+
+    if (OPRT_OK != rt) {
+        log_error("http_request_send error:%d", rt);
+        return rt;
+    }
+
+    /* Response copy out */
+    response->status_code = http_response.statusCode;
+    response->body = http_response.pBody;
+    response->body_length = http_response.bodyLen;
+    response->headers = http_response.pHeaders;
+    response->headers_length = http_response.headersLen;
+    response->buffer  = http_response.pBuffer;
+    response->buffer_length = http_response.bufferLen;
+
+    return HTTP_CLIENT_SUCCESS;
+}
+
+
+int http_client_free(http_client_response_t *response)
+{
+    if (NULL == response) {
+        return OPRT_INVALID_PARM;
+    }
+
+    if (response->buffer) {
+        tal_free(response->buffer);
+    }
+
+    if (response->body) {
+        tal_free(response->body);
+    }
+
+    return OPRT_OK;
+}

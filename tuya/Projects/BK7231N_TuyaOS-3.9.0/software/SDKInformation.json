@@ -1,0 +1,42 @@
+{
+    "OsVersion": "3.9.0",
+    "SDKType": "1",
+    "package": {
+        "MainPackage": {
+            "Name": "tuyaos-iot_3.9.0_bk7231n_wifi-ble-com_1.3.5.tar.gz"
+        },
+        "Packages": []
+    },
+    "toolchain_pack_url": "https://airtake-public-data-1254153901.cos.ap-shanghai.myqcloud.com/smart/embed/pruduct/bk7231n_1.3.5.zip",
+    "AblityValue": {
+        "EmbAbt_ENABLE_BT_NETCFG": "true",
+        "EmbAbt_ENABLE_WIFI_PEGASUS": "false",
+        "EmbAbt_ENABLE_WIFI_FFS": "false",
+        "EmbAbt_ENABLE_WIFI_QRCODE": "true",
+        "EmbAbt_ENABLE_QRCODE_ACTIVE": "false",
+        "EmbAbt_ENABLE_BT_SERVICE": "true",
+        "EmbAbt_ENABLE_BT_ACTIVE": "true",
+        "EmbAbt_ENABLE_TUYA_LAN": "true",
+        "EmbAbt_ENABLE_BT_CTRL": "true",
+        "EmbAbt_ENABLE_WIFI_FFC": "true",
+        "EmbAbt_ENABLE_WIFI_AP": "true",
+        "EmbAbt_ENABLE_BT_REMOTE_CTRL": "true",
+        "EmbAbt_ENABLE_ASTRO_TIMER": "true",
+        "EmbAbt_ENABLE_CALENDAR_TIMER": "true",
+        "EmbAbt_ENABLE_BT_TIMER": "true",
+        "EmbAbt_ENABLE_WIFI_PROTECT": "true",
+        "EmbAbt_ENABLE_HOMEKIT": "false",
+        "EmbAbt_ENABLE_MATTER": "false",
+        "EmbAbt_ENABLE_WEBSOCKET": "false",
+        "EmbAbt_ENABLE_LWIP": "true",
+        "EmbAbt_ENABLE_HOSTAPD": "false",
+        "EmbAbt_ENABLE_TUYA_BLE_STACK": "true",
+        "EmbAbt_ENABLE_KV_PROTECTED": "true",
+        "EmbAbt_ENABLE_RTSP_SERVER": "false",
+        "EmbAbt_ENABLE_LOCAL_KEY_UPDATE": "true",
+        "EmbAbt_ENABLE_DEVICE_DATA_COLLECT": "true",
+        "EmbAbt_ENABLE_COMMUNICATE_PRIORITY": "true",
+        "EmbAbt_ENABLE_MATOP": "false",
+        "EmbAbt_TUYA_SECURITY_LEVEL": "EmbAbt_TUYA_SECURITY_LEVEL_0"
+    }
+}
