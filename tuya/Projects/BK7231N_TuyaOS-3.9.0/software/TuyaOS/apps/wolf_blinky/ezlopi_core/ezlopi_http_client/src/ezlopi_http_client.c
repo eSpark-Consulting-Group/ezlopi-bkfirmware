@@ -1,5 +1,6 @@
 
 #include "ezlopi_http_client.h"
+#include "esp_http_client.h"
 #include "tal_log.h"
 #include "httpc.h"
 #include "cert.h"
@@ -204,29 +205,29 @@ static int https_read_response(char ** p_received_data)
 
 //     // TLS_ENABLE is sent as a flag for creating HTTPS client.
 //     // retry_cnt is set to 0 for letting SDK determing the socket creation retry count, also can be set here.
-//     int http_ret = http_open_session_with_config(&https_handle, host_uri, TLS_ENABLE, 0);
+//     // int http_ret = http_open_session_with_config(&https_handle, host_uri, TLS_ENABLE, 0);
 //     if (WM_SUCCESS == http_ret)
 //     {
 //         TAL_PR_DEBUG("HTTP session created successfully");
-//         // if (0 == https_send_request(host_uri))
-//         // {
-//         //     if (0 == https_read_response(received_data))
-//         //     {
-//         //         TAL_PR_DEBUG("Data reading successful.(data: %s)", received_data);
-//         //     }
-//         //     else
-//         //     {
-//         //         TAL_PR_ERR("Something went wrong while receiving response form the server.");
-//         //         ret = 1;
-//         //     }
-//         // }
-//         // else
-//         // {
-//         //     TAL_PR_ERR("Error while sending data to the server.");
-//         //     ret = 1;
-//         // }
-//         // // Since http session has been created, any kind of error encountered or any data is received, the session has to be closed.
-//         // http_close_session(&https_handle);
+//         if (0 == https_send_request(host_uri))
+//         {
+//             if (0 == https_read_response(received_data))
+//             {
+//                 TAL_PR_DEBUG("Data reading successful.(data: %s)", received_data);
+//             }
+//             else
+//             {
+//                 TAL_PR_ERR("Something went wrong while receiving response form the server.");
+//                 ret = 1;
+//             }
+//         }
+//         else
+//         {
+//             TAL_PR_ERR("Error while sending data to the server.");
+//             ret = 1;
+//         }
+//         // Since http session has been created, any kind of error encountered or any data is received, the session has to be closed.
+//         http_close_session(&https_handle);
 //     }
 //     else
 //     {
@@ -237,66 +238,66 @@ static int https_read_response(char ** p_received_data)
 //     return ret;
 // }
 
-int ezlopi_http_send_get_request(char *host_uri, char *received_data)
-{
-    int ret = 0;
+// int ezlopi_http_send_get_request(char *host_uri, char *received_data)
+// {
+//     int ret = 0;
     
-    // Configure the TLS parameters
-    tuya_tls_config_t tls_config;
-    memset(&tls_config, 0, sizeof(tls_config));
-    tls_config.mode = TUYA_TLS_SERVER_CERT_MODE;  // Example mode, adjust as needed
-    tls_config.hostname = host_uri;
-    tls_config.port = 7000;  // HTTPS port
+//     // Configure the TLS parameters
+//     tuya_tls_config_t tls_config;
+//     memset(&tls_config, 0, sizeof(tls_config));
+//     tls_config.mode = TUYA_TLS_SERVER_CERT_MODE;  // Example mode, adjust as needed
+//     tls_config.hostname = host_uri;
+//     tls_config.port = 7000;  // HTTPS port
 
-    // Set CA certificate (assuming CA_CERT is defined as per your previous definitions)
-    tls_config.ca_cert = CA_CERT;
-    tls_config.ca_cert_size = strlen(CA_CERT);
+//     // Set CA certificate (assuming CA_CERT is defined as per your previous definitions)
+//     tls_config.ca_cert = CA_CERT;
+//     tls_config.ca_cert_size = strlen(CA_CERT);
 
-    // Set timeout and other parameters as needed
-    tls_config.timeout = 10;  // Example timeout
-    tls_config.verify = true;  // Enable certificate verification
+//     // Set timeout and other parameters as needed
+//     tls_config.timeout = 10;  // Example timeout
+//     tls_config.verify = true;  // Enable certificate verification
 
-    // If you have client certificate and key, set them as follows:
-    tls_config.client_cert = SHARED_KEY;
-    tls_config.client_cert_size = strlen(SHARED_KEY);
-    tls_config.client_pkey = SSL_PRIVATE_KEY;
-    tls_config.client_pkey_size = strlen(SSL_PRIVATE_KEY);
+//     // If you have client certificate and key, set them as follows:
+//     tls_config.client_cert = SHARED_KEY;
+//     tls_config.client_cert_size = strlen(SHARED_KEY);
+//     tls_config.client_pkey = SSL_PRIVATE_KEY;
+//     tls_config.client_pkey_size = strlen(SSL_PRIVATE_KEY);
 
-    // Open HTTP session with Tuya TLS configuration
-    int http_ret = http_open_session_with_config(&https_handle, host_uri, &tls_config, TLS_ENABLE, 0);
-    // int http_ret = http_open_session(&https_handle, host_uri, NULL, 0);
-    if (WM_SUCCESS == http_ret)
-    {
-        TAL_PR_DEBUG("HTTP session created successfully");
-        // Proceed with sending request and reading response as per your implementation
-        if (0 == https_send_request(host_uri))
-        {
-            if (0 == https_read_response(&received_data))
-            {
-                TAL_PR_DEBUG("Data reading successful.(data: %s)", received_data);
-            }
-            else
-            {
-                TAL_PR_ERR("Something went wrong while receiving response form the server.");
-                ret = 1;
-            }
-        }
-        else
-        {
-            TAL_PR_ERR("Error while sending data to the server.");
-            ret = 1;
-        }
-        // Since http session has been created, any kind of error encountered or any data is received, the session has to be closed.
-        http_close_session(&https_handle);
-    }
-    else
-    {
-        TAL_PR_ERR("Error opening HTTP session.(code: %d)", http_ret);
-        ret = 1;
-    }
+//     // Open HTTP session with Tuya TLS configuration
+//     int http_ret = http_open_session_with_config(&https_handle, host_uri, &tls_config, TLS_ENABLE, 0);
+//     // int http_ret = http_open_session(&https_handle, host_uri, NULL, 0);
+//     if (WM_SUCCESS == http_ret)
+//     {
+//         TAL_PR_DEBUG("HTTP session created successfully");
+//         // Proceed with sending request and reading response as per your implementation
+//         if (0 == https_send_request(host_uri))
+//         {
+//             if (0 == https_read_response(&received_data))
+//             {
+//                 TAL_PR_DEBUG("Data reading successful.(data: %s)", received_data);
+//             }
+//             else
+//             {
+//                 TAL_PR_ERR("Something went wrong while receiving response form the server.");
+//                 ret = 1;
+//             }
+//         }
+//         else
+//         {
+//             TAL_PR_ERR("Error while sending data to the server.");
+//             ret = 1;
+//         }
+//         // Since http session has been created, any kind of error encountered or any data is received, the session has to be closed.
+//         http_close_session(&https_handle);
+//     }
+//     else
+//     {
+//         TAL_PR_ERR("Error opening HTTP session.(code: %d)", http_ret);
+//         ret = 1;
+//     }
 
-    return ret;
-}
+//     return ret;
+// }
 
 
 int is_network_initialized() {

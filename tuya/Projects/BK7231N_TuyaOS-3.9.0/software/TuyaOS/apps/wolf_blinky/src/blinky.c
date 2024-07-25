@@ -44,7 +44,10 @@
 #include <wolfssl/options.h>
 #include <wolfssl/ssl.h>
 
+#include "esp_http_client.h"
+#include "ezlopi_http_client.h"
 #include "cert.h"
+
 // #define USE_CERT_BUFFERS_1024
 // #include "wolfssl/certs_test.h"
 #define PID  "tvjs8eysp0imads8"
@@ -81,6 +84,8 @@ void call_wolf_funcs();
 int send_websocket_message(WOLFSSL* ssl, const char* strdata);
 void receive(WOLFSSL* ssl);
 char* handle_message(const char* message);
+static esp_err_t ezlopi_http_event_handler(esp_http_client_event_t* evt);
+
 void initialize_responses();
 STATIC VOID __free_heap_task(PVOID_T args);
 
@@ -148,7 +153,22 @@ STATIC VOID user_main(VOID_T)
     }
     TAL_PR_ERR("Wifi Connected");
     initialize_responses();
-    call_wolf_funcs();
+    // call_wolf_funcs();
+    esp_http_client_config_t config = {
+        .host = "cloud.ezlo.com",
+        .path = "/getserver?json=true",
+        .cert_pem = CA_CERT,
+        .client_cert_pem = SHARED_KEY,
+        .client_key_pem = SSL_PRIVATE_KEY,
+        .event_handler = NULL,
+        .port = 7000,
+        .event_handler = ezlopi_http_event_handler,
+        // .user_data = (void*)(my_data), // my_data will be filled in 'ezlopi_http_event_handler'
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_http_client_set_method(client, HTTP_METHOD_GET);
+    esp_http_client_perform(client);
+    esp_http_client_cleanup(client);
     while(1) {  
         tkl_gpio_write(LED_PIN, TUYA_GPIO_LEVEL_HIGH);
         // tal_uart_write(TUYA_UART_NUM_0, turnOn, sizeof(turnOn));
@@ -160,7 +180,7 @@ STATIC VOID user_main(VOID_T)
         tal_system_sleep(blink_interval);
 
 	    // Set logging level to DEBUG
-        TAL_PR_DEBUG("Hello TuyaOS.");
+        // TAL_PR_DEBUG("Hello TuyaOS.");
     }
 
     return;
@@ -316,22 +336,22 @@ void call_wolf_funcs()
         TAL_PR_DEBUG("%d bytes of %d bytes were sent", ret, (int) strlen(GET_REQUEST));
     }
 
-    int totalRead = 0;
+    // int totalRead = 0;
 
-    while (1) {
-        memset(buff, 0, sizeof(buff));
-        ret = wolfSSL_read(ssl, buff, sizeof(buff)-1);
-        if (ret <= 0) {
-            TAL_PR_DEBUG(stderr, "ERROR: failed to read\n");
-            return;
-        }
-        TAL_PR_DEBUG("%s", buff);
+    // while (1) {
+    //     memset(buff, 0, sizeof(buff));
+    //     ret = wolfSSL_read(ssl, buff, sizeof(buff)-1);
+    //     if (ret <= 0) {
+    //         TAL_PR_DEBUG(stderr, "ERROR: failed to read\n");
+    //         return;
+    //     }
+    //     TAL_PR_DEBUG("%s", buff);
 
-        /* Check if we've reached the end of the headers */
-        if (strstr(buff, "\r\n\r\n") != NULL) {
-            break;
-        }
-    }
+    //     /* Check if we've reached the end of the headers */
+    //     if (strstr(buff, "\r\n\r\n") != NULL) {
+    //         break;
+    //     }
+    // }
 
     /* Read the response body */
     // TAL_PR_DEBUG("\nResponse Body:\n");
@@ -341,9 +361,9 @@ void call_wolf_funcs()
     //     totalRead += ret;
     // }
 
-    if (ret < 0) {
-        TAL_PR_DEBUG(stderr, "ERROR: failed to read\n");
-    }
+    // if (ret < 0) {
+    //     TAL_PR_DEBUG(stderr, "ERROR: failed to read\n");
+    // }
 
 
     /* Print to stdout any data the server sends */
@@ -712,18 +732,18 @@ Response* get_response_by_method(const char* method) {
 char* handle_message(const char* message) {
     cJSON* data = cJSON_Parse(message);
     if (!data) {
-        printf("Error parsing JSON\n");
+        TAL_PR_DEBUG("Error parsing JSON\n");
         return NULL;
     }
 
-    printf("WS Request: %s\n", cJSON_Print(data));
+    TAL_PR_DEBUG("WS Request: %s\n", cJSON_Print(data));
 
     cJSON* method = cJSON_GetObjectItem(data, "method");
     cJSON* id = cJSON_GetObjectItem(data, "id");
     cJSON* sender = cJSON_GetObjectItem(data, "sender");
 
     if (!cJSON_IsString(method) || !method->valuestring || !cJSON_IsString(id) || !id->valuestring) {
-        printf("Invalid method or id\n");
+        TAL_PR_DEBUG("Invalid method or id\n");
         cJSON_Delete(data);
         return NULL;
     }
@@ -750,7 +770,7 @@ char* handle_message(const char* message) {
         }
 
         char* response_str = cJSON_Print(response_json);
-        printf("WS Response: %s\n", response_str);
+        TAL_PR_DEBUG("WS Response: %s\n", response_str);
         cJSON_Delete(response_json);
         cJSON_Delete(data);
         return response_str;
@@ -766,7 +786,7 @@ char* handle_message(const char* message) {
         cJSON_AddItemToObject(error_response, "result", cJSON_CreateObject());
 
         char* error_str = cJSON_Print(error_response);
-        printf("WS Error Response: %s\n", error_str);
+        TAL_PR_DEBUG("WS Error Response: %s\n", error_str);
         cJSON_Delete(error_response);
         cJSON_Delete(data);
         return error_str;
@@ -779,4 +799,95 @@ STATIC VOID __free_heap_task(PVOID_T args)
         TAL_PR_NOTICE("free heap: %d", tal_system_get_free_heap_size());
         tal_system_sleep(3000);
     }
+}
+
+
+static esp_err_t ezlopi_http_event_handler(esp_http_client_event_t* evt)
+{
+    switch (evt->event_id)
+    {
+    case HTTP_EVENT_ERROR:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_ERROR");
+        break;
+    }
+    case HTTP_EVENT_ON_CONNECTED:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_ON_CONNECTED");
+        break;
+    }
+    case HTTP_EVENT_HEADER_SENT:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_HEADER_SENT");
+        break;
+    }
+    case HTTP_EVENT_ON_HEADER:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_ON_HEADER, headers = \n%s", evt->data);
+        break;
+    }
+    case HTTP_EVENT_ON_DATA:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_ON_DATA, len=%d, data: \n%.*s", evt->data_len, evt->data_len, (char*)evt->data);
+        // // if (!esp_http_client_is_chunked_response(evt->client))
+        // {
+        //     if (evt->user_data)
+        //     {
+        //         char* tmp_data = (char*)ezlopi_malloc(__FUNCTION__, evt->data_len + 1);
+        //         if (NULL != tmp_data)
+        //         {
+        //             memcpy(tmp_data, evt->data, evt->data_len);
+        //             tmp_data[evt->data_len] = '\0';
+
+        //             s_rx_data_t* my_data = (s_rx_data_t*)evt->user_data;
+        //             if (my_data->len || my_data->total_len || my_data->ptr)
+        //             {
+        //                 s_rx_data_t* cur_dh = my_data;
+        //                 while (cur_dh->next)
+        //                 {
+        //                     cur_dh = cur_dh->next;
+        //                 }
+
+        //                 cur_dh->next = (s_rx_data_t*)ezlopi_malloc(__FUNCTION__, sizeof(s_rx_data_t));
+        //                 if (cur_dh->next)
+        //                 {
+        //                     cur_dh->next->len = evt->data_len;
+        //                     cur_dh->next->ptr = (char*)tmp_data;
+        //                     cur_dh->next->total_len = 0;
+        //                     my_data->total_len += evt->data_len;
+        //                     cur_dh->next->next = NULL;
+        //                 }
+        //             }
+        //             else
+        //             {
+        //                 my_data->len = evt->data_len;
+        //                 my_data->total_len = evt->data_len;
+        //                 my_data->ptr = (char*)tmp_data;
+        //                 my_data->next = NULL;
+        //             }
+        //         }
+        //     }
+        // }
+
+        break;
+    }
+    case HTTP_EVENT_ON_FINISH:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_ON_FINISH");
+        break;
+    }
+    case HTTP_EVENT_DISCONNECTED:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_DISCONNECTED");
+        // int mbedtls_err = 0;
+        // esp_err_t err = esp_tls_get_and_clear_last_error((esp_tls_error_handle_t)evt->data, &mbedtls_err, NULL);
+        // if (err != 0)
+        // {
+        //     TAL_PR_DEBUG("Last esp error code: 0x%x", err);
+        //     TAL_PR_DEBUG("Last mbedtls failure: 0x%x", mbedtls_err);
+        // }
+        break;
+    }
+    }
+    return ESP_OK;
 }

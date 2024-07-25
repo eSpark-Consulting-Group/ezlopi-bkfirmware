@@ -3,6 +3,19 @@
         "options.h": "c",
         "tuya_iot_wifi_api.h": "c",
         "sys_config.h": "c",
-        "tuya_error_code.h": "c"
+        "tuya_error_code.h": "c",
+        "lwip_init.h": "c",
+        "tal_log.h": "c",
+        "stdlib.h": "c",
+        "esp_http_client.h": "c",
+        "esp_err.h": "c",
+        "socket.h": "c",
+        "tuya_ws_db.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "stddef.h": "c",
+        "ezlopi_http_client.h": "c",
+        "tuya_iot_com_api.h": "c"
     }
 }

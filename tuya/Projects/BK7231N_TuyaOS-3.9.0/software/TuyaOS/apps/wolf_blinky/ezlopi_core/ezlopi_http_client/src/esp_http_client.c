@@ -1,0 +1,374 @@
+#include <stdlib.h>
+#include "tal_log.h"
+#include "tal_network.h"
+#include "esp_http_client.h"
+
+/* socket includes */
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include "netdb.h"
+
+/* wolfSSL */
+#include <wolfssl/options.h>
+#include <wolfssl/ssl.h>
+
+/* turn off logs */
+#define TAL_PR_DEBUG
+
+#define RX_TX_BUFFER_SIZE 512
+
+struct http_header_handle {
+    void* buffer;
+};
+
+typedef struct http_header_handle http_header_handle_t;
+
+/**
+ * HTTP Buffer
+ */
+typedef struct {
+    char *data;         /*!< The HTTP data received from the server */
+    int len;            /*!< The HTTP data len received from the server */
+    char *raw_data;     /*!< The HTTP data after decoding */
+    char *orig_raw_data;/*!< The Original pointer to HTTP data after decoding */
+    int raw_len;        /*!< The HTTP data len after decoding */
+    char *output_ptr;   /*!< The destination address of the data to be copied to after decoding */
+} esp_http_buffer_t;
+
+/**
+ * private HTTP Data structure
+ */
+typedef struct {
+    http_header_handle_t headers;       /*!< http header */
+    esp_http_buffer_t   *buffer;        /*!< data buffer as linked list */
+    int                 status_code;    /*!< status code (integer) */
+    int64_t             content_length; /*!< data length */
+    int                 method;         /*!< http method */
+} esp_http_data_t;
+
+typedef enum {
+    HTTP_STATE_UNINIT = 0,
+    HTTP_STATE_INIT,
+    HTTP_STATE_CONNECTED,
+    HTTP_STATE_REQ_COMPLETE_HEADER,
+    HTTP_STATE_REQ_COMPLETE_DATA,
+    HTTP_STATE_RES_COMPLETE_HEADER,
+    HTTP_STATE_RES_ON_DATA_START,
+    HTTP_STATE_RES_COMPLETE_DATA,
+    HTTP_STATE_CLOSE
+} esp_http_state_t;
+
+struct esp_http_client {
+    const char* url;
+    const char* host;
+    const char *path;    
+    esp_http_data_t *request;
+    esp_http_data_t *response;
+    http_event_handle_cb        event_handler;
+    void* user_data;
+    WOLFSSL_CTX* ctx;
+    WOLFSSL* ssl;
+    int sockfd;
+    int state;
+    int method;
+};
+typedef struct esp_http_client esp_http_client_t;
+
+esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *config)
+{
+    esp_http_client_handle_t client;
+    esp_err_t ret = ESP_OK;
+    bool _success = (
+        (client                         = calloc(1, sizeof(esp_http_client_t)))           &&
+        (client->request                = calloc(1, sizeof(esp_http_data_t)))             &&
+        (client->request->buffer        = calloc(1, sizeof(esp_http_buffer_t)))           &&
+        (client->response               = calloc(1, sizeof(esp_http_data_t)))             &&
+        (client->response->buffer       = calloc(1, sizeof(esp_http_buffer_t)))
+    );
+
+    _success = (
+                (client->request->buffer->data  = malloc(RX_TX_BUFFER_SIZE))  &&
+                (client->response->buffer->data = malloc(RX_TX_BUFFER_SIZE))
+    );
+
+    sprintf(client->url, "https://%s/%s", config->host, config->path);
+    client->path = config->path;
+    client->host = config->host;
+    client->event_handler = config->event_handler;
+
+    socket_initialize(config, client);
+    ssl_initialize(config, client);
+
+    return client;
+}
+
+esp_err_t esp_http_client_perform(esp_http_client_handle_t client){
+
+    switch (client->state)
+    {
+    case HTTP_STATE_INIT:
+        server_connect(client);
+        /* Falls thorugh */
+    case HTTP_STATE_CONNECTED:
+        esp_http_client_request_send(client);
+        /* Falls thorugh */
+    case HTTP_STATE_REQ_COMPLETE_HEADER:   
+
+    case HTTP_STATE_CLOSE:
+        break;
+    default:
+        break;
+    }
+
+}
+
+int esp_http_client_get_status_code(esp_http_client_handle_t client){
+
+}
+
+bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client){
+
+}
+
+esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client){
+    esp_err_t ret = ESP_OK;
+    esp_http_client_event_t http_event;
+    /* Bidirectional shutdown */
+    while (wolfSSL_shutdown(client->ssl) == WOLFSSL_SHUTDOWN_NOT_DONE) {
+        TAL_PR_DEBUG("Shutdown not complete\n");
+        ret = ESP_ERR;
+        return ret;
+    }
+    wolfSSL_free(client->ssl);      /* Free the wolfSSL object                  */
+    wolfSSL_CTX_free(client->ctx);  /* Free the wolfSSL context object          */
+    wolfSSL_Cleanup();      /* Cleanup the wolfSSL environment              */
+    
+    http_event.event_id = HTTP_EVENT_DISCONNECTED;
+    client->event_handler(&http_event);
+
+    close(client->sockfd);    
+    return ret;
+}
+
+esp_err_t esp_http_client_set_method(esp_http_client_handle_t client, esp_http_client_method_t method)
+{
+    client->method = method;
+    return ESP_OK;
+}
+
+/* -------------------------------------------------------------------- */
+
+int socket_initialize(const esp_http_client_config_t *config, esp_http_client_handle_t client)
+{
+    // int sockfd;
+    struct addrinfo hints, *result;
+    size_t len;
+    int ret = ESP_OK;
+
+    wolfSSL_Debugging_ON();
+    wolfSSL_SetLoggingCb(tal_log_print);
+
+    /* declare wolfSSL objects */
+    WOLFSSL_CTX* ctx;
+    WOLFSSL*     ssl;
+
+    /* Create a socket */
+    client->sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (client->sockfd == -1) {
+        TAL_PR_ERR("ERROR: failed to create the socket\n");
+        return ESP_ERR;
+    }
+
+    TAL_PR_DEBUG("SOCKET CREATE SUCCESS!\n");
+
+    /* Resolve domain name to IP address */
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;     // IPv4
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+
+    if (getaddrinfo(config->host, NULL, &hints, &result) != 0) {
+        TAL_PR_ERR("ERROR: failed to resolve domain name\n");
+        close(client->sockfd);
+        return ESP_ERR;
+    }
+
+    /* Print the resolved IP address */
+    struct sockaddr_in *addr = (struct sockaddr_in *)result->ai_addr;
+    addr->sin_port = config->port;
+    char ipstr[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(addr->sin_addr), ipstr, INET_ADDRSTRLEN);
+    TAL_PR_DEBUG("Resolved IP address: %s\n", ipstr);
+
+    /* Connect to the server */
+    if(tal_net_connect(client->sockfd, tal_net_str2addr(ipstr), addr->sin_port) < 0) {
+        TAL_PR_ERR("ERROR: failed to connect to server\n");
+        close(client->sockfd);
+        freeaddrinfo(result);
+        return ESP_ERR;
+    }
+
+
+    TAL_PR_DEBUG("SOCKET CONNECT SUCCESS!\n");
+    return ret;
+}
+
+int ssl_initialize(esp_http_client_config_t *config, esp_http_client_handle_t client)
+{
+    int ret = ESP_OK;
+    /*---------------------------------*/
+    /* Start of wolfSSL initialization and configuration */
+    /*---------------------------------*/
+    /* Initialize wolfSSL */
+    if ((ret = wolfSSL_Init()) != WOLFSSL_SUCCESS) {
+        TAL_PR_DEBUG("ERROR: Failed to initialize the library\n");
+        return;
+    }
+    TAL_PR_DEBUG("SSL INIT SUCCESS!\n");
+
+    /* Create and initialize WOLFSSL_CTX */
+#ifdef WOLFSSL_TLS13
+    client->ctx = wolfSSL_CTX_new(wolfTLSv1_3_client_method());
+#else
+    client->ctx = wolfSSL_CTX_new(wolfTLSv1_2_client_method());
+    // client->ctx = wolfSSL_CTX_new(wolfSSLv23_client_method());
+#endif
+    if (client->ctx == NULL) {
+        TAL_PR_DEBUG("ERROR: failed to create WOLFSSL_CTX\n");
+        return ESP_ERR;
+    }
+    TAL_PR_DEBUG("wolfSSL_CTX_new SUCCESS!\n");
+
+    /* Loading keys */
+    if (wolfSSL_CTX_use_PrivateKey_buffer(client->ctx, config->client_key_pem, strlen(config->client_key_pem), WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+        TAL_PR_DEBUG(stderr, "Error loading client private key\n");
+        return ESP_ERR;
+    }
+    TAL_PR_DEBUG("\t PRIVATE KEY LOADED\n");
+
+    // Load client's certificate
+    if (wolfSSL_CTX_use_certificate_buffer(client->ctx, config->client_cert_pem, strlen(config->client_cert_pem), WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+        TAL_PR_DEBUG(stderr, "Error loading client certificate\n");
+        return ESP_ERR;
+    }
+    TAL_PR_DEBUG("\t SHARED KEY LOADED\n");
+
+    /* Load client certificates into WOLFSSL_CTX */
+    if ((ret = wolfSSL_CTX_load_verify_buffer(client->ctx, config->cert_pem, strlen(config->cert_pem), WOLFSSL_FILETYPE_PEM))
+         != WOLFSSL_SUCCESS) {
+        TAL_PR_DEBUG("ERROR: failed to load %s, please check the Cert. err: %d\n", config->cert_pem, ret);
+        return ESP_ERR;
+    }
+    
+    TAL_PR_DEBUG("wolfSSL_CTX_load_verify_buffer SUCCESS!\n");
+
+    /* Create a WOLFSSL object */
+    if ((client->ssl = wolfSSL_new(client->ctx)) == NULL) {
+        TAL_PR_DEBUG("ERROR: failed to create WOLFSSL object\n");
+        return ESP_ERR;
+    }
+    TAL_PR_DEBUG("wolfSSL_new SUCCESS!\n");
+
+    /* Attach wolfSSL to the socket */
+    if ((ret = wolfSSL_set_fd(client->ssl, client->sockfd)) != WOLFSSL_SUCCESS) {
+        TAL_PR_DEBUG("ERROR: Failed to set the file descriptor\n");
+        return ESP_ERR;
+    }
+    TAL_PR_DEBUG("attach wolfSSL to the socket SUCCESS!\n");
+    
+    client->state = HTTP_STATE_INIT; 
+    return ret;
+}
+
+int server_connect(esp_http_client_handle_t client)
+{
+    esp_err_t ret = ESP_OK;
+    esp_http_client_event_t http_event;
+    http_event.client = client;
+    http_event.event_id = HTTP_EVENT_ON_CONNECTED;
+    /* Connect to wolfSSL on the server side */
+    if ((ret = wolfSSL_connect(client->ssl)) != WOLFSSL_SUCCESS) {
+        TAL_PR_DEBUG("ERROR: failed to connect to wolfSSL error:%d\n", ret);
+        http_event.event_id = HTTP_EVENT_ERROR;
+        client->event_handler(&http_event);
+        return ESP_ERR;
+    }
+    client->event_handler(&http_event);
+    TAL_PR_DEBUG("Connect to wolfSSL on the server side SUCCESS!\n");
+    client->state = HTTP_STATE_CONNECTED; 
+    return ret;
+}
+
+int esp_http_client_request_send(esp_http_client_handle_t client)
+{
+    esp_err_t ret = ESP_OK;
+    esp_http_client_event_t http_event;
+    char* buf_ptr = client->request->buffer->data;
+    int totalRead = 0;
+
+    http_event.client = client;
+    switch (client->method)
+    {
+    case HTTP_METHOD_GET:
+        client->request->buffer->len = sprintf(buf_ptr, "GET %s %s\r\nHost: %s\r\n\r\n", client->path, "HTTP/1.1", client->host);
+        break;
+    case HTTP_METHOD_POST:
+        client->request->buffer->data = "{\"hello\":\"world\"}\r\n\r\n"; //FIXME:
+        client->request->buffer->len = sprintf(buf_ptr, "POST %s %s\r\nHost: %s\r\nContent-Type: %s\r\nnContent-Length: %d\r\n\r\n%s", client->path, "HTTP/1.1", "application/json", strlen(client->request->buffer->data), client->host, client->request->buffer->data);
+        break;
+    default:
+        http_event.event_id = HTTP_EVENT_ERROR;
+        client->event_handler(&http_event);
+        break;
+    }
+
+        TAL_PR_DEBUG("SENDING REQUEST %s", buf_ptr);
+        if ((ret = wolfSSL_write(client->ssl, client->request->buffer->data, client->request->buffer->len)) != client->request->buffer->len) {
+            TAL_PR_DEBUG("ERROR: failed to write entire message\n");
+            TAL_PR_DEBUG("%d bytes of %d bytes were sent\n", ret, (int)client->request->buffer->len);
+            free(client->request->buffer->data);
+            ret = ESP_ERR;
+            return ret;
+        }
+        http_event.event_id = HTTP_EVENT_HEADERS_SENT;
+        client->event_handler(&http_event);
+        while (1) {
+            memset(buf_ptr, 0, RX_TX_BUFFER_SIZE);
+            ret = wolfSSL_read(client->ssl, buf_ptr, RX_TX_BUFFER_SIZE - 1);
+            if (ret <= 0) {
+                TAL_PR_DEBUG(stderr, "ERROR: failed to read\n");
+                ret = ESP_ERR;
+                return ret;
+            }
+            http_event.event_id = HTTP_EVENT_ON_HEADER;
+            http_event.data = buf_ptr;
+            http_event.data_len = strlen(buf_ptr);
+            client->event_handler(&http_event);
+            TAL_PR_DEBUG("%s", buf_ptr);
+
+            /* Check if we've reached the end of the headers */
+            if (strstr(buf_ptr, "\r\n\r\n") != NULL) {
+                break;
+            }
+        }
+        /* Read the response body */
+        totalRead = 0;
+        TAL_PR_DEBUG("\nResponse Body:\n");
+        while ((ret = wolfSSL_read(client->ssl, buf_ptr, RX_TX_BUFFER_SIZE - 1)) > 0) {
+            buf_ptr[ret] = '\0';  // Null-terminate the buffer
+            // TAL_PR_DEBUG("%s", buf_ptr);
+            http_event.event_id = HTTP_EVENT_ON_DATA;
+            http_event.data = buf_ptr;
+            http_event.data_len = strlen(buf_ptr);
+            client->event_handler(&http_event);
+            totalRead += ret;
+        }
+
+        http_event.event_id = HTTP_EVENT_ON_FINISH;
+        client->event_handler(&http_event);
+        
+        if (ret < 0) {
+            TAL_PR_DEBUG(stderr, "ERROR: failed to read\n");
+        }
+}
