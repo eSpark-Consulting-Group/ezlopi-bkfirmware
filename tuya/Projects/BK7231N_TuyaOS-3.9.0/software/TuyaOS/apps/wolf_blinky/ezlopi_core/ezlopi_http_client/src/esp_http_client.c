@@ -16,7 +16,7 @@
 /* turn off logs */
 #define TAL_PR_DEBUG
 
-#define RX_TX_BUFFER_SIZE 512
+#define RX_TX_BUFFER_SIZE 256
 
 struct http_header_handle {
     void* buffer;
@@ -74,6 +74,8 @@ struct esp_http_client {
     int method;
 };
 typedef struct esp_http_client esp_http_client_t;
+/* Private Funcition Prototypes */
+void parse_headers(char *response, esp_http_client_handle_t client);
 
 esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *config)
 {
@@ -86,35 +88,116 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         (client->response               = calloc(1, sizeof(esp_http_data_t)))             &&
         (client->response->buffer       = calloc(1, sizeof(esp_http_buffer_t)))
     );
+    if (!_success) {
+        TAL_PR_DEBUG("Error allocate memory");
+        goto error;
+    }
 
-    _success = (
-                (client->request->buffer->data  = malloc(RX_TX_BUFFER_SIZE))  &&
-                (client->response->buffer->data = malloc(RX_TX_BUFFER_SIZE))
+    _success = 
+    (
+                (client->request->buffer->data  = calloc(1, RX_TX_BUFFER_SIZE))  &&
+                (client->response->buffer->data = calloc(1, RX_TX_BUFFER_SIZE))
     );
 
-    sprintf(client->url, "https://%s/%s", config->host, config->path);
-    client->path = config->path;
-    client->host = config->host;
+    if (!_success) {
+        TAL_PR_DEBUG("Error allocate memory for req res buffers");
+        goto error;
+    }
+    
+    if( NULL == (config->url || config->event_handler || config->user_data) )
+    {
+        TAL_PR_DEBUG("Error url or handler or");
+        goto error;
+    }
+    client->url = config->url;
     client->event_handler = config->event_handler;
+    client->user_data = config->user_data;  
+
+    if(NULL != client->url)
+    {
+        // Find the position of the first '/'
+        const char* slash = strchr(config->url, '/');
+        
+        if (slash != NULL) 
+        {
+            TAL_PR_DEBUG("Slash found started parsing!\n");
+            // Length of the host is the distance from the start of the URL to the slash
+            size_t host_len = slash - config->url;  
+            
+            // Allocate memory for host and path
+            client->host = (char*)malloc(host_len + 1);
+            client->path = (char*)malloc(strlen(config->url) - host_len + 1);
+            if(NULL == client->host || NULL == client->path)
+            {
+                TAL_PR_ERR("ERROR: Unable to malloc path and host");
+                goto error;
+            }
+            
+            // Copy the host and path
+            strncpy((char*)client->host, config->url, host_len);
+            ((char*)client->host)[host_len] = '\0';  // Null-terminate the host string
+
+            strcpy((char*)client->path, slash);      // Copy the path including the slash
+            
+            // Print the results for debugging
+            TAL_PR_DEBUG("Host: %s\n", client->host);
+            TAL_PR_DEBUG("Path: %s\n", client->path);
+        } else 
+        {
+            size_t url_len = strlen(config->url);
+            TAL_PR_DEBUG("Invalid URL format or path not found!\n");
+            client->host = (char*)malloc(url_len + 1);
+            strncpy((char*)client->host, config->url, url_len);
+            ((char*)client->host)[url_len] = '\0';  // Null-terminate the host string
+            client->path = (char*)malloc(sizeof(char)*2);
+            strcpy((char*)client->path, "/");
+
+            // Print the results for debugging
+            TAL_PR_DEBUG("Host: %s\n", client->host);
+            TAL_PR_DEBUG("Path: %s\n", client->path);
+        }
+    }
 
     socket_initialize(config, client);
     ssl_initialize(config, client);
 
-    return client;
+    if(ret == ESP_OK)
+    {
+        return client;
+    }
+
+error:
+    esp_http_client_cleanup(client);
+    return ESP_ERR;
+
 }
 
-esp_err_t esp_http_client_perform(esp_http_client_handle_t client){
+esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
+{
 
     switch (client->state)
     {
     case HTTP_STATE_INIT:
         server_connect(client);
-        /* Falls thorugh */
+        /* Falls through */
     case HTTP_STATE_CONNECTED:
         esp_http_client_request_send(client);
-        /* Falls thorugh */
+        /* Falls through */
     case HTTP_STATE_REQ_COMPLETE_HEADER:   
 
+        /* Falls through */
+    case HTTP_STATE_REQ_COMPLETE_DATA:
+
+        /* Falls through */
+    case HTTP_STATE_RES_COMPLETE_HEADER:
+
+        /* Falls through */
+    case HTTP_STATE_RES_ON_DATA_START:
+
+        /* Falls through */
+    case HTTP_STATE_RES_COMPLETE_DATA:
+
+        /* Falls through */
     case HTTP_STATE_CLOSE:
         break;
     default:
@@ -123,15 +206,18 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client){
 
 }
 
-int esp_http_client_get_status_code(esp_http_client_handle_t client){
+int esp_http_client_get_status_code(esp_http_client_handle_t client)
+{
+    return client->response->status_code;
+}
+
+bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client)
+{
 
 }
 
-bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client){
-
-}
-
-esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client){
+esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
+{
     esp_err_t ret = ESP_OK;
     esp_http_client_event_t http_event;
     /* Bidirectional shutdown */
@@ -144,6 +230,25 @@ esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client){
     wolfSSL_CTX_free(client->ctx);  /* Free the wolfSSL context object          */
     wolfSSL_Cleanup();      /* Cleanup the wolfSSL environment              */
     
+    if(client->request)
+    {
+        if (client->request->buffer) {
+            free(client->request->buffer->data);
+        }
+        free(client->request->buffer);
+        free(client->request);
+    }
+    if (client->response) {
+        if (client->response->buffer) {
+            free(client->response->buffer->data);
+        }
+        free(client->response->buffer);
+        free(client->response);
+    }
+    free(client->host);
+    free(client->path);
+    free(client);
+
     http_event.event_id = HTTP_EVENT_DISCONNECTED;
     client->event_handler(&http_event);
 
@@ -188,7 +293,7 @@ int socket_initialize(const esp_http_client_config_t *config, esp_http_client_ha
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
-    if (getaddrinfo(config->host, NULL, &hints, &result) != 0) {
+    if (getaddrinfo(client->host, NULL, &hints, &result) != 0) {
         TAL_PR_ERR("ERROR: failed to resolve domain name\n");
         close(client->sockfd);
         return ESP_ERR;
@@ -303,6 +408,7 @@ int server_connect(esp_http_client_handle_t client)
 int esp_http_client_request_send(esp_http_client_handle_t client)
 {
     esp_err_t ret = ESP_OK;
+    size_t bytes_rx_tx;
     esp_http_client_event_t http_event;
     char* buf_ptr = client->request->buffer->data;
     int totalRead = 0;
@@ -323,52 +429,176 @@ int esp_http_client_request_send(esp_http_client_handle_t client)
         break;
     }
 
-        TAL_PR_DEBUG("SENDING REQUEST %s", buf_ptr);
-        if ((ret = wolfSSL_write(client->ssl, client->request->buffer->data, client->request->buffer->len)) != client->request->buffer->len) {
-            TAL_PR_DEBUG("ERROR: failed to write entire message\n");
-            TAL_PR_DEBUG("%d bytes of %d bytes were sent\n", ret, (int)client->request->buffer->len);
-            free(client->request->buffer->data);
+    TAL_PR_DEBUG("SENDING REQUEST %s", buf_ptr);
+    if ((bytes_rx_tx = wolfSSL_write(client->ssl, client->request->buffer->data, client->request->buffer->len)) != client->request->buffer->len) {
+        TAL_PR_DEBUG("ERROR: failed to write entire message\n");
+        TAL_PR_DEBUG("%d bytes of %d bytes were sent\n", bytes_rx_tx, (int)client->request->buffer->len);
+        free(client->request->buffer->data);
+        http_event.event_id = HTTP_EVENT_ERROR;
+        client->event_handler(&http_event);
+        ret = ESP_ERR;
+        return ret;
+    }
+    http_event.event_id = HTTP_EVENT_HEADERS_SENT;
+    client->event_handler(&http_event);
+
+    /* Reading Response Headers */
+    while (1) {
+        memset(buf_ptr, 0, RX_TX_BUFFER_SIZE);
+        bytes_rx_tx = wolfSSL_read(client->ssl, buf_ptr, RX_TX_BUFFER_SIZE - 1);
+        if (bytes_rx_tx <= 0) {
+
+            TAL_PR_DEBUG(stderr, "ERROR: failed to read\n");
+            http_event.event_id = HTTP_EVENT_ERROR;
+            client->event_handler(&http_event);
             ret = ESP_ERR;
             return ret;
         }
-        http_event.event_id = HTTP_EVENT_HEADERS_SENT;
-        client->event_handler(&http_event);
-        while (1) {
-            memset(buf_ptr, 0, RX_TX_BUFFER_SIZE);
-            ret = wolfSSL_read(client->ssl, buf_ptr, RX_TX_BUFFER_SIZE - 1);
-            if (ret <= 0) {
-                TAL_PR_DEBUG(stderr, "ERROR: failed to read\n");
-                ret = ESP_ERR;
-                return ret;
-            }
-            http_event.event_id = HTTP_EVENT_ON_HEADER;
-            http_event.data = buf_ptr;
-            http_event.data_len = strlen(buf_ptr);
-            client->event_handler(&http_event);
-            TAL_PR_DEBUG("%s", buf_ptr);
 
-            /* Check if we've reached the end of the headers */
-            if (strstr(buf_ptr, "\r\n\r\n") != NULL) {
-                break;
+        /* Check if we've reached the end of the headers */
+        if (strstr(buf_ptr, "\r\n\r\n") != NULL) {
+            parse_headers(buf_ptr, client);
+            if(client->response->status_code != 200)
+            {
+                http_event.event_id = HTTP_EVENT_ERROR;
+                client->event_handler(&http_event);
             }
+                http_event.event_id = HTTP_EVENT_ON_HEADER;
+                http_event.data = buf_ptr;
+                http_event.data_len = strlen(buf_ptr);
+                client->event_handler(&http_event);
+            break;
         }
-        /* Read the response body */
-        totalRead = 0;
-        TAL_PR_DEBUG("\nResponse Body:\n");
-        while ((ret = wolfSSL_read(client->ssl, buf_ptr, RX_TX_BUFFER_SIZE - 1)) > 0) {
-            buf_ptr[ret] = '\0';  // Null-terminate the buffer
-            // TAL_PR_DEBUG("%s", buf_ptr);
-            http_event.event_id = HTTP_EVENT_ON_DATA;
-            http_event.data = buf_ptr;
-            http_event.data_len = strlen(buf_ptr);
-            client->event_handler(&http_event);
-            totalRead += ret;
-        }
-
-        http_event.event_id = HTTP_EVENT_ON_FINISH;
-        client->event_handler(&http_event);
         
-        if (ret < 0) {
-            TAL_PR_DEBUG(stderr, "ERROR: failed to read\n");
-        }
+    }
+    /* Read the response body */
+    totalRead = 0;
+    while ((bytes_rx_tx = wolfSSL_read(client->ssl, buf_ptr, RX_TX_BUFFER_SIZE - 1)) > 0) {
+        buf_ptr[bytes_rx_tx] = '\0';  // Null-terminate the buffer
+        // TAL_PR_DEBUG("%s", buf_ptr);
+        http_event.event_id = HTTP_EVENT_ON_DATA;
+        http_event.data = buf_ptr;
+        http_event.data_len = strlen(buf_ptr);
+        http_event.user_data = client->user_data;
+        client->event_handler(&http_event);
+        totalRead += bytes_rx_tx;
+    }
+
+    http_event.event_id = HTTP_EVENT_ON_FINISH;
+    client->event_handler(&http_event);
+    
+    if (bytes_rx_tx < 0) {
+        TAL_PR_DEBUG(stderr, "ERROR: failed to read\n");
+    }
 }
+
+// Function to parse headers and save content length and status code
+void parse_headers(char *response, esp_http_client_handle_t client) 
+{
+    char *header_start = response;
+    char *header_end;
+
+    // Extract status code from the status line
+    char *status_line_end = strstr(header_start, "\r\n");
+    if (status_line_end) {
+        *status_line_end = '\0';  // Null-terminate the status line
+
+        // Find the status code in the status line
+        char *status_code_start = strchr(header_start, ' ') + 1;
+        if (status_code_start) {
+            char *status_code_end = strchr(status_code_start, ' ');
+            if (status_code_end) {
+                *status_code_end = '\0';  // Null-terminate the status code
+                client->response->status_code = atoi(status_code_start);
+            }
+        }
+
+        // Move header_start past the end of the status line
+        header_start = status_line_end + 2;
+    }
+
+    while ((header_end = strstr(header_start, "\r\n")) != NULL) {
+        *header_end = '\0';  // Null-terminate the header line
+
+        // Find the colon separating key and value
+        char *colon_pos = strstr(header_start, ": ");
+        if (colon_pos) {
+            *colon_pos = '\0';  // Null-terminate the key
+            char *key = header_start;
+            char *value = colon_pos + 2;  // Value starts after ": "
+
+            // Check if the key is "Content-Length"
+            if (strcasecmp(key, "Content-Length") == 0) {
+                client->response->content_length = atoi(value);
+            }
+        }
+
+        // Move to the next header line
+        header_start = header_end + 2;
+    }
+}
+
+#if 0
+// Function to parse headers and save content length and status code
+void parse_headers(char *response, esp_http_client_event_t *http_event, esp_http_client_handle_t client) {
+    char *header_start = response;
+    char *header_end;
+
+    // Extract status code from the status line
+    char *status_line_end = strstr(header_start, "\r\n");
+    if (status_line_end) {
+        *status_line_end = '\0';  // Null-terminate the status line
+
+        // Find the status code in the status line
+        char *status_code_start = strchr(header_start, ' ') + 1;
+        if (status_code_start) {
+            char *status_code_end = strchr(status_code_start, ' ');
+            if (status_code_end) {
+                *status_code_end = '\0';  // Null-terminate the status code
+                client->response->status_code = atoi(status_code_start);
+            }
+        }
+
+        // Move header_start past the end of the status line
+        header_start = status_line_end + 2;
+    }
+
+    while ((header_end = strstr(header_start, "\r\n")) != NULL) {
+        *header_end = '\0';  // Null-terminate the header line
+
+        // Find the colon separating key and value
+        char *colon_pos = strstr(header_start, ": ");
+        if (colon_pos) {
+            *colon_pos = '\0';  // Null-terminate the key
+            char *key = header_start;
+            char *value = colon_pos + 2;  // Value starts after ": "
+
+            // Allocate memory and copy the key and value
+            http_event->header_key = (char *)malloc(strlen(key) + 1);
+            http_event->header_value = (char *)malloc(strlen(value) + 1);
+            if (http_event->header_key && http_event->header_value) {
+                strcpy(http_event->header_key, key);
+                strcpy(http_event->header_value, value);
+
+                // Check if the key is "Content-Length"
+                if (strcasecmp(key, "Content-Length") == 0) {
+                    client->response->content_length = atoi(value);
+                }
+
+                // Trigger the event for this header
+                http_event->event_id = HTTP_EVENT_ON_HEADER;
+                http_event->data = header_start;
+                http_event->data_len = strlen(header_start);
+                client->event_handler(http_event);
+
+                // Free the allocated memory after the event handler has processed the headers
+                free(http_event->header_key);
+                free(http_event->header_value);
+            }
+        }
+
+        // Move to the next header line
+        header_start = header_end + 2;
+    }
+}
+#endif

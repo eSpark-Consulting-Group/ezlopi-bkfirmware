@@ -8,11 +8,18 @@
 
 typedef struct s_rx_data
 {
-    char *ptr;
+    char* ptr;
     int len;
-    struct s_rx_data *next;
+    int total_len;
+    struct s_rx_data* next;
 
 } s_rx_data_t;
+typedef struct ezlopi_http_data
+{
+    char* response;
+    int status_code;
+
+} s_ezlopi_http_data_t;
 
 int ezlopi_http_send_get_request(char *host_uri, char *received_data);
 static esp_err_t ezlopi_http_event_handler(esp_http_client_event_t* evt);

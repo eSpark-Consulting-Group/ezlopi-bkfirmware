@@ -84,6 +84,7 @@ void call_wolf_funcs();
 int send_websocket_message(WOLFSSL* ssl, const char* strdata);
 void receive(WOLFSSL* ssl);
 char* handle_message(const char* message);
+s_ezlopi_http_data_t* ezlopi_http_get_request(const char* cloud_url, const char* private_key, const char* shared_key, const char* ca_certificate);
 static esp_err_t ezlopi_http_event_handler(esp_http_client_event_t* evt);
 
 void initialize_responses();
@@ -129,12 +130,14 @@ STATIC VOID user_main(VOID_T)
     }
 
     TAL_PR_DEBUG("hello Ash-----");
-    THREAD_CFG_T thread_cfg = {
+    THREAD_CFG_T thread_cfg = 
+    {
         .thrdname = "free_heap",
         .stackDepth = 1024,
         .priority = THREAD_PRIO_5,
     };
-    if (NULL == free_heap_thrd) {
+    if (NULL == free_heap_thrd) 
+    {
         tal_thread_create_and_start(&free_heap_thrd, NULL, NULL, __free_heap_task, NULL, &thread_cfg);
     }
     // while(1)
@@ -146,29 +149,19 @@ STATIC VOID user_main(VOID_T)
 
 
     ezlopi_wifi_initialize();
-    while (!ezlopi_wifi_is_connected()) {  
+    while (!ezlopi_wifi_is_connected()) 
+    {  
         ezlopi_wifi_connect_from_id_bin();
         TAL_PR_ERR("Not Connected");
         tal_system_sleep(1000);
     }
     TAL_PR_ERR("Wifi Connected");
-    initialize_responses();
-    // call_wolf_funcs();
-    esp_http_client_config_t config = {
-        .host = "cloud.ezlo.com",
-        .path = "/getserver?json=true",
-        .cert_pem = CA_CERT,
-        .client_cert_pem = SHARED_KEY,
-        .client_key_pem = SSL_PRIVATE_KEY,
-        .event_handler = NULL,
-        .port = 7000,
-        .event_handler = ezlopi_http_event_handler,
-        // .user_data = (void*)(my_data), // my_data will be filled in 'ezlopi_http_event_handler'
-    };
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-    esp_http_client_set_method(client, HTTP_METHOD_GET);
-    esp_http_client_perform(client);
-    esp_http_client_cleanup(client);
+    // initialize_responses();
+    char user_http_req[128];
+    char* cloud_server = "cloud.ezlo.com";
+    snprintf(user_http_req, "%s/getserver?json=true", cloud_server);
+    s_ezlopi_http_data_t * ws_endpoint = ezlopi_http_get_request("cloud.ezlo.com/getserver?json=true", SSL_PRIVATE_KEY, SHARED_KEY, CA_CERT);
+    TAL_PR_DEBUG(">>>>>>>>>>>>>> wss endpoint : %s", ws_endpoint->response);
     while(1) {  
         tkl_gpio_write(LED_PIN, TUYA_GPIO_LEVEL_HIGH);
         // tal_uart_write(TUYA_UART_NUM_0, turnOn, sizeof(turnOn));
@@ -823,51 +816,51 @@ static esp_err_t ezlopi_http_event_handler(esp_http_client_event_t* evt)
     }
     case HTTP_EVENT_ON_HEADER:
     {
-        TAL_PR_DEBUG("HTTP_EVENT_ON_HEADER, headers = \n%s", evt->data);
+        TAL_PR_DEBUG("HTTP_EVENT_ON_HEADER, \nheaders = %s ", evt->data);
         break;
     }
     case HTTP_EVENT_ON_DATA:
     {
         TAL_PR_DEBUG("HTTP_EVENT_ON_DATA, len=%d, data: \n%.*s", evt->data_len, evt->data_len, (char*)evt->data);
-        // // if (!esp_http_client_is_chunked_response(evt->client))
-        // {
-        //     if (evt->user_data)
-        //     {
-        //         char* tmp_data = (char*)ezlopi_malloc(__FUNCTION__, evt->data_len + 1);
-        //         if (NULL != tmp_data)
-        //         {
-        //             memcpy(tmp_data, evt->data, evt->data_len);
-        //             tmp_data[evt->data_len] = '\0';
+        // if (!esp_http_client_is_chunked_response(evt->client))
+        {
+            if (evt->user_data)
+            {
+                char* tmp_data = (char*)malloc(evt->data_len + 1);
+                if (NULL != tmp_data)
+                {
+                    memcpy(tmp_data, evt->data, evt->data_len);
+                    tmp_data[evt->data_len] = '\0';
 
-        //             s_rx_data_t* my_data = (s_rx_data_t*)evt->user_data;
-        //             if (my_data->len || my_data->total_len || my_data->ptr)
-        //             {
-        //                 s_rx_data_t* cur_dh = my_data;
-        //                 while (cur_dh->next)
-        //                 {
-        //                     cur_dh = cur_dh->next;
-        //                 }
+                    s_rx_data_t* my_data = (s_rx_data_t*)evt->user_data;
+                    if (my_data->len || my_data->total_len || my_data->ptr)
+                    {
+                        s_rx_data_t* cur_dh = my_data;
+                        while (cur_dh->next)
+                        {
+                            cur_dh = cur_dh->next;
+                        }
 
-        //                 cur_dh->next = (s_rx_data_t*)ezlopi_malloc(__FUNCTION__, sizeof(s_rx_data_t));
-        //                 if (cur_dh->next)
-        //                 {
-        //                     cur_dh->next->len = evt->data_len;
-        //                     cur_dh->next->ptr = (char*)tmp_data;
-        //                     cur_dh->next->total_len = 0;
-        //                     my_data->total_len += evt->data_len;
-        //                     cur_dh->next->next = NULL;
-        //                 }
-        //             }
-        //             else
-        //             {
-        //                 my_data->len = evt->data_len;
-        //                 my_data->total_len = evt->data_len;
-        //                 my_data->ptr = (char*)tmp_data;
-        //                 my_data->next = NULL;
-        //             }
-        //         }
-        //     }
-        // }
+                        cur_dh->next = (s_rx_data_t*)malloc(sizeof(s_rx_data_t));
+                        if (cur_dh->next)
+                        {
+                            cur_dh->next->len = evt->data_len;
+                            cur_dh->next->ptr = (char*)tmp_data;
+                            cur_dh->next->total_len = 0;
+                            my_data->total_len += evt->data_len;
+                            cur_dh->next->next = NULL;
+                        }
+                    }
+                    else
+                    {
+                        my_data->len = evt->data_len;
+                        my_data->total_len = evt->data_len;
+                        my_data->ptr = (char*)tmp_data;
+                        my_data->next = NULL;
+                    }
+                }
+            }
+        }
 
         break;
     }
@@ -879,15 +872,88 @@ static esp_err_t ezlopi_http_event_handler(esp_http_client_event_t* evt)
     case HTTP_EVENT_DISCONNECTED:
     {
         TAL_PR_DEBUG("HTTP_EVENT_DISCONNECTED");
-        // int mbedtls_err = 0;
-        // esp_err_t err = esp_tls_get_and_clear_last_error((esp_tls_error_handle_t)evt->data, &mbedtls_err, NULL);
-        // if (err != 0)
-        // {
-        //     TAL_PR_DEBUG("Last esp error code: 0x%x", err);
-        //     TAL_PR_DEBUG("Last mbedtls failure: 0x%x", mbedtls_err);
-        // }
         break;
     }
     }
     return ESP_OK;
+}
+
+
+static void ezlopi_http_free_rx_data(s_rx_data_t* rx_data)
+{
+    if (rx_data)
+    {
+        if (rx_data->next)
+        {
+            ezlopi_http_free_rx_data(rx_data->next);
+        }
+
+        if (rx_data->ptr)
+        {
+            free( rx_data->ptr);
+        }
+        free(rx_data);
+    }
+}
+
+s_ezlopi_http_data_t* ezlopi_http_get_request(const char* cloud_url, const char* private_key, const char* shared_key, const char* ca_certificate)
+{
+    char* ret = NULL;
+    int status_code = 0;
+    s_rx_data_t* my_data = (s_rx_data_t*)malloc(sizeof(s_rx_data_t));
+    s_ezlopi_http_data_t* http_get_data = NULL;
+    if ((NULL != my_data))
+    {
+        memset(my_data, 0, sizeof(s_rx_data_t));
+
+        esp_http_client_config_t config = {
+            .url = cloud_url,
+            .cert_pem = CA_CERT,
+            .client_cert_pem = SHARED_KEY,
+            .client_key_pem = SSL_PRIVATE_KEY,
+            .event_handler = NULL,
+            .port = 7000,
+            .event_handler = ezlopi_http_event_handler,
+            .user_data = (void*)(my_data), // my_data will be filled in 'ezlopi_http_event_handler'
+        };
+        esp_http_client_handle_t client = esp_http_client_init(&config);
+        if (NULL != client)
+        {   
+            esp_http_client_set_method(client, HTTP_METHOD_GET);
+            esp_err_t err = esp_http_client_perform(client);
+            status_code = esp_http_client_get_status_code(client);
+            if (my_data->total_len && (err == ESP_OK))
+            {
+                ret = (char*)malloc(my_data->total_len + 1);
+                if (ret)
+                {
+                    s_rx_data_t* cur_d = my_data;
+                    memset(ret, 0, my_data->total_len + 1);
+
+                    while (cur_d)
+                    {
+                        strcat(ret, cur_d->ptr);
+                        TAL_PR_DEBUG("%.*s", cur_d->len, cur_d->ptr);
+                        cur_d = cur_d->next;
+                    }
+
+                    http_get_data = (s_ezlopi_http_data_t*)malloc(sizeof(s_ezlopi_http_data_t));
+                    if (http_get_data)
+                    {
+                        memset(http_get_data, 0, sizeof(s_ezlopi_http_data_t));
+                        http_get_data->response = ret;
+                        http_get_data->status_code = status_code;
+                    }
+                }
+            }
+            else
+            {
+                TAL_PR_DEBUG("Error perform http request %d", (int)err);
+            }
+
+            ezlopi_http_free_rx_data(my_data);
+            esp_http_client_cleanup(client);
+        }
+    }
+    return http_get_data;
 }

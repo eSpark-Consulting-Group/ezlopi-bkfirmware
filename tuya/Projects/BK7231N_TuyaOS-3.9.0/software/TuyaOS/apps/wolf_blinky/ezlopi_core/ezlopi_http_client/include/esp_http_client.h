@@ -28,8 +28,8 @@ typedef struct esp_http_client_event {
     void *data;                             /*!< data of the event */
     int data_len;                           /*!< data length of data */
     void *user_data;                        /*!< user_data context, from esp_http_client_config_t user_data */
-    const char *header_key;                       /*!< For HTTP_EVENT_ON_HEADER event_id, it's store current http header key */
-    const char *header_value;                     /*!< For HTTP_EVENT_ON_HEADER event_id, it's store current http header value */
+    char *header_key;                       /*!< For HTTP_EVENT_ON_HEADER event_id, it's store current http header key */
+    char *header_value;                     /*!< For HTTP_EVENT_ON_HEADER event_id, it's store current http header value */
 } esp_http_client_event_t;
 
 /**
@@ -58,9 +58,10 @@ typedef enum {
 
 typedef esp_err_t (*http_event_handle_cb)(esp_http_client_event_t *evt);
 typedef struct {
+    const char* url;
     const char* host;
-    const char *path;    
-    const char *user_agent;
+    const char* path;    
+    const char* user_agent;
     const char* cert_pem;
     size_t cert_pem_len;
     const char* client_cert_pem;
