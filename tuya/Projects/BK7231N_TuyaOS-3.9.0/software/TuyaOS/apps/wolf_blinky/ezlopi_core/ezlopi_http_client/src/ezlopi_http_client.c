@@ -4,11 +4,6 @@
 #include "tal_log.h"
 #include "httpc.h"
 #include "cert.h"
-// #include "str_pub.h"
-// #include "uni_log.h"
-// #include "string.h"
-
-
 
 static http_session_t https_handle;
 
@@ -199,105 +194,168 @@ static int https_read_response(char ** p_received_data)
     return ret;
 }
 
-// int ezlopi_http_send_get_request(char *host_uri, char *received_data)
-// {
-//     int ret = 0;
+static esp_err_t ezlopi_http_event_handler(esp_http_client_event_t* evt)
+{
+    switch (evt->event_id)
+    {
+    case HTTP_EVENT_ERROR:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_ERROR");
+        break;
+    }
+    case HTTP_EVENT_ON_CONNECTED:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_ON_CONNECTED");
+        break;
+    }
+    case HTTP_EVENT_HEADER_SENT:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_HEADER_SENT");
+        break;
+    }
+    case HTTP_EVENT_ON_HEADER:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_ON_HEADER, \nheaders = %s ", evt->data);
+        break;
+    }
+    case HTTP_EVENT_ON_DATA:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_ON_DATA, len=%d, data: \n%.*s", evt->data_len, evt->data_len, (char*)evt->data);
+        // if (!esp_http_client_is_chunked_response(evt->client))
+        {
+            if (evt->user_data)
+            {
+                char* tmp_data = (char*)malloc(evt->data_len + 1);
+                if (NULL != tmp_data)
+                {
+                    memcpy(tmp_data, evt->data, evt->data_len);
+                    tmp_data[evt->data_len] = '\0';
 
-//     // TLS_ENABLE is sent as a flag for creating HTTPS client.
-//     // retry_cnt is set to 0 for letting SDK determing the socket creation retry count, also can be set here.
-//     // int http_ret = http_open_session_with_config(&https_handle, host_uri, TLS_ENABLE, 0);
-//     if (WM_SUCCESS == http_ret)
-//     {
-//         TAL_PR_DEBUG("HTTP session created successfully");
-//         if (0 == https_send_request(host_uri))
-//         {
-//             if (0 == https_read_response(received_data))
-//             {
-//                 TAL_PR_DEBUG("Data reading successful.(data: %s)", received_data);
-//             }
-//             else
-//             {
-//                 TAL_PR_ERR("Something went wrong while receiving response form the server.");
-//                 ret = 1;
-//             }
-//         }
-//         else
-//         {
-//             TAL_PR_ERR("Error while sending data to the server.");
-//             ret = 1;
-//         }
-//         // Since http session has been created, any kind of error encountered or any data is received, the session has to be closed.
-//         http_close_session(&https_handle);
-//     }
-//     else
-//     {
-//         TAL_PR_ERR("Error opening HTTP session.(code: %d)", http_ret);
-//         ret = 1;
-//     }
+                    s_rx_data_t* my_data = (s_rx_data_t*)evt->user_data;
+                    if (my_data->len || my_data->total_len || my_data->ptr)
+                    {
+                        s_rx_data_t* cur_dh = my_data;
+                        while (cur_dh->next)
+                        {
+                            cur_dh = cur_dh->next;
+                        }
 
-//     return ret;
-// }
+                        cur_dh->next = (s_rx_data_t*)malloc(sizeof(s_rx_data_t));
+                        if (cur_dh->next)
+                        {
+                            cur_dh->next->len = evt->data_len;
+                            cur_dh->next->ptr = (char*)tmp_data;
+                            cur_dh->next->total_len = 0;
+                            my_data->total_len += evt->data_len;
+                            cur_dh->next->next = NULL;
+                        }
+                    }
+                    else
+                    {
+                        my_data->len = evt->data_len;
+                        my_data->total_len = evt->data_len;
+                        my_data->ptr = (char*)tmp_data;
+                        my_data->next = NULL;
+                    }
+                }
+            }
+        }
 
-// int ezlopi_http_send_get_request(char *host_uri, char *received_data)
-// {
-//     int ret = 0;
-    
-//     // Configure the TLS parameters
-//     tuya_tls_config_t tls_config;
-//     memset(&tls_config, 0, sizeof(tls_config));
-//     tls_config.mode = TUYA_TLS_SERVER_CERT_MODE;  // Example mode, adjust as needed
-//     tls_config.hostname = host_uri;
-//     tls_config.port = 7000;  // HTTPS port
+        break;
+    }
+    case HTTP_EVENT_ON_FINISH:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_ON_FINISH");
+        break;
+    }
+    case HTTP_EVENT_DISCONNECTED:
+    {
+        TAL_PR_DEBUG("HTTP_EVENT_DISCONNECTED");
+        break;
+    }
+    }
+    return ESP_OK;
+}
 
-//     // Set CA certificate (assuming CA_CERT is defined as per your previous definitions)
-//     tls_config.ca_cert = CA_CERT;
-//     tls_config.ca_cert_size = strlen(CA_CERT);
 
-//     // Set timeout and other parameters as needed
-//     tls_config.timeout = 10;  // Example timeout
-//     tls_config.verify = true;  // Enable certificate verification
+static void ezlopi_http_free_rx_data(s_rx_data_t* rx_data)
+{
+    if (rx_data)
+    {
+        if (rx_data->next)
+        {
+            ezlopi_http_free_rx_data(rx_data->next);
+        }
 
-//     // If you have client certificate and key, set them as follows:
-//     tls_config.client_cert = SHARED_KEY;
-//     tls_config.client_cert_size = strlen(SHARED_KEY);
-//     tls_config.client_pkey = SSL_PRIVATE_KEY;
-//     tls_config.client_pkey_size = strlen(SSL_PRIVATE_KEY);
+        if (rx_data->ptr)
+        {
+            free( rx_data->ptr);
+        }
+        free(rx_data);
+    }
+}
 
-//     // Open HTTP session with Tuya TLS configuration
-//     int http_ret = http_open_session_with_config(&https_handle, host_uri, &tls_config, TLS_ENABLE, 0);
-//     // int http_ret = http_open_session(&https_handle, host_uri, NULL, 0);
-//     if (WM_SUCCESS == http_ret)
-//     {
-//         TAL_PR_DEBUG("HTTP session created successfully");
-//         // Proceed with sending request and reading response as per your implementation
-//         if (0 == https_send_request(host_uri))
-//         {
-//             if (0 == https_read_response(&received_data))
-//             {
-//                 TAL_PR_DEBUG("Data reading successful.(data: %s)", received_data);
-//             }
-//             else
-//             {
-//                 TAL_PR_ERR("Something went wrong while receiving response form the server.");
-//                 ret = 1;
-//             }
-//         }
-//         else
-//         {
-//             TAL_PR_ERR("Error while sending data to the server.");
-//             ret = 1;
-//         }
-//         // Since http session has been created, any kind of error encountered or any data is received, the session has to be closed.
-//         http_close_session(&https_handle);
-//     }
-//     else
-//     {
-//         TAL_PR_ERR("Error opening HTTP session.(code: %d)", http_ret);
-//         ret = 1;
-//     }
+s_ezlopi_http_data_t* ezlopi_http_get_request(const char* cloud_url, const char* private_key, const char* shared_key, const char* ca_certificate)
+{
+    char* ret = NULL;
+    int status_code = 0;
+    s_rx_data_t* my_data = (s_rx_data_t*)malloc(sizeof(s_rx_data_t));
+    s_ezlopi_http_data_t* http_get_data = NULL;
+    if ((NULL != my_data))
+    {
+        memset(my_data, 0, sizeof(s_rx_data_t));
 
-//     return ret;
-// }
+        esp_http_client_config_t config = {
+            .url = cloud_url,
+            .cert_pem = CA_CERT,
+            .client_cert_pem = SHARED_KEY,
+            .client_key_pem = SSL_PRIVATE_KEY,
+            .event_handler = NULL,
+            .port = 7000,
+            .event_handler = ezlopi_http_event_handler,
+            .user_data = (void*)(my_data), // my_data will be filled in 'ezlopi_http_event_handler'
+        };
+        esp_http_client_handle_t client = esp_http_client_init(&config);
+        if (NULL != client)
+        {   
+            esp_http_client_set_method(client, HTTP_METHOD_GET);
+            esp_err_t err = esp_http_client_perform(client);
+            status_code = esp_http_client_get_status_code(client);
+            if (my_data->total_len && (err == ESP_OK))
+            {
+                ret = (char*)malloc(my_data->total_len + 1);
+                if (ret)
+                {
+                    s_rx_data_t* cur_d = my_data;
+                    memset(ret, 0, my_data->total_len + 1);
+
+                    while (cur_d)
+                    {
+                        strcat(ret, cur_d->ptr);
+                        TAL_PR_DEBUG("%.*s", cur_d->len, cur_d->ptr);
+                        cur_d = cur_d->next;
+                    }
+
+                    http_get_data = (s_ezlopi_http_data_t*)malloc(sizeof(s_ezlopi_http_data_t));
+                    if (http_get_data)
+                    {
+                        memset(http_get_data, 0, sizeof(s_ezlopi_http_data_t));
+                        http_get_data->response = ret;
+                        http_get_data->status_code = status_code;
+                    }
+                }
+            }
+            else
+            {
+                TAL_PR_DEBUG("Error perform http request %d", (int)err);
+            }
+
+            ezlopi_http_free_rx_data(my_data);
+            esp_http_client_cleanup(client);
+        }
+    }
+    return http_get_data;
+}
 
 
 int is_network_initialized() {

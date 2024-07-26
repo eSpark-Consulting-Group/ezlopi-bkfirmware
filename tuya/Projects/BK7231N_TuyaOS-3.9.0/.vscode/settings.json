@@ -16,6 +16,7 @@
         "string_view": "c",
         "stddef.h": "c",
         "ezlopi_http_client.h": "c",
-        "tuya_iot_com_api.h": "c"
+        "tuya_iot_com_api.h": "c",
+        "httpc.h": "c"
     }
 }

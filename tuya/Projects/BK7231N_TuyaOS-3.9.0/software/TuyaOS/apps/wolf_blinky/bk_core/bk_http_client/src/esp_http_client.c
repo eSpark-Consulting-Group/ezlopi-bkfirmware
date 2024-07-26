@@ -328,7 +328,7 @@ int ssl_initialize(esp_http_client_config_t *config, esp_http_client_handle_t cl
     /* Initialize wolfSSL */
     if ((ret = wolfSSL_Init()) != WOLFSSL_SUCCESS) {
         TAL_PR_DEBUG("ERROR: Failed to initialize the library\n");
-        return;
+        return ESP_ERR;
     }
     TAL_PR_DEBUG("SSL INIT SUCCESS!\n");
 

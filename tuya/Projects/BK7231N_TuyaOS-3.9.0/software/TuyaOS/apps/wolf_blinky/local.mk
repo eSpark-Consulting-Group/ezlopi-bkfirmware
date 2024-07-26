@@ -13,6 +13,7 @@ LOCAL_MODULE := $(notdir $(LOCAL_PATH))
 # 加载至CFLAGS中提供给其他组件使用；打包进SDK产物中；
 LOCAL_TUYA_SDK_INC := $(LOCAL_PATH)/include
 LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/ezlopi_core
+LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/bk_core
 
 # 模块对外CFLAGS：其他组件编译时可感知到
 LOCAL_TUYA_SDK_CFLAGS := -DUSER_SW_VER=\"$(APP_VER)\" -DAPP_BIN_NAME=\"$(APP_NAME)\"
@@ -20,6 +21,7 @@ LOCAL_TUYA_SDK_CFLAGS := -DUSER_SW_VER=\"$(APP_VER)\" -DAPP_BIN_NAME=\"$(APP_NAM
 # 模块源代码
 LOCAL_SRC_FILES := $(shell find $(LOCAL_PATH)/src -name "*.c" -o -name "*.cpp" -o -name "*.cc")
 LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/ezlopi_core -name "*.c" -o -name "*.cpp" -o -name "*.cc")
+LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/bk_core -name "*.c" -o -name "*.cpp" -o -name "*.cc")
 
 # 模块内部CFLAGS：仅供本组件使用
 LOCAL_CFLAGS += -DDEBUG_WOLFSSL
