@@ -3,7 +3,9 @@
 #ifndef __EZLOPI_WEBSOCKET_CLINET_H__
 #define __EZLOPI_WEBSOCKET_CLINET_H__
 
-#include "rtos_pub.h"
+// #include "rtos_pub.h"
+#include "bk_websocket_client.h"
+#include "cJSON.h"
 #include "httpc.h"
 
 /*
@@ -71,17 +73,24 @@ typedef struct
 
 typedef struct
 {
-    beken_queue_t websocket_queue;
+    // beken_queue_t websocket_queue;
     http_session_t websocket_session;
     char *payload;
     uint64_t payload_length;
     ezlopi_websocket_clinet_operation_code_t opcode;
 } s_ezlopi_websocket_t;
 
+typedef struct s_ws_event_arg
+{
+    esp_websocket_client_handle_t client;
+    void (*msg_upcall)(const char*, uint32_t);
+    void (*connection_upcall)(bool connected);
+} s_ws_event_arg_t;
+
 int ezlopi_websocket_client_initialize_websocket_client(char *uri, s_ezlopi_websocket_t *websocket);
 int ezlopi_websocket_client_send_ping(http_session_t websocket_session);
 int ezlopi_websocket_client_send_pong(http_session_t websocket_session);
 int ezlopi_websocket_client_close(http_session_t websocket_session);
 int ezlopi_websocekt_write_to_websocekt(http_session_t websocket_session, char *data, size_t data_len);
-
+esp_websocket_client_handle_t ezlopi_websocket_client_init(cJSON* uri, void (*msg_upcall)(const char*, uint32_t), void (*connection_upcall)(bool connected));
 #endif // __EZLOPI_WEBSOCKET_CLINET_H__
