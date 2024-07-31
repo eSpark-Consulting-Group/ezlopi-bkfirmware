@@ -1,4 +1,5 @@
 #include "tal_log.h"
+#include "FreeRTOS.h"
 #include "ezlopi_core_websocket.h"
 #include "cert.h"
 #include "cJSON.h"
@@ -9,7 +10,20 @@
 static esp_websocket_client_handle_t client = NULL;
 static void websocket_event_handler(esp_websocket_client_event_t *evt);
 
+int ezlopi_websocket_client_send(char *data, uint32_t len)
+{
+    int ret = 0;
 
+    if ((NULL != data) && (len > 0))
+    {
+        if (esp_websocket_client_is_connected(client) && (len > 0) && (NULL != data))
+        {
+            ret = esp_websocket_client_send_text(client, data, len, portMAX_DELAY);
+        }
+    }
+
+    return ret;
+}
 
 esp_websocket_client_handle_t ezlopi_websocket_client_init(cJSON* uri, void (*msg_upcall)(const char*, uint32_t), void (*connection_upcall)(bool connected))
 {
@@ -97,4 +111,9 @@ static void websocket_event_handler(esp_websocket_client_event_t *evt)
         break;
     }
     }
+}
+
+bool ezlopi_websocket_client_is_connected()
+{
+    return esp_websocket_client_is_connected(client);
 }

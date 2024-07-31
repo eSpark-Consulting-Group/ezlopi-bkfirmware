@@ -87,10 +87,11 @@ typedef struct s_ws_event_arg
     void (*connection_upcall)(bool connected);
 } s_ws_event_arg_t;
 
-int ezlopi_websocket_client_initialize_websocket_client(char *uri, s_ezlopi_websocket_t *websocket);
 int ezlopi_websocket_client_send_ping(http_session_t websocket_session);
 int ezlopi_websocket_client_send_pong(http_session_t websocket_session);
 int ezlopi_websocket_client_close(http_session_t websocket_session);
 int ezlopi_websocekt_write_to_websocekt(http_session_t websocket_session, char *data, size_t data_len);
 esp_websocket_client_handle_t ezlopi_websocket_client_init(cJSON* uri, void (*msg_upcall)(const char*, uint32_t), void (*connection_upcall)(bool connected));
+bool ezlopi_websocket_client_is_connected();
+int ezlopi_websocket_client_send(char *data, uint32_t len);
 #endif // __EZLOPI_WEBSOCKET_CLINET_H__

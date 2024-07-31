@@ -15,6 +15,7 @@
 #include <wolfssl/options.h>
 #include <wolfssl/ssl.h>
 
+#define TAL_PR_DEBUG
 #define RX_TX_BUFFER_SIZE 256
 #define WS_UPGRADE_REQ "GET / HTTP/1.1\r\nHost: nma-server6-cloud.ezlo.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-Websocket-Extensions: premessage-deflate; client_max_window_bits\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Protocol: chat, superchat\r\n\r\n"
 
@@ -31,6 +32,17 @@ typedef enum {
     WEBSOCKET_STATE_RES_COMPLETE_DATA,
     WEBSOCKET_STATE_CLOSE
 } esp_http_state_t;
+
+// Enum for common HTTP status codes
+typedef enum {
+    HTTP_SWITCHING_PROTOCOLS = 101,
+    HTTP_OK = 200,
+    HTTP_CREATED = 201,
+    HTTP_ACCEPTED = 202,
+    HTTP_NOT_FOUND = 404,
+    // Add other status codes as needed
+    HTTP_UNKNOWN = 0
+} esp_http_status_code;
 
 /**
  * ws Buffer
@@ -75,6 +87,12 @@ struct esp_websocket_client {
 /* Prototypes */
 void ws_receive(esp_websocket_client_handle_t client);
 esp_err_t parse_url(esp_websocket_client_handle_t client, const char* url);
+int parse_http_response_code(const char *response);
+
+esp_err_t esp_websocket_client_send_text(esp_websocket_client_handle_t client, const char* data, int len, int delay)
+{
+    ws_send_websocket_message(client->ssl, data);
+}
 
 esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_client_config_t *config)
 {
@@ -142,6 +160,11 @@ error:
 int esp_websocket_client_start(esp_websocket_client_handle_t client)
 {
     ws_server_connect(client);
+}
+
+bool esp_websocket_client_is_connected(esp_websocket_client_handle_t client)
+{
+    return (client->state != WEBSOCKET_STATE_CLOSE);
 }
 
 void esp_ws_client_cleanup(esp_websocket_client_handle_t client)
@@ -331,11 +354,36 @@ int ws_server_connect(esp_websocket_client_handle_t client)
         return ESP_ERR;
     }
 
-    ws_event.connection_upcall = client->connection_upcall;
-    client->event_handler(&ws_event);
-    TAL_PR_DEBUG("Connect to wolfSSL on the server side SUCCESS!\n");
-    THREAD_CFG_T thrd_param = {4096, 4, "beken-ws-rcv"};
-    tal_thread_create_and_start(&bk_ws_rcv_thread, NULL, NULL, ws_receive, client, &thrd_param);
+    /* Check the response for upgrade request and then start the WS Recieve thread */
+    char upgrade_req_res[256];
+    while ((bytes_rx_tx = wolfSSL_read(client->ssl, upgrade_req_res, sizeof(upgrade_req_res)-1)) > 0) {
+        upgrade_req_res[bytes_rx_tx] = '\0';  // Null-terminate the buffer
+        if (strstr(upgrade_req_res, "\r\n\r\n") != NULL) {
+            TAL_PR_DEBUG("Upgrade Request Response : %s", upgrade_req_res);
+            break;
+        }
+    }
+    int response_code = parse_http_response_code(upgrade_req_res);
+    TAL_PR_DEBUG("Response Code : %d", response_code);
+    if(response_code == HTTP_SWITCHING_PROTOCOLS)
+    {
+        ws_event.connection_upcall = client->connection_upcall;
+        client->event_handler(&ws_event);
+        client->state = WEBSOCKET_STATE_CONNECTED;
+        TAL_PR_DEBUG("Connect to wolfSSL on the server side SUCCESS!\n");
+        THREAD_CFG_T thrd_param = {4096, 4, "beken-ws-rcv"};
+        tal_thread_create_and_start(&bk_ws_rcv_thread, NULL, NULL, ws_receive, client, &thrd_param);
+    }
+    else
+    {
+        ws_event.connection_upcall = client->connection_upcall;
+        ws_event.event_id = WEBSOCKET_EVENT_ERROR;
+        client->state = WEBSOCKET_STATE_CLOSE;
+        client->event_handler(&ws_event);
+        esp_ws_client_cleanup(client);
+        ret = ESP_ERR;
+    }
+
     return ret;
 }
 
@@ -370,7 +418,6 @@ void ws_receive(esp_websocket_client_handle_t client)
 
 		len = ret;
         buf[len] = '\0'; // Ensure null-terminated string
-		// TAL_PR_DEBUG( " %d bytes read:%s\n", len, buf );
         if(buf && len)
         {
             ws_event.event_id = WEBSOCKET_EVENT_ON_DATA;
@@ -381,6 +428,10 @@ void ws_receive(esp_websocket_client_handle_t client)
         }
 
 	}while( 1 );
+    ws_event.connection_upcall = client->connection_upcall;
+    ws_event.event_id = WEBSOCKET_EVENT_ERROR;
+    client->state = WEBSOCKET_STATE_CLOSE;
+    client->event_handler(&ws_event);
     esp_ws_client_cleanup(client);
 	TAL_PR_DEBUG( "  Ended Receiving WS data\n" );
 
@@ -505,4 +556,95 @@ esp_err_t parse_url(esp_websocket_client_handle_t client, const char* url)
     free(url_buffer);
 
     return ESP_OK;
+}
+
+// Function to parse the HTTP response code
+int parse_http_response_code(const char *response) {
+    // Find the start of the response code
+    const char *status_code_start = strchr(response, ' ') + 1;
+
+    // Extract the response code as a string
+    char status_code_str[4];
+    strncpy(status_code_str, status_code_start, 3);
+    status_code_str[3] = '\0'; // Null-terminate the string
+
+    // Convert the status code string to an integer
+    int status_code = atoi(status_code_str);
+
+    return status_code;
+}
+
+int ws_send_websocket_message(WOLFSSL* ssl, const char* strdata) 
+{
+    unsigned char mask[4];
+	unsigned int mask_int;
+	unsigned long long payload_len;
+	unsigned char finNopcode;
+	unsigned int payload_len_small;
+	unsigned int payload_offset = 6;
+	unsigned int len_size;
+	unsigned long long be_payload_len;
+	unsigned int sent = 0;
+	int i, sockfd;
+	unsigned int frame_size;
+	char *data;
+    int ret;
+
+
+	finNopcode = 0x81; //FIN and text opcode.
+	mask_int = (unsigned int) 1234;
+	memcpy(mask, &mask_int, 4);
+	payload_len = strlen(strdata);
+	if(payload_len <= 125) {
+		frame_size = 6 + payload_len;
+		payload_len_small = payload_len;
+
+	} else if(payload_len > 125 && payload_len <= 0xffff) {
+		frame_size = 8 + payload_len;
+		payload_len_small = 126;
+		payload_offset += 2;
+	} else if(payload_len > 0xffff && payload_len <= 0xffffffffffffffffLL) {
+		frame_size = 14 + payload_len;
+		payload_len_small = 127;
+		payload_offset += 8;
+	} else {
+		return -1; //too large payload
+	}
+	data = (char *)malloc(frame_size);
+	memset(data, 0, frame_size);
+	*data = finNopcode;
+	*(data+1) = payload_len_small | 0x80; //payload length with mask bit on
+	if(payload_len_small == 126) {
+		payload_len &= 0xffff;
+		len_size = 2;
+		for(i = 0; i < len_size; i++) {
+			*(data+2+i) = *((char *)&payload_len+(len_size-i-1));
+		}
+	}
+	if(payload_len_small == 127) {
+		payload_len &= 0xffffffffffffffffLL;
+		len_size = 8;
+		for(i = 0; i < len_size; i++) {
+			*(data+2+i) = *((char *)&payload_len+(len_size-i-1));
+		}
+	}
+	for(i=0;i<4;i++)
+		*(data+(payload_offset-4)+i) = mask[i];
+
+	memcpy(data+payload_offset, strdata, strlen(strdata));
+	for(i=0;i<strlen(strdata);i++)
+		*(data+payload_offset+i) ^= mask[i % 4] & 0xff;
+	sent = 0;
+	i = 0;
+
+    TAL_PR_DEBUG("Sending WebSocket message to Cloud Server......\n");
+    if ((ret = wolfSSL_write(ssl, data, frame_size)) != frame_size) {
+        TAL_PR_DEBUG("ERROR: failed to write entire message\n");
+        TAL_PR_DEBUG("%d bytes of %d bytes were sent\n", ret, (int)frame_size);
+        free(data);
+        return -1;
+    }
+
+    free(data);
+    return 0;
 }

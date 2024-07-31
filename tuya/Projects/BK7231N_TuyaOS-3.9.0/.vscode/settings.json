@@ -17,6 +17,20 @@
         "stddef.h": "c",
         "ezlopi_http_client.h": "c",
         "tuya_iot_com_api.h": "c",
-        "httpc.h": "c"
-    }
+        "httpc.h": "c",
+        "ezlopi_core_websocket.h": "c",
+        "bk_websocket_client.h": "c",
+        "charconv": "c",
+        "ezlopi_cloud_registration.h": "c",
+        "trace.h": "c",
+        "string.h": "c",
+        "freertos.h": "c",
+        "task.h": "c",
+        "mac.h": "c",
+        "math.h": "c",
+        "stdbool.h": "c",
+        "stdint.h": "c",
+        "version.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

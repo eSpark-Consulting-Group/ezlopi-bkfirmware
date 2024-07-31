@@ -44,9 +44,12 @@
 #include <wolfssl/options.h>
 #include <wolfssl/ssl.h>
 
-#include "esp_http_client.h"
+// #include "esp_http_client.h"
 #include "ezlopi_http_client.h"
+#include "ezlopi_core_websocket.h"
+#include "ezlopi_cloud_registration.h"
 #include "cert.h"
+#include "cJSON.h"
 
 // #define USE_CERT_BUFFERS_1024
 // #include "wolfssl/certs_test.h"
@@ -86,6 +89,7 @@ void receive(WOLFSSL* ssl);
 char* handle_message(const char* message);
 s_ezlopi_http_data_t* ezlopi_http_get_request(const char* cloud_url, const char* private_key, const char* shared_key, const char* ca_certificate);
 static esp_err_t ezlopi_http_event_handler(esp_http_client_event_t* evt);
+static void __connection_upcall(bool connected);
 
 void initialize_responses();
 STATIC VOID __free_heap_task(PVOID_T args);
@@ -159,9 +163,28 @@ STATIC VOID user_main(VOID_T)
     // initialize_responses();
     char user_http_req[128];
     char* cloud_server = "cloud.ezlo.com";
-    snprintf(user_http_req, "%s/getserver?json=true", cloud_server);
+    snprintf(user_http_req, sizeof(user_http_req), "%s/getserver?json=true", cloud_server);
+    TAL_PR_DEBUG("http_request: %s", user_http_req);
     s_ezlopi_http_data_t * ws_endpoint = ezlopi_http_get_request("cloud.ezlo.com/getserver?json=true", SSL_PRIVATE_KEY, SHARED_KEY, CA_CERT);
     TAL_PR_DEBUG(">>>>>>>>>>>>>> wss endpoint : %s", ws_endpoint->response);
+    cJSON* root = cJSON_Parse(ws_endpoint->response);
+    if (root)
+    {
+        cJSON* cjson_uri = cJSON_GetObjectItem(root, "uri");
+        if (cjson_uri)
+        {
+            TAL_PR_DEBUG("uri: %s", cjson_uri->valuestring ? cjson_uri->valuestring : "NULL");
+            // ezlopi_core_ezlopi_broadcast_method_add(__send_str_data_to_nma_websocket, "nma-websocket", 4);
+            ezlopi_websocket_client_init(cjson_uri, NULL, __connection_upcall);
+            // task_complete = 1;
+        }
+
+        cJSON_Delete(root);
+    }
+    
+
+    // call_wolf_funcs();
+    
     while(1) {  
         tkl_gpio_write(LED_PIN, TUYA_GPIO_LEVEL_HIGH);
         // tal_uart_write(TUYA_UART_NUM_0, turnOn, sizeof(turnOn));
@@ -223,7 +246,7 @@ void call_wolf_funcs()
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
-    if (getaddrinfo("nma-server6-cloud.ezlo.com", NULL, &hints, &result) != 0) {
+    if (getaddrinfo("nma-server9-cloud.ezlo.com", NULL, &hints, &result) != 0) {
         TAL_PR_ERR("ERROR: failed to resolve domain name\n");
         close(sockfd);
         return;
@@ -791,5 +814,31 @@ STATIC VOID __free_heap_task(PVOID_T args)
     for (;;) {
         TAL_PR_NOTICE("free heap: %d", tal_system_get_free_heap_size());
         tal_system_sleep(3000);
+    }
+}
+
+static void __connection_upcall(bool connected)
+{
+    TAL_PR_DEBUG("wss-connection: %s", connected ? "connected." : "disconnected!");
+    static int prev_status; // 0: never connected, 1: Not-connected, 2: connected
+    if (connected)
+    {
+        if (0 == prev_status)
+        {
+            TAL_PR_DEBUG("Web-socket Connected.");
+        }
+        else
+        {
+            TAL_PR_DEBUG("Web-socket Re-connected.");
+        }
+
+        prev_status = 2;
+        TAL_PR_DEBUG("Starting registration process....");
+        registration_init();
+    }
+    else
+    {
+        prev_status = 1;
+        // ezlopi_event_group_clear_event(EZLOPI_EVENT_NMA_REG);
     }
 }

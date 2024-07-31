@@ -62,5 +62,6 @@ struct esp_websocket_client_handle_t {
 
 esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_client_config_t *config);
 int esp_websocket_client_start(esp_websocket_client_handle_t client);
-
+bool esp_websocket_client_is_connected(esp_websocket_client_handle_t client);
+esp_err_t esp_websocket_client_send_text(esp_websocket_client_handle_t client, const char* data, int len, int delay);
 #endif /* _BK_WS_CLIENT_H_ */
