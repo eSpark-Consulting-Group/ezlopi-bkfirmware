@@ -48,6 +48,10 @@
 #include "ezlopi_http_client.h"
 #include "ezlopi_core_websocket.h"
 #include "ezlopi_cloud_registration.h"
+#include "ezlopi_core_api_methods.h"
+#include "ezlopi_cloud_keywords.h"
+#include "ezlopi_service_webprov.h"
+
 #include "cert.h"
 #include "cJSON.h"
 
@@ -81,6 +85,15 @@ uint64_t htobe64(uint64_t host_64bits) {
 }
 #endif
 
+static int message_counter = 0;
+typedef enum e_trace_type
+{
+    TRACE_TYPE_NONE = 0,
+    TRACE_TYPE_B,
+    TRACE_TYPE_I,
+    TRACE_TYPE_E
+} e_trace_type_t;
+
 // #define WS_REGISTER_REQ "hello\r\n"
 /* FUNC PROTO */
 void call_wolf_funcs();
@@ -90,6 +103,7 @@ char* handle_message(const char* message);
 s_ezlopi_http_data_t* ezlopi_http_get_request(const char* cloud_url, const char* private_key, const char* shared_key, const char* ca_certificate);
 static esp_err_t ezlopi_http_event_handler(esp_http_client_event_t* evt);
 static void __connection_upcall(bool connected);
+static void __message_upcall(const char* payload, uint32_t len);
 
 void initialize_responses();
 STATIC VOID __free_heap_task(PVOID_T args);
@@ -161,29 +175,32 @@ STATIC VOID user_main(VOID_T)
     }
     TAL_PR_ERR("Wifi Connected");
     // initialize_responses();
-    char user_http_req[128];
-    char* cloud_server = "cloud.ezlo.com";
-    snprintf(user_http_req, sizeof(user_http_req), "%s/getserver?json=true", cloud_server);
-    TAL_PR_DEBUG("http_request: %s", user_http_req);
-    s_ezlopi_http_data_t * ws_endpoint = ezlopi_http_get_request("cloud.ezlo.com/getserver?json=true", SSL_PRIVATE_KEY, SHARED_KEY, CA_CERT);
-    TAL_PR_DEBUG(">>>>>>>>>>>>>> wss endpoint : %s", ws_endpoint->response);
-    cJSON* root = cJSON_Parse(ws_endpoint->response);
-    if (root)
-    {
-        cJSON* cjson_uri = cJSON_GetObjectItem(root, "uri");
-        if (cjson_uri)
-        {
-            TAL_PR_DEBUG("uri: %s", cjson_uri->valuestring ? cjson_uri->valuestring : "NULL");
-            // ezlopi_core_ezlopi_broadcast_method_add(__send_str_data_to_nma_websocket, "nma-websocket", 4);
-            ezlopi_websocket_client_init(cjson_uri, NULL, __connection_upcall);
-            // task_complete = 1;
-        }
 
-        cJSON_Delete(root);
-    }
+    // char user_http_req[128];
+    // char* cloud_server = "cloud.ezlo.com";
+    // snprintf(user_http_req, sizeof(user_http_req), "%s/getserver?json=true", cloud_server);
+    // TAL_PR_DEBUG("http_request: %s", user_http_req);
+    // s_ezlopi_http_data_t * ws_endpoint = ezlopi_http_get_request("cloud.ezlo.com/getserver?json=true", SSL_PRIVATE_KEY, SHARED_KEY, CA_CERT);
+    // TAL_PR_DEBUG(">>>>>>>>>>>>>> wss endpoint : %s", ws_endpoint->response);
+    // cJSON* root = cJSON_Parse(ws_endpoint->response);
+    // if (root)
+    // {
+    //     cJSON* cjson_uri = cJSON_GetObjectItem(root, "uri");
+    //     if (cjson_uri)
+    //     {
+    //         TAL_PR_DEBUG("uri: %s", cjson_uri->valuestring ? cjson_uri->valuestring : "NULL");
+    //         // ezlopi_core_ezlopi_broadcast_method_add(__send_str_data_to_nma_websocket, "nma-websocket", 4);
+    //         ezlopi_websocket_client_init(cjson_uri, __message_upcall, __connection_upcall);
+    //         // task_complete = 1;
+    //     }
+
+    //     cJSON_Delete(root);
+    // }
     
 
     // call_wolf_funcs();
+
+    ezlopi_service_web_provisioning_init();
     
     while(1) {  
         tkl_gpio_write(LED_PIN, TUYA_GPIO_LEVEL_HIGH);
@@ -817,28 +834,98 @@ STATIC VOID __free_heap_task(PVOID_T args)
     }
 }
 
-static void __connection_upcall(bool connected)
-{
-    TAL_PR_DEBUG("wss-connection: %s", connected ? "connected." : "disconnected!");
-    static int prev_status; // 0: never connected, 1: Not-connected, 2: connected
-    if (connected)
-    {
-        if (0 == prev_status)
-        {
-            TAL_PR_DEBUG("Web-socket Connected.");
-        }
-        else
-        {
-            TAL_PR_DEBUG("Web-socket Re-connected.");
-        }
+// static void __connection_upcall(bool connected)
+// {
+//     TAL_PR_DEBUG("wss-connection: %s", connected ? "connected." : "disconnected!");
+//     static int prev_status; // 0: never connected, 1: Not-connected, 2: connected
+//     if (connected)
+//     {
+//         if (0 == prev_status)
+//         {
+//             TAL_PR_DEBUG("Web-socket Connected.");
+//         }
+//         else
+//         {
+//             TAL_PR_DEBUG("Web-socket Re-connected.");
+//         }
 
-        prev_status = 2;
-        TAL_PR_DEBUG("Starting registration process....");
-        registration_init();
-    }
-    else
-    {
-        prev_status = 1;
-        // ezlopi_event_group_clear_event(EZLOPI_EVENT_NMA_REG);
-    }
-}
+//         prev_status = 2;
+//         TAL_PR_DEBUG("Starting registration process....");
+//         registration_init();
+//     }
+//     else
+//     {
+//         prev_status = 1;
+//         // ezlopi_event_group_clear_event(EZLOPI_EVENT_NMA_REG);
+//     }
+// }
+
+// static void __message_upcall(const char* payload, uint32_t len)
+// {
+//     TAL_PR_DEBUG("In Message UpCall");
+//     cJSON *cj_request = cJSON_ParseWithLength(payload, len);
+
+//     if (cj_request)
+//     {
+//         cJSON *cj_error = cJSON_GetObjectItem(cj_request, "error");
+//         cJSON *cj_method = cJSON_GetObjectItem(cj_request, "method");
+
+//         if ((NULL == cj_error) || (NULL == cj_error->valuestring) || (0 == strncmp(cj_error->valuestring, "null", 4)))
+//         {
+//             if ((NULL != cj_method) && (NULL != cj_method->valuestring))
+//             {
+//                 TAL_PR_DEBUG("## WS Rx <<<<<<<<<< '%s'\r\n%.*s", (cj_method->valuestring ? cj_method->valuestring : ""), len, payload);
+//                 uint32_t method_idx = ezlopi_core_ezlopi_methods_search_in_list(cj_method);
+//                 if (UINT32_MAX != method_idx)
+//                 {
+//                     __call_method_func_and_send_response(cj_request, cj_method, method_list_v2[method_idx].method, TRACE_TYPE_B);
+//                     __call_method_func_and_send_response(cj_request, cj_method, method_list_v2[method_idx].updater, TRACE_TYPE_B);
+//                 }
+//                 // else
+//                 // {
+//                 //     __call_method_func_and_send_response(cj_request, cj_method, __rpc_method_notfound, TRACE_TYPE_E);
+//                 // }
+//             }
+//         }
+//         else
+//         {
+//             TAL_PR_DEBUG("## WS Rx <<<<<<<<<<'%s'\r\n%.*s", (cj_method->valuestring ? cj_method->valuestring : ""), len, payload);
+//         }
+
+//         cJSON_Delete(cj_request);
+//     }
+//     // TAL_PR_DEBUG("## WS Rx <<<<<<<<<<'%s'\r\n", (cj_method->valuestring ? cj_method->valuestring : ""));
+// }
+
+// void __call_method_func_and_send_response(cJSON *cj_request, cJSON *cj_method, f_method_func_t method_func, e_trace_type_t print_type)
+// {
+//     if (method_func)
+//     {
+//         if (registered == method_func)
+//         {
+//             method_func(cj_request, NULL);
+//         }
+//         else
+//         {
+//             cJSON *cj_response = cJSON_CreateObject();
+//             if (NULL != cj_response)
+//             {
+//                 cJSON *cj_sender = cJSON_GetObjectItem(cj_request, ezlopi_sender_str);
+
+//                 cJSON_AddNumberToObject(cj_response, ezlopi_msg_id_str, message_counter);
+//                 cJSON_AddItemReferenceToObject(cj_response, ezlopi_sender_str, cj_sender);
+//                 cJSON_AddNullToObject(cj_response, "error");
+
+//                 method_func(cj_request, cj_response);
+
+//                 // web_provisioning_send_to_nma_websocket(cj_response, print_type);
+//                 ezlopi_websocket_client_send(cj_response, strlen(cj_response));
+//                 cJSON_Delete(cj_response);
+//             }
+//             else
+//             {
+//                 TAL_PR_DEBUG("Error - cj_response: %d", (uint32_t)cj_response);
+//             }
+//         }
+//     }
+// }

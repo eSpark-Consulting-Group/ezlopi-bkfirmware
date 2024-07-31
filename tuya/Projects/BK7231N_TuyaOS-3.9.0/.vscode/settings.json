@@ -30,7 +30,17 @@
         "math.h": "c",
         "stdbool.h": "c",
         "stdint.h": "c",
-        "version.h": "c"
+        "version.h": "c",
+        "ezlopi_core_wifi.h": "c",
+        "ezlopi_core_api_methods.h": "c",
+        "ezlopi_service_webprov.h": "c",
+        "ezlopi_cloud_keywords.h": "c",
+        "tal_memory.h": "c",
+        "ezlopi_core_api.h": "c",
+        "ezlopi_cloud_constants.h": "c",
+        "typeindex": "c",
+        "typeinfo": "c",
+        "ezlopi_core_api_macros.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

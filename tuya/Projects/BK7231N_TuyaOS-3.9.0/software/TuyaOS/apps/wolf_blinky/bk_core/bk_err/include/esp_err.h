@@ -2,7 +2,7 @@
 #define ESP_ERR_H
 
 typedef enum {
-    ESP_OK,
+    ESP_OK = 1,
     ESP_ERR,
     ESP_ERR_NO_MEM,    // Memory allocation failure
     ESP_ERR_INVALID_ARG // Invalid argument or parsing failure

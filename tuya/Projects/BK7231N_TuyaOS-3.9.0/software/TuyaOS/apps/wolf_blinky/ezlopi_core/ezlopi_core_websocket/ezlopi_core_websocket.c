@@ -90,13 +90,9 @@ static void websocket_event_handler(esp_websocket_client_event_t *evt)
     case WEBSOCKET_EVENT_ON_DATA:
     {
         TAL_PR_DEBUG("WEBSOCKET_EVENT_ON_DATA");
-        // if ((NULL != data->data_ptr) && (data->data_len > 0) && (NULL != evt) && (NULL != event_arg->msg_upcall))
-        // {
-        //     event_arg->msg_upcall(data->data_ptr, data->data_len);
-        // }
-        if(evt && evt->data && evt->data_len)
+        if(evt && evt->data && evt->data_len && evt->msg_upcall)
         {
-            TAL_PR_DEBUG("Got Message %s", evt->data);
+            evt->msg_upcall(evt->data, evt->data_len);
         }
         break;
     }

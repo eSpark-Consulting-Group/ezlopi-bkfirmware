@@ -91,7 +91,7 @@ int parse_http_response_code(const char *response);
 
 esp_err_t esp_websocket_client_send_text(esp_websocket_client_handle_t client, const char* data, int len, int delay)
 {
-    ws_send_websocket_message(client->ssl, data);
+    return ws_send_websocket_message(client->ssl, data);
 }
 
 esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_client_config_t *config)
@@ -129,6 +129,7 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     client->url = config->url;
     client->event_handler = config->event_handler;
     client->connection_upcall = config->connection_upcall;
+    client->msg_upcall = config->msg_upcall;
 
     TAL_PR_DEBUG("URLLLLL %s", config->url);
 
@@ -423,7 +424,7 @@ void ws_receive(esp_websocket_client_handle_t client)
             ws_event.event_id = WEBSOCKET_EVENT_ON_DATA;
             ws_event.data = buf;
             ws_event.data_len = len; 
-            // ws_event.msg_upcall = client->msg_upcall;
+            ws_event.msg_upcall = client->msg_upcall;
             client->event_handler(&ws_event);
         }
 
@@ -646,5 +647,5 @@ int ws_send_websocket_message(WOLFSSL* ssl, const char* strdata)
     }
 
     free(data);
-    return 0;
+    return ESP_OK;
 }
