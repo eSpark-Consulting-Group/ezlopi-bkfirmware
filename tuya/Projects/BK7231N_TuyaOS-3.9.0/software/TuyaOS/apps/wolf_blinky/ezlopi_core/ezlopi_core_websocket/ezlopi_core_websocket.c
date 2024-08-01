@@ -27,8 +27,7 @@ int ezlopi_websocket_client_send(char *data, uint32_t len)
 
 esp_websocket_client_handle_t ezlopi_websocket_client_init(cJSON* uri, void (*msg_upcall)(const char*, uint32_t), void (*connection_upcall)(bool connected))
 {
-    if ((NULL == client) && (NULL != uri) && (NULL != uri->valuestring)
-    //  && (NULL != msg_upcall)
+    if ((NULL == client) && (NULL != uri) && (NULL != uri->valuestring)  && (NULL != msg_upcall)
      )
     {
         char * ca_cert = CA_CERT;
@@ -65,8 +64,6 @@ esp_websocket_client_handle_t ezlopi_websocket_client_init(cJSON* uri, void (*ms
 
 static void websocket_event_handler(esp_websocket_client_event_t *evt)
 {
-    // s_ws_event_arg_t* event_arg = (s_ws_event_arg_t*)handler_args;
-    // esp_websocket_event_data_t* data = (esp_websocket_event_data_t*)event_data;
     switch (evt->event_id)
     {
     case WEBSOCKET_EVENT_ON_CONNECTED:

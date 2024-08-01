@@ -40,7 +40,8 @@
         "ezlopi_cloud_constants.h": "c",
         "typeindex": "c",
         "typeinfo": "c",
-        "ezlopi_core_api_macros.h": "c"
+        "ezlopi_core_api_macros.h": "c",
+        "ieee.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

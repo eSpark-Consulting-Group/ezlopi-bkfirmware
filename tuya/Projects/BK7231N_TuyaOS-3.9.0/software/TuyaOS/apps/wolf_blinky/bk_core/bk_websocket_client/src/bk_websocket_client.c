@@ -44,42 +44,17 @@ typedef enum {
     HTTP_UNKNOWN = 0
 } esp_http_status_code;
 
-/**
- * ws Buffer
- */
-typedef struct {
-    char *data;         /*!< The ws data received from the server */
-    int len;            /*!< The ws data len received from the server */
-    char *raw_data;     /*!< The ws data after decoding */
-    char *orig_raw_data;/*!< The Original pointer to ws data after decoding */
-    int raw_len;        /*!< The ws data len after decoding */
-    char *output_ptr;   /*!< The destination address of the data to be copied to after decoding */
-} esp_ws_buffer_t;
-
-/**
- * private ws Data structure
- */
-typedef struct {
-    esp_ws_buffer_t   *buffer;        /*!< data buffer as linked list */
-    int                 status_code;    /*!< status code (integer) */
-    int64_t             content_length; /*!< data length */
-    int                 method;         /*!< ws method */
-} esp_ws_data_t;
 
 struct esp_websocket_client {
     const char* url;
     const char* host;
     const char* path;    
     const char* port;
-    esp_ws_data_t *request;
-    esp_ws_data_t *response;
-    void* user_data;
     ws_event_handle_cb        event_handler;
     WOLFSSL_CTX* ctx;
     WOLFSSL* ssl;
     int sockfd;
     int state;
-    int method;
     void (*connection_upcall)(bool connected);
     void (*msg_upcall)(const char*, uint32_t)
 };
@@ -98,26 +73,10 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
 {
     esp_websocket_client_handle_t client;
     esp_err_t ret = ESP_OK;
-    bool _success = (
-        (client                         = calloc(1, sizeof(esp_websocket_client_handle_t)))           &&
-        (client->request                = calloc(1, sizeof(esp_ws_data_t)))             &&
-        (client->request->buffer        = calloc(1, sizeof(esp_ws_buffer_t)))           &&
-        (client->response               = calloc(1, sizeof(esp_ws_data_t)))             &&
-        (client->response->buffer       = calloc(1, sizeof(esp_ws_buffer_t)))
-    );
+
+    bool _success = (client = calloc(1, sizeof(esp_websocket_client_handle_t)));
     if (!_success) {
         TAL_PR_DEBUG("Error allocate memory");
-        goto error;
-    }
-
-    _success = 
-    (
-                (client->request->buffer->data  = calloc(1, RX_TX_BUFFER_SIZE))  &&
-                (client->response->buffer->data = calloc(1, RX_TX_BUFFER_SIZE))
-    );
-
-    if (!_success) {
-        TAL_PR_DEBUG("Error allocate memory for req res buffers");
         goto error;
     }
     
@@ -130,8 +89,6 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     client->event_handler = config->event_handler;
     client->connection_upcall = config->connection_upcall;
     client->msg_upcall = config->msg_upcall;
-
-    TAL_PR_DEBUG("URLLLLL %s", config->url);
 
     ret = parse_url(client, config->url);
     if(ret != ESP_OK)
@@ -160,7 +117,7 @@ error:
 
 int esp_websocket_client_start(esp_websocket_client_handle_t client)
 {
-    ws_server_connect(client);
+    return ws_server_connect(client);
 }
 
 bool esp_websocket_client_is_connected(esp_websocket_client_handle_t client)
@@ -182,25 +139,11 @@ void esp_ws_client_cleanup(esp_websocket_client_handle_t client)
     wolfSSL_CTX_free(client->ctx);  /* Free the wolfSSL context object          */
     wolfSSL_Cleanup();      /* Cleanup the wolfSSL environment              */
     
-    if(client->request)
-    {
-        if (client->request->buffer) {
-            free(client->request->buffer->data);
-        }
-        free(client->request->buffer);
-        free(client->request);
-    }
-    if (client->response) {
-        if (client->response->buffer) {
-            free(client->response->buffer->data);
-        }
-        free(client->response->buffer);
-        free(client->response);
-    }
     free(client->host);
     free(client->path);
     free(client);
 
+    client->state = WEBSOCKET_STATE_CLOSE;
     ws_event.connection_upcall = client->connection_upcall;
     ws_event.event_id = WEBSOCKET_EVENT_DISCONNECTED;
     client->event_handler(&ws_event);
@@ -377,10 +320,7 @@ int ws_server_connect(esp_websocket_client_handle_t client)
     }
     else
     {
-        ws_event.connection_upcall = client->connection_upcall;
-        ws_event.event_id = WEBSOCKET_EVENT_ERROR;
-        client->state = WEBSOCKET_STATE_CLOSE;
-        client->event_handler(&ws_event);
+        TAL_PR_ERR("Unable to upgrade connection to Websocket \nStatus code :%d\n", response_code);
         esp_ws_client_cleanup(client);
         ret = ESP_ERR;
     }
@@ -429,10 +369,6 @@ void ws_receive(esp_websocket_client_handle_t client)
         }
 
 	}while( 1 );
-    ws_event.connection_upcall = client->connection_upcall;
-    ws_event.event_id = WEBSOCKET_EVENT_ERROR;
-    client->state = WEBSOCKET_STATE_CLOSE;
-    client->event_handler(&ws_event);
     esp_ws_client_cleanup(client);
 	TAL_PR_DEBUG( "  Ended Receiving WS data\n" );
 

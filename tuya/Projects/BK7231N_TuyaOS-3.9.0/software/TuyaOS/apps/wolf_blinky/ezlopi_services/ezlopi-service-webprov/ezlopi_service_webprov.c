@@ -191,7 +191,7 @@ static int __send_cjson_data_to_nma_websocket(cJSON* cj_data)
         char* data_buffer = (char*)malloc(buffer_len * sizeof(char));
         if (data_buffer && buffer_len)
         {
-            TAL_PR_DEBUG("-----------------------------> buffer acquired!");
+            // TAL_PR_DEBUG("-----------------------------> buffer acquired!");
             memset(data_buffer, 0, buffer_len);
 
             if (true == cJSON_PrintPreallocated(cj_data, data_buffer, buffer_len, false))
@@ -205,7 +205,7 @@ static int __send_cjson_data_to_nma_websocket(cJSON* cj_data)
 
             // ezlopi_core_buffer_release();
             free(data_buffer);
-            TAL_PR_DEBUG("-----------------------------> buffer released!");
+            // TAL_PR_DEBUG("-----------------------------> buffer released!");
         }
         else
         {

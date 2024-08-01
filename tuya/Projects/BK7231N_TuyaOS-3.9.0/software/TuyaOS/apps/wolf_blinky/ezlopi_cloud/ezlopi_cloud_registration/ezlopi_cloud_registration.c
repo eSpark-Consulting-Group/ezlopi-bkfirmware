@@ -35,7 +35,6 @@ static void registration_process(void *pv)
     uint8_t mac_addr[6];
     char reg_str[300] = "";
 
-    // esp_read_mac(mac_addr, ESP_MAC_WIFI_STA);
     snprintf(mac_str, sizeof(mac_str), "%02X:%02X:%02X:%02X:%02X:%02X",
              mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
 

@@ -8,6 +8,8 @@
 #include "ezlopi_core_api_methods.h"
 #include "cJSON.h"
 
+#define ENABLE_TRACE 1
+
 static int __check_for_no_error(cJSON* cj_request);
 static cJSON* __execute_method(cJSON* cj_request, f_method_func_t method_func);
 
