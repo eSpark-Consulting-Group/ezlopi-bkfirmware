@@ -16,6 +16,8 @@ LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/bk_core
 LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/ezlopi_core
 LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/ezlopi_cloud
 LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/ezlopi_services
+LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/ezlopi_util
+LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/ezlopi_user_config
 
 
 # 模块对外CFLAGS：其他组件编译时可感知到
@@ -27,15 +29,11 @@ LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/bk_core -name "*.c" -o -name "*.cp
 LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/ezlopi_core -name "*.c" -o -name "*.cpp" -o -name "*.cc")
 LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/ezlopi_cloud -name "*.c" -o -name "*.cpp" -o -name "*.cc")
 LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/ezlopi_services -name "*.c" -o -name "*.cpp" -o -name "*.cc")
+LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/ezlopi_util -name "*.c" -o -name "*.cpp" -o -name "*.cc")
+LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/ezlopi_user_config -name "*.c" -o -name "*.cpp" -o -name "*.cc")
 
 # 模块内部CFLAGS：仅供本组件使用
 LOCAL_CFLAGS += -DDEBUG_WOLFSSL
-# LOCAL_CFLAGS += -I/home/maaz/GitHub/ezlopi-bkfirmware/tuya/Projects/BK7231N_TuyaOS-3.9.0/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/func/wolfssl
-# LOCAL_CFLAGS += -I/home/maaz/GitHub/ezlopi-bkfirmware/tuya/Projects/BK7231N_TuyaOS-3.9.0/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/func/wolfssl/wolfssl/wolfcrypt
-# LOCAL_CFLAGS += -I/home/maaz/GitHub/ezlopi-bkfirmware/tuya/Projects/BK7231N_TuyaOS-3.9.0/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/app/config
-# LOCAL_CFLAGS += -I/home/maaz/GitHub/ezlopi-bkfirmware/tuya/Projects/BK7231N_TuyaOS-3.9.0/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/os/FreeRTOSv9.0.0/FreeRTOS/Source/include
-# LOCAL_CFLAGS += -I/home/maaz/GitHub/ezlopi-bkfirmware/tuya/Projects/BK7231N_TuyaOS-3.9.0/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/os/include
-# LOCAL_CFLAGS += -I/home/maaz/GitHub/ezlopi-bkfirmware/tuya/Projects/BK7231N_TuyaOS-3.9.0/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/os/FreeRTOSv9.0.0/FreeRTOS/Source/portable/Keil/ARM968es
 LOCAL_CFLAGS += -I$(TUYA_SDK_PATH)/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/os/FreeRTOSv9.0.0/FreeRTOS/Source/portable/Keil/ARM968es
 LOCAL_CFLAGS += -I$(TUYA_SDK_PATH)/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/func/wolfssl
 LOCAL_CFLAGS += -I$(TUYA_SDK_PATH)/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/func/wolfssl/wolfssl/wolfcrypt

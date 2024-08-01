@@ -1,7 +1,7 @@
 
-#include "ezlopi_http_client.h"
 #include "esp_http_client.h"
-#include "tal_log.h"
+#include "ezlopi_http_client.h"
+#include "ezlopi_util_trace.h"
 #include "httpc.h"
 #include "cert.h"
 
@@ -113,12 +113,12 @@ static int https_send_request(char *host_uri)
     http_prepare_req(https_handle, &https_request, 0);
     if (WM_SUCCESS == http_send_request(https_handle, &https_request, 1))
     {
-        TAL_PR_DEBUG("Request sent successfully.");
+        TRACE_D("Request sent successfully.");
         ret = 0;
     }
     else
     {
-        TAL_PR_ERR("Failed to send request.");
+        TRACE_E("Failed to send request.");
         ret = 1;
     }
     return ret;
@@ -146,7 +146,7 @@ static int https_read_response(char ** p_received_data)
                 {
                     set_https_response_data_to_ll(receive_buffer, read_size, &my_data);
                 }
-                // TAL_PR_ERR("In do while");
+                // TRACE_E("In do while");
 
             } while (read_size != 0);
             int receive_data_total_len = 0;
@@ -167,19 +167,19 @@ static int https_read_response(char ** p_received_data)
                 }
                 else
                 {
-                    TAL_PR_ERR("Error combining received data.");
+                    TRACE_E("Error combining received data.");
                     ret = 1;
                 }
             }
             else
             {
-                TAL_PR_ERR("No data received.");
+                TRACE_E("No data received.");
                 ret = 1;
             }
         }
         else
         {
-            TAL_PR_ERR("Unable to allocate memory for receiver's buffer.");
+            TRACE_E("Unable to allocate memory for receiver's buffer.");
             ret = 1;
         }
         free(receive_buffer);
@@ -187,7 +187,7 @@ static int https_read_response(char ** p_received_data)
     }
     else
     {
-        TAL_PR_ERR("No status code 200 received.(code: %d)", http_resp->status_code);
+        TRACE_E("No status code 200 received.(code: %d)", http_resp->status_code);
         ret = 1;
     }
 
@@ -200,27 +200,27 @@ static esp_err_t ezlopi_http_event_handler(esp_http_client_event_t* evt)
     {
     case HTTP_EVENT_ERROR:
     {
-        TAL_PR_DEBUG("HTTP_EVENT_ERROR");
+        TRACE_D("HTTP_EVENT_ERROR");
         break;
     }
     case HTTP_EVENT_ON_CONNECTED:
     {
-        TAL_PR_DEBUG("HTTP_EVENT_ON_CONNECTED");
+        TRACE_D("HTTP_EVENT_ON_CONNECTED");
         break;
     }
     case HTTP_EVENT_HEADER_SENT:
     {
-        TAL_PR_DEBUG("HTTP_EVENT_HEADER_SENT");
+        TRACE_D("HTTP_EVENT_HEADER_SENT");
         break;
     }
     case HTTP_EVENT_ON_HEADER:
     {
-        TAL_PR_DEBUG("HTTP_EVENT_ON_HEADER, \nheaders = %s ", evt->data);
+        TRACE_D("HTTP_EVENT_ON_HEADER, \nheaders = %s ", evt->data);
         break;
     }
     case HTTP_EVENT_ON_DATA:
     {
-        TAL_PR_DEBUG("HTTP_EVENT_ON_DATA, len=%d, data: \n%.*s", evt->data_len, evt->data_len, (char*)evt->data);
+        TRACE_D("HTTP_EVENT_ON_DATA, len=%d, data: \n%.*s", evt->data_len, evt->data_len, (char*)evt->data);
         // if (!esp_http_client_is_chunked_response(evt->client))
         {
             if (evt->user_data)
@@ -265,12 +265,12 @@ static esp_err_t ezlopi_http_event_handler(esp_http_client_event_t* evt)
     }
     case HTTP_EVENT_ON_FINISH:
     {
-        TAL_PR_DEBUG("HTTP_EVENT_ON_FINISH");
+        TRACE_D("HTTP_EVENT_ON_FINISH");
         break;
     }
     case HTTP_EVENT_DISCONNECTED:
     {
-        TAL_PR_DEBUG("HTTP_EVENT_DISCONNECTED");
+        TRACE_D("HTTP_EVENT_DISCONNECTED");
         break;
     }
     }
@@ -332,7 +332,7 @@ s_ezlopi_http_data_t* ezlopi_http_get_request(const char* cloud_url, const char*
                     while (cur_d)
                     {
                         strcat(ret, cur_d->ptr);
-                        TAL_PR_DEBUG("%.*s", cur_d->len, cur_d->ptr);
+                        TRACE_D("%.*s", cur_d->len, cur_d->ptr);
                         cur_d = cur_d->next;
                     }
 
@@ -347,7 +347,7 @@ s_ezlopi_http_data_t* ezlopi_http_get_request(const char* cloud_url, const char*
             }
             else
             {
-                TAL_PR_DEBUG("Error perform http request %d", (int)err);
+                TRACE_D("Error perform http request %d", (int)err);
             }
 
             ezlopi_http_free_rx_data(my_data);
@@ -360,12 +360,12 @@ s_ezlopi_http_data_t* ezlopi_http_get_request(const char* cloud_url, const char*
 
 int is_network_initialized() {
     int ret = system("ping -c 1 google.com > /dev/null 2>&1");
-    TAL_PR_ERR("RETURN:%d\r\n",ret);
+    TRACE_E("RETURN:%d\r\n",ret);
     if (ret == 0) {
-        TAL_PR_DEBUG("Network is connected.\n");
+        TRACE_D("Network is connected.\n");
         return 1; // Network is connected
     } else {
-        TAL_PR_DEBUG("Network is not connected.\n");
+        TRACE_D("Network is not connected.\n");
         return 0; // Network is not connected
     }
 }

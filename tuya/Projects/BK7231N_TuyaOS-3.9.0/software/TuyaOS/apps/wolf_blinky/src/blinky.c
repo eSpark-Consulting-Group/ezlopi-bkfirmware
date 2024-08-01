@@ -20,6 +20,7 @@
 
 #include "ezlopi_core_wifi.h"
 #include "ezlopi_service_webprov.h"
+#include "ezlopi_util_trace.h"
 
 #define PID  "tvjs8eysp0imads8"
 #define LED_PIN TUYA_GPIO_NUM_26
@@ -84,10 +85,10 @@ STATIC VOID user_main(VOID_T)
     while (!ezlopi_wifi_is_connected()) 
     {  
         ezlopi_wifi_connect_from_id_bin();
-        TAL_PR_ERR("Not Connected");
+        TRACE_E("Not Connected");
         tal_system_sleep(1000);
     }
-    TAL_PR_ERR("Wifi Connected");
+    TRACE_S("Wifi Connected");
 
     ezlopi_service_web_provisioning_init();
     
@@ -100,6 +101,11 @@ STATIC VOID user_main(VOID_T)
         tal_log_set_manage_attr(TAL_LOG_LEVEL_DEBUG);
         // tal_uart_write(TUYA_UART_NUM_0, turnOff, sizeof(turnOff));
         tal_system_sleep(blink_interval);
+        // TRACE_E("CHECKING TRACEEEEEE ");
+        // TRACE_D("CHECKING TRACEEEEEE ");
+        // TRACE_W("CHECKING TRACEEEEEE ");
+        // TRACE_I("CHECKING TRACEEEEEE ");
+        // TRACE_S("CHECKING TRACEEEEEE ");
 
     }
 

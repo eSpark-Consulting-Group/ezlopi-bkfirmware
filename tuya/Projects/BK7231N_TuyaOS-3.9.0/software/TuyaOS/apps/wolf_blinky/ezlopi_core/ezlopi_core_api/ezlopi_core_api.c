@@ -1,5 +1,5 @@
 #include "tal_log.h"
-// #include "ezlopi_util_trace.h"
+#include "ezlopi_util_trace.h"
 
 #include "ezlopi_cloud_constants.h"
 #include "ezlopi_core_api.h"
@@ -29,7 +29,7 @@ cJSON *ezlopi_core_api_consume(const char * who, const char *payload, uint32_t l
                 cJSON *cj_method = cJSON_GetObjectItem(cj_request, ezlopi_method_str);
 
 #if (1 == ENABLE_TRACE)
-                TAL_PR_DEBUG("## WS Rx <<<<<<<<<< '%s' \n %.*s", (cj_method ? cj_method->valuestring : ezlopi__str), len, payload);
+                TRACE_I("## WS Rx <<<<<<<<<< '%s' \n %.*s", (cj_method ? cj_method->valuestring : ezlopi__str), len, payload);
 #endif
                 uint32_t method_id = ezlopi_core_ezlopi_methods_search_in_list(cj_method);
 
@@ -52,7 +52,7 @@ cJSON *ezlopi_core_api_consume(const char * who, const char *payload, uint32_t l
                     f_method_func_t updater = ezlopi_core_ezlopi_methods_get_updater_by_id(method_id);
                     if (updater)
                     {
-                        TAL_PR_DEBUG("updater function: %p", updater);
+                        TRACE_W("updater function: %p", updater);
 
                         cJSON* cj_update_response = __execute_method(cj_request, updater);
 
@@ -85,7 +85,7 @@ cJSON *ezlopi_core_api_consume(const char * who, const char *payload, uint32_t l
             else
             {
                 cJSON *cj_method = cJSON_GetObjectItem(cj_request, ezlopi_method_str);
-                TAL_PR_DEBUG("## WS Rx <<<<<<<<<< '%s' \n%.*s", (NULL != cj_method) ? (cj_method->valuestring ? cj_method->valuestring : ezlopi__str) : ezlopi__str, len, payload);
+                TRACE_E("## WS Rx <<<<<<<<<< '%s' \n%.*s", (NULL != cj_method) ? (cj_method->valuestring ? cj_method->valuestring : ezlopi__str) : ezlopi__str, len, payload);
             }
 #endif
             cJSON_Delete(cj_request);
@@ -113,7 +113,7 @@ static cJSON* __execute_method(cJSON* cj_request, f_method_func_t method_func)
             }
             else
             {
-                TAL_PR_DEBUG("Error - cj_response: %d", (uint32_t)cj_response);
+                TRACE_E("Error - cj_response: %d", (uint32_t)cj_response);
             }
         }
     }
@@ -136,7 +136,7 @@ static int __check_for_no_error(cJSON* cj_request)
 #if (1 == ENABLE_TRACE)
         else
         {
-            TAL_PR_DEBUG("cj_error: %p, cj_error->type: %u, cj_error->value_string: %s", cj_error, cj_error->type, cj_error ? (cj_error->valuestring ? cj_error->valuestring : ezlopi_null_str) : ezlopi_null_str);
+            TRACE_E("cj_error: %p, cj_error->type: %u, cj_error->value_string: %s", cj_error, cj_error->type, cj_error ? (cj_error->valuestring ? cj_error->valuestring : ezlopi_null_str) : ezlopi_null_str);
         }
 #endif
     }

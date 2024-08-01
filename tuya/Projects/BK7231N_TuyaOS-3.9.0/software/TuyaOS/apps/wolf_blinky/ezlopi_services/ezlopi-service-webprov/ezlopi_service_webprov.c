@@ -2,10 +2,8 @@
 #include <task.h>
 #include <semphr.h>
 
-#include "tal_log.h"
 
-
-// #include "ezlopi_util_trace.h"
+#include "ezlopi_util_trace.h"
 #include "ezlopi_cloud_constants.h"
 
 #include "ezlopi_core_api.h"
@@ -52,7 +50,6 @@ uint32_t ezlopi_service_web_provisioning_get_message_count(void)
 void ezlopi_service_web_provisioning_init(void)
 {
 
-    TAL_PR_DEBUG("__fetch_wss_endpoint");
     // TaskHandle_t ezlopi_service_web_prov_config_check_task_handle = NULL;
     // xTaskCreate(__config_check, "WebProvCfgChk", EZLOPI_SERVICE_WEB_PROV_CONFIG_CHECK_TASK_DEPTH, NULL, 5, &ezlopi_service_web_prov_config_check_task_handle);
     // ezlopi_core_process_set_process_info(ENUM_EZLOPI_SERVICE_WEB_PROV_CONFIG_CHECK_TASK, &ezlopi_service_web_prov_config_check_task_handle, EZLOPI_SERVICE_WEB_PROV_CONFIG_CHECK_TASK_DEPTH);
@@ -73,21 +70,21 @@ void ezlopi_service_web_provisioning_deinit(void)
 
 static void __connection_upcall(bool connected)
 {
-    TAL_PR_DEBUG("wss-connection: %s", connected ? "connected." : "disconnected!");
+    TRACE_D("wss-connection: %s", connected ? "connected." : "disconnected!");
     static int prev_status; // 0: never connected, 1: Not-connected, 2: connected
     if (connected)
     {
         if (0 == prev_status)
         {
-            TAL_PR_DEBUG("Web-socket Connected.");
+            TRACE_D("Web-socket Connected.");
         }
         else
         {
-            TAL_PR_DEBUG("Web-socket Re-connected.");
+            TRACE_D("Web-socket Re-connected.");
         }
 
         prev_status = 2;
-        TAL_PR_DEBUG("Starting registration process....");
+        TRACE_D("Starting registration process....");
         ezlopi_core_ezlopi_methods_registration_init();
     }
     else
@@ -100,7 +97,6 @@ static void __connection_upcall(bool connected)
 static void __fetch_wss_endpoint(void* pv)
 {
 
-    TAL_PR_DEBUG("__fetch_wss_endpoint");
     char* cloud_server = "cloud.ezlo.com";
     char* ca_certificate = CA_CERT;
     char* ssl_shared_key = SHARED_KEY;
@@ -116,21 +112,21 @@ static void __fetch_wss_endpoint(void* pv)
 
         char http_request[128];
         snprintf(http_request, sizeof(http_request), "%s/getserver?json=true", cloud_server);
-        TAL_PR_DEBUG("http_request: %s", http_request);
+        TRACE_D("http_request: %s", http_request);
 
         s_ezlopi_http_data_t * ws_endpoint = ezlopi_http_get_request(http_request, ssl_private_key, ssl_shared_key, ca_certificate);
         if (ws_endpoint)
         {
             if (ws_endpoint->response)
             {
-                TAL_PR_DEBUG("ws_endpoint: %s", ws_endpoint->response); // {"uri": "wss://endpoint:port"}
+                TRACE_D("ws_endpoint: %s", ws_endpoint->response); // {"uri": "wss://endpoint:port"}
                 cJSON* root = cJSON_Parse(ws_endpoint->response);
                 if (root)
                 {
                     cJSON* cjson_uri = cJSON_GetObjectItem(root, "uri");
                     if (cjson_uri)
                     {
-                        TAL_PR_DEBUG("uri: %s", cjson_uri->valuestring ? cjson_uri->valuestring : "NULL");
+                        TRACE_D("uri: %s", cjson_uri->valuestring ? cjson_uri->valuestring : "NULL");
                         // ezlopi_core_ezlopi_broadcast_method_add(__send_str_data_to_nma_websocket, "nma-websocket", 4);
                         ezlopi_websocket_client_init(cjson_uri, __message_upcall, __connection_upcall);
                         task_complete = 1;
@@ -176,7 +172,7 @@ static void __message_upcall(const char* payload, uint32_t len)
     }
     else
     {
-        TAL_PR_DEBUG("no response!");
+        TRACE_D("no response!");
     }
 }
 
@@ -187,11 +183,10 @@ static int __send_cjson_data_to_nma_websocket(cJSON* cj_data)
     if (cj_data)
     {
         uint32_t buffer_len = 1000;
-        // char* data_buffer = ezlopi_core_buffer_acquire(&buffer_len, 5000);
         char* data_buffer = (char*)malloc(buffer_len * sizeof(char));
         if (data_buffer && buffer_len)
         {
-            // TAL_PR_DEBUG("-----------------------------> buffer acquired!");
+            TRACE_D("-----------------------------> buffer acquired!");
             memset(data_buffer, 0, buffer_len);
 
             if (true == cJSON_PrintPreallocated(cj_data, data_buffer, buffer_len, false))
@@ -200,16 +195,15 @@ static int __send_cjson_data_to_nma_websocket(cJSON* cj_data)
             }
             else
             {
-                TAL_PR_DEBUG("FAILED!");
+                TRACE_D("FAILED!");
             }
 
-            // ezlopi_core_buffer_release();
             free(data_buffer);
-            // TAL_PR_DEBUG("-----------------------------> buffer released!");
+            TRACE_D("-----------------------------> buffer released!");
         }
         else
         {
-            TAL_PR_DEBUG("-----------------------------> buffer acquired failed!");
+            TRACE_D("-----------------------------> buffer acquired failed!");
         }
     }
 
@@ -236,11 +230,11 @@ static int __send_str_data_to_nma_websocket(char* str_data)
 
         if (ret)
         {
-            TAL_PR_DEBUG("## WSC-SENDING done >>>>>>>>>>>>>>>>>>>\r\n%s", str_data);
+            TRACE_S("## WSC-SENDING done >>>>>>>>>>>>>>>>>>>\r\n%s", str_data);
         }
         else
         {
-            TAL_PR_DEBUG("## WSC-SENDING failed >>>>>>>>>>>>>>>>>>>\r\n%s", str_data);
+            TRACE_E("## WSC-SENDING failed >>>>>>>>>>>>>>>>>>>\r\n%s", str_data);
         }
     }
 
@@ -275,14 +269,14 @@ static void __config_check(void* pv)
     //             char http_request_location[200];
     //             snprintf(http_request_location, sizeof(http_request_location), "api/v1/controller/sync?version=%d", config_version ? config_version : 1);
 
-    //             TAL_PR_DEBUG("web-prov-request: %s", http_request_location);
+    //             TRACE_D("web-prov-request: %s", http_request_location);
 
     //             ezlopi_wait_for_wifi_to_connect(portMAX_DELAY);
     //             s_ezlopi_http_data_t* response = ezlopi_http_post_request(provisioning_server, http_request_location, root_header_prov_token, NULL, NULL, ca_certificate);
 
     //             if (NULL != response)
     //             {
-    //                 TAL_PR_DEBUG("Status Code : %d", response->status_code);
+    //                 TRACE_D("Status Code : %d", response->status_code);
     //                 // if (response->response) 
     //                 {
     //                     switch (response->status_code)
@@ -290,7 +284,7 @@ static void __config_check(void* pv)
     //                     case HttpStatus_Ok:
     //                     {
     //                         // re-write all the info into the flash region
-    //                         // TAL_PR_DEBUG("Data : %s", response->response);
+    //                         // TRACE_D("Data : %s", response->response);
     //                         if (0 == __config_update(response->response))
     //                         {
     //                             retry_count++;
@@ -309,7 +303,7 @@ static void __config_check(void* pv)
     //                     {
     //                         if (304 == response->status_code) // HTTP Status not modified
     //                         {
-    //                             TAL_PR_DEBUG("Config data not changed !");
+    //                             TRACE_D("Config data not changed !");
     //                             flag_break_loop = 1;
     //                         }
     //                         break;
@@ -321,7 +315,7 @@ static void __config_check(void* pv)
     //             }
     //             if (flag_break_loop)
     //             {
-    //                 TAL_PR_DEBUG("Config check task complete!");
+    //                 TRACE_D("Config check task complete!");
     //                 xTaskNotifyGive(ezlopi_update_config_notifier);
     //                 break;
     //             }
@@ -397,12 +391,12 @@ static uint8_t __config_update(char* arg)
 
     //     if (ezlopi_factory_info_v3_set_basic(&config_check_factoryInfo))
     //     {
-    //         TAL_PR_DEBUG("Updated provisioning config");
+    //         TRACE_D("Updated provisioning config");
     //         ret = 1;
     //     }
     //     else
     //     {
-    //         TAL_PR_DEBUG("Error updating provisioning config");
+    //         TRACE_D("Error updating provisioning config");
     //     }
 
     //     cJSON * cj_ssl_private_key = cJSON_GetObjectItem(cj_root_prov_data, ezlopi_ssl_private_key_str);
@@ -433,7 +427,7 @@ static uint8_t __config_update(char* arg)
     // }
     // else
     // {
-    //     TAL_PR_DEBUG("Error parsing JSON.\n");
+    //     TRACE_D("Error parsing JSON.\n");
     // }
     // return ret;
 }

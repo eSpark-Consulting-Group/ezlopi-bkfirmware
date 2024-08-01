@@ -4,3 +4,8 @@ output/
 docs/
 *.zip
 *.tar
+*.o
+*.a
+*.stripped
+Debug/
+build_param

@@ -1,7 +1,8 @@
-#include "tal_log.h"
+// #include "tal_log.h"
 #include "tuya_cloud_types.h"
 #include "tuya_iot_wifi_api.h"
 #include "ezlopi_core_wifi.h"
+#include "ezlopi_util_trace.h"
 
 bool is_connected = false;
 
@@ -11,43 +12,43 @@ STATIC VOID_T wifi_event_callback(WF_EVENT_E event, VOID_T *arg)
     NW_IP_S sta_info;
     memset(&sta_info, 0, SIZEOF(NW_IP_S));
 
-    TAL_PR_DEBUG("-------------event callback-------------");
+    TRACE_D("-------------event callback-------------");
     switch (event) {
         case WFE_CONNECTED:{
             is_connected = true;
-            TAL_PR_DEBUG("connection succeeded!");
+            TRACE_D("connection succeeded!");
 
             /* output ip information */
             op_ret = tal_wifi_get_ip(WF_STATION, &sta_info);
             if (OPRT_OK != op_ret) {
-                TAL_PR_ERR("get station ip error");
+                TRACE_E("get station ip error");
                 return;
             }
 
 #ifdef nwipstr                
             if(IS_NW_IPV4_ADDR(&sta_info)) {
-                TAL_PR_NOTICE("gw: %s", sta_info.nwgwstr);
-                TAL_PR_NOTICE("ip: %s", sta_info.nwipstr);
-                TAL_PR_NOTICE("mask: %s", sta_info.nwmaskstr);
+                TRACE_I("gw: %s", sta_info.nwgwstr);
+                TRACE_I("ip: %s", sta_info.nwipstr);
+                TRACE_I("mask: %s", sta_info.nwmaskstr);
             }else {
-                TAL_PR_NOTICE("ip: %s", sta_info.addr.ip6.ip);
-                TAL_PR_NOTICE("islinklocal: %d", sta_info.addr.ip6.islinklocal);
+                TRACE_I("ip: %s", sta_info.addr.ip6.ip);
+                TRACE_I("islinklocal: %d", sta_info.addr.ip6.islinklocal);
             }
 #else 
-            TAL_PR_NOTICE("gw: %s", sta_info.gw);
-            TAL_PR_NOTICE("ip: %s", sta_info.ip);
-            TAL_PR_NOTICE("mask: %s", sta_info.mask);
+            TRACE_I("gw: %s", sta_info.gw);
+            TRACE_I("ip: %s", sta_info.ip);
+            TRACE_I("mask: %s", sta_info.mask);
 #endif
             break;
         }
 
         case WFE_CONNECT_FAILED: {
-            TAL_PR_DEBUG("connection fail!");
+            TRACE_D("connection fail!");
             break;
         }
 
         case WFE_DISCONNECTED: {
-            TAL_PR_DEBUG("disconnect!");
+            TRACE_D("disconnect!");
             break;        
         }
     }
@@ -84,7 +85,7 @@ VOID ezlopi_wifi_initialize(VOID)
         memset(wifi_interface, 0, sizeof(s_ezlopi_wifi_ap_itf_t));
     /*WiFi init*/
         // tuya_iot_wf_timeout_set(60);
-        TUYA_CALL_ERR_LOG(tal_wifi_init(wifi_event_callback));
+        BK_CALL_ERR_LOG(tal_wifi_init(wifi_event_callback));
     }
 }
 
@@ -96,7 +97,7 @@ VOID ezlopi_wifi_connect_from_id_bin(VOID)
     if ((NULL != wifi_ssid) && ('\0' != wifi_ssid[0]) &&
         (NULL != wifi_password) && ('\0' != wifi_password[0]))
     {
-        // TUYA_CALL_ERR_LOG(ezlopi_wifi_connect(wifi_ssid, wifi_password));
+        // TBK_CALL_ERR_LOG(ezlopi_wifi_connect(wifi_ssid, wifi_password));
         ezlopi_wifi_connect(wifi_ssid, wifi_password);
     }
 }
@@ -105,13 +106,13 @@ VOID ezlopi_wifi_connect(const char* ssid, const char* pass)
 {
     OPERATE_RET rt = OPRT_OK;
     /*Set WiFi mode to station*/
-    TUYA_CALL_ERR_LOG(tal_wifi_set_work_mode(WWM_STATION));
+    BK_CALL_ERR_LOG(tal_wifi_set_work_mode(WWM_STATION));
     
     /*STA mode, connect to WiFi*/
-    TAL_PR_NOTICE("\r\nconnect wifi ssid: %s, password: %s\r\n", ssid, pass);
+    TRACE_I("\r\nconnect wifi ssid: %s, password: %s\r\n", ssid, pass);
     // tal_wifi_lp_enable();
-    // TUYA_CALL_ERR_LOG(tal_wifi_station_connect((SCHAR_T *)ssid, (SCHAR_T *)pass));
-    TUYA_CALL_ERR_LOG(tkl_wifi_station_connect((SCHAR_T *)ssid, (SCHAR_T *)pass));
+    // BK_CALL_ERR_LOG(tal_wifi_station_connect((SCHAR_T *)ssid, (SCHAR_T *)pass));
+    BK_CALL_ERR_LOG(tkl_wifi_station_connect((SCHAR_T *)ssid, (SCHAR_T *)pass));
 }
 
 bool ezlopi_wifi_is_connected()

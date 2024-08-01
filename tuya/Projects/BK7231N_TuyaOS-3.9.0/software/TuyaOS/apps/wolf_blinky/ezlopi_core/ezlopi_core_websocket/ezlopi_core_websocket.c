@@ -1,4 +1,4 @@
-#include "tal_log.h"
+#include "ezlopi_util_trace.h"
 #include "FreeRTOS.h"
 #include "ezlopi_core_websocket.h"
 #include "cert.h"
@@ -48,7 +48,7 @@ esp_websocket_client_handle_t ezlopi_websocket_client_init(cJSON* uri, void (*ms
 
         char websocket_url_buffer[128] = {0};
 
-        TAL_PR_DEBUG("Connecting to %s...", websocket_cfg.url);
+        TRACE_D("Connecting to %s...", websocket_cfg.url);
         strncpy(websocket_url_buffer, websocket_cfg.url, sizeof(websocket_url_buffer) - 1);
         websocket_url_buffer[sizeof(websocket_url_buffer) - 1] = '\0';        
         websocket_cfg.url = websocket_url_buffer;
@@ -68,7 +68,7 @@ static void websocket_event_handler(esp_websocket_client_event_t *evt)
     {
     case WEBSOCKET_EVENT_ON_CONNECTED:
     {
-        TAL_PR_DEBUG("WEBSOCKET_EVENT_CONNECTED");
+        TRACE_D("WEBSOCKET_EVENT_CONNECTED");
         if(evt && evt->connection_upcall)
         {
             evt->connection_upcall(true);
@@ -77,7 +77,7 @@ static void websocket_event_handler(esp_websocket_client_event_t *evt)
     }
     case WEBSOCKET_EVENT_DISCONNECTED:
     {
-        TAL_PR_DEBUG("WEBSOCKET_EVENT_DISCONNECTED");
+        TRACE_D("WEBSOCKET_EVENT_DISCONNECTED");
         if(evt && evt->connection_upcall)
         {
             evt->connection_upcall(false);
@@ -86,7 +86,7 @@ static void websocket_event_handler(esp_websocket_client_event_t *evt)
     }
     case WEBSOCKET_EVENT_ON_DATA:
     {
-        TAL_PR_DEBUG("WEBSOCKET_EVENT_ON_DATA");
+        TRACE_D("WEBSOCKET_EVENT_ON_DATA");
         if(evt && evt->data && evt->data_len && evt->msg_upcall)
         {
             evt->msg_upcall(evt->data, evt->data_len);
@@ -95,12 +95,12 @@ static void websocket_event_handler(esp_websocket_client_event_t *evt)
     }
     case WEBSOCKET_EVENT_ERROR:
     {
-        TAL_PR_DEBUG("WEBSOCKET_EVENT_ERROR");
+        TRACE_D("WEBSOCKET_EVENT_ERROR");
         break;
     }
     default:
     {
-        TAL_PR_DEBUG("Websocket event type not-implemented! value: %u", evt->event_id);
+        TRACE_D("Websocket event type not-implemented! value: %u", evt->event_id);
         break;
     }
     }

@@ -41,7 +41,12 @@
         "typeindex": "c",
         "typeinfo": "c",
         "ezlopi_core_api_macros.h": "c",
-        "ieee.h": "c"
+        "ieee.h": "c",
+        "system.h": "c",
+        "ezlopi_util_trace.h": "c",
+        "tal_uart.h": "c",
+        "tuya_cloud_types.h": "c",
+        "tal_thread.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
