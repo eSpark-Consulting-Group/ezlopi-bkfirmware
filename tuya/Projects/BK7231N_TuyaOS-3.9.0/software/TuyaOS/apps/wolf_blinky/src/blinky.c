@@ -20,6 +20,7 @@
 
 #include "ezlopi_core_wifi.h"
 #include "ezlopi_service_webprov.h"
+#include "ezlopi_service_broadcast.h"
 #include "ezlopi_util_trace.h"
 #include "ezlopi_core_ezlopi.h"
 
@@ -91,6 +92,8 @@ STATIC VOID user_main(VOID_T)
     TRACE_S("Wifi Connected");
 
     ezlopi_init();
+
+    ezlopi_service_broadcast_init();
 
     tal_system_sleep(1000);
 

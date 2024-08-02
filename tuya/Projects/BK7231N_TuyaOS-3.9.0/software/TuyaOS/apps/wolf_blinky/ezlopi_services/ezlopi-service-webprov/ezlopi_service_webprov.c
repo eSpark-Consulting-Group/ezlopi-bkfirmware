@@ -17,7 +17,7 @@
 // #include "ezlopi_core_factory_info.h"
 // #include "ezlopi_core_cjson_macros.h"
 #include "ezlopi_core_websocket.h"
-// #include "ezlopi_core_ezlopi_broadcast.h"
+#include "ezlopi_core_ezlopi_broadcast.h"
 
 #include "ezlopi_service_webprov.h"
 // #include "EZLOPI_USER_CONFIG.h"
@@ -127,7 +127,7 @@ static void __fetch_wss_endpoint(void* pv)
                     if (cjson_uri)
                     {
                         TRACE_D("uri: %s", cjson_uri->valuestring ? cjson_uri->valuestring : "NULL");
-                        // ezlopi_core_ezlopi_broadcast_method_add(__send_str_data_to_nma_websocket, "nma-websocket", 4);
+                        ezlopi_core_ezlopi_broadcast_method_add(__send_str_data_to_nma_websocket, "nma-websocket", 4);
                         ezlopi_websocket_client_init(cjson_uri, __message_upcall, __connection_upcall);
                         task_complete = 1;
                     }

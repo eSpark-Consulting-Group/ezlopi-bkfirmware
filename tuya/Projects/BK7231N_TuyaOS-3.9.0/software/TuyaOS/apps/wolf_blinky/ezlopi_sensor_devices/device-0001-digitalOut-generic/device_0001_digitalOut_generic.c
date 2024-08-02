@@ -6,7 +6,7 @@
 // #include "ezlopi_core_cloud.h"
 // #include "ezlopi_core_cjson_macros.h"
 #include "ezlopi_core_valueformatter.h"
-// #include "ezlopi_core_device_value_updated.h"
+#include "ezlopi_core_device_value_updated.h"
 
 #include "ezlopi_hal_gpio.h"
 
@@ -50,27 +50,27 @@ int device_0001_digitalOut_generic(e_ezlopi_actions_t action, l_ezlopi_item_t* i
     {
     case EZLOPI_ACTION_PREPARE:
     {
-        ret = __prepare(arg);
         TRACE_W("device_0001_digitalOut_generic -> EZLOPI_ACTION_PREPARE");
+        ret = __prepare(arg);
         break;
     }
     case EZLOPI_ACTION_INITIALIZE:
     {
-        ret = __init(item);
         TRACE_W("device_0001_digitalOut_generic -> EZLOPI_ACTION_INITIALIZE");
+        ret = __init(item);
         break;
     }
     case EZLOPI_ACTION_SET_VALUE:
     {
-        ret = __set_value(item, arg);
         TRACE_W("device_0001_digitalOut_generic -> EZLOPI_ACTION_SET_VALUE");
+        ret = __set_value(item, arg);
         break;
     }
     case EZLOPI_ACTION_HUB_GET_ITEM:
     case EZLOPI_ACTION_GET_EZLOPI_VALUE:
     {
-        ret = __get_value_cjson(item, arg);
         TRACE_W("device_0001_digitalOut_generic -> EZLOPI_ACTION_GET_EZLOPI_VALUE");
+        ret = __get_value_cjson(item, arg);
         break;
     }
 
@@ -516,7 +516,7 @@ static int __set_value(l_ezlopi_item_t* item, void* arg)
                 if (GPIO_IS_VALID_GPIO(item->interface.gpio.gpio_out.gpio_num))
                 {
                     __set_gpio_value(item, value);
-                    // ezlopi_device_value_updated_from_device_broadcast(item);
+                    ezlopi_device_value_updated_from_device_broadcast(item);
                     ret =1;
                 }
             }
@@ -533,7 +533,7 @@ static int __set_value(l_ezlopi_item_t* item, void* arg)
                             TRACE_D("GPIO-pin: %d", curr_item->interface.gpio.gpio_out.gpio_num);
                             TRACE_D("value: %d", value);
                             __set_gpio_value(curr_item, value);
-                            // ezlopi_device_value_updated_from_device_broadcast(curr_item);
+                            ezlopi_device_value_updated_from_device_broadcast(curr_item);
                             ret = 1;
                         }
                         curr_item = curr_item->next;
@@ -542,7 +542,7 @@ static int __set_value(l_ezlopi_item_t* item, void* arg)
                 }
 
                 item->interface.gpio.gpio_out.value = value;
-                // ezlopi_device_value_updated_from_device_broadcast(item);
+                ezlopi_device_value_updated_from_device_broadcast(item);
             }
         }
     }
@@ -562,7 +562,7 @@ static void __interrupt_upcall(void* arg)
     {
         __toggle_gpio(item);
         TRACE_W("INTERRUPT UPCALL %d", __LINE__);
-        // ezlopi_device_value_updated_from_device_broadcast(item);
+        ezlopi_device_value_updated_from_device_broadcast(item);
     }
 }
 

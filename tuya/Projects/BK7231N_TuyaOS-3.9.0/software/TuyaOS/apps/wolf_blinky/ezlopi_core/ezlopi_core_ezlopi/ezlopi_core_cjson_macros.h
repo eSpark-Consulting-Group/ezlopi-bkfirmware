@@ -42,7 +42,7 @@
     {                                                                                       \
         if (object)                                                                         \
         {                                                                                   \
-            char *obj_str = cJSON_Print(__FUNCTION__, object);                              \
+            char *obj_str = cJSON_Print(object);                              \
             if (obj_str)                                                                    \
             {                                                                               \
                 TRACE_D("%s[%d]: %s", name ? name : ezlopi__str, strlen(obj_str), obj_str); \
