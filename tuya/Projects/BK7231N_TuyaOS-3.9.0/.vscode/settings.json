@@ -46,7 +46,8 @@
         "ezlopi_util_trace.h": "c",
         "tal_uart.h": "c",
         "tuya_cloud_types.h": "c",
-        "tal_thread.h": "c"
+        "tal_thread.h": "c",
+        "semphr.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

@@ -347,7 +347,7 @@ s_ezlopi_http_data_t* ezlopi_http_get_request(const char* cloud_url, const char*
             }
             else
             {
-                TRACE_D("Error perform http request %d", (int)err);
+                TRACE_E("Error perform http request %d", (int)err);
             }
 
             ezlopi_http_free_rx_data(my_data);

@@ -76,15 +76,15 @@ static void __connection_upcall(bool connected)
     {
         if (0 == prev_status)
         {
-            TRACE_D("Web-socket Connected.");
+            TRACE_S("Web-socket Connected.");
         }
         else
         {
-            TRACE_D("Web-socket Re-connected.");
+            TRACE_S("Web-socket Re-connected.");
         }
 
         prev_status = 2;
-        TRACE_D("Starting registration process....");
+        TRACE_I("Starting registration process....");
         ezlopi_core_ezlopi_methods_registration_init();
     }
     else
@@ -186,7 +186,7 @@ static int __send_cjson_data_to_nma_websocket(cJSON* cj_data)
         char* data_buffer = (char*)malloc(buffer_len * sizeof(char));
         if (data_buffer && buffer_len)
         {
-            TRACE_D("-----------------------------> buffer acquired!");
+            TRACE_I("-----------------------------> buffer acquired!");
             memset(data_buffer, 0, buffer_len);
 
             if (true == cJSON_PrintPreallocated(cj_data, data_buffer, buffer_len, false))
@@ -195,15 +195,15 @@ static int __send_cjson_data_to_nma_websocket(cJSON* cj_data)
             }
             else
             {
-                TRACE_D("FAILED!");
+                TRACE_E("FAILED!");
             }
 
             free(data_buffer);
-            TRACE_D("-----------------------------> buffer released!");
+            TRACE_I("-----------------------------> buffer released!");
         }
         else
         {
-            TRACE_D("-----------------------------> buffer acquired failed!");
+            TRACE_E("-----------------------------> buffer acquired failed!");
         }
     }
 
@@ -234,7 +234,7 @@ static int __send_str_data_to_nma_websocket(char* str_data)
         }
         else
         {
-            TRACE_E("## WSC-SENDING failed >>>>>>>>>>>>>>>>>>>\r\n%s", str_data);
+            TRACE_W("## WSC-SENDING failed >>>>>>>>>>>>>>>>>>>\r\n%s", str_data);
         }
     }
 

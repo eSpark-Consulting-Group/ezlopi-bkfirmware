@@ -1,4 +1,3 @@
-#include "tal_log.h"
 #include "ezlopi_util_trace.h"
 
 #include "ezlopi_cloud_constants.h"

@@ -79,7 +79,6 @@ STATIC VOID user_main(VOID_T)
     {
         tal_thread_create_and_start(&free_heap_thrd, NULL, NULL, __free_heap_task, NULL, &thread_cfg);
     }
-    sys_msleep(4000);
 
     ezlopi_wifi_initialize();
     while (!ezlopi_wifi_is_connected()) 
@@ -89,6 +88,7 @@ STATIC VOID user_main(VOID_T)
         tal_system_sleep(1000);
     }
     TRACE_S("Wifi Connected");
+    tal_system_sleep(1000);
 
     ezlopi_service_web_provisioning_init();
     
@@ -127,8 +127,17 @@ VOID_T tuya_app_main(VOID)
 }
 STATIC VOID __free_heap_task(PVOID_T args)
 {
+    int free_heap = 0;
+    float free_heap_kb;
     for (;;) {
-        TAL_PR_NOTICE("free heap: %d", tal_system_get_free_heap_size());
+        free_heap = tal_system_get_free_heap_size();
+        free_heap_kb = free_heap/1024;
+        TAL_PR_NOTICE("free heap: %d B       %.4f KB", free_heap, free_heap_kb);
+        // TRACE_W("Free Heap Size: %d B ", free_heap);
+        if(free_heap <= 5*1024)
+        {
+            tal_system_reset();
+        }
         tal_system_sleep(3000);
     }
 }

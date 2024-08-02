@@ -1,4 +1,3 @@
-// #include "tal_log.h"
 #include "tuya_cloud_types.h"
 #include "tuya_iot_wifi_api.h"
 #include "ezlopi_core_wifi.h"

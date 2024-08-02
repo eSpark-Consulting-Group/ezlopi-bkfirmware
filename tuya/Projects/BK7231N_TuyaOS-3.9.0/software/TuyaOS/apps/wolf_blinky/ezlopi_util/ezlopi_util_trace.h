@@ -2,7 +2,6 @@
 #define _EZLOPI_UTIL_H_
 
 // #include "../../build/config/sdkconfig.h"
-// #include "esp_log.h"
 #include "tal_log.h"
 #include "FreeRTOS.h"
 #include "EZLOPI_USER_CONFIG.h"
@@ -49,7 +48,7 @@ extern "C"
 
 #define trace_color(log_lvl, txt_color, X, reg...)                                                 \
     {                                                                                     \
-        log_and_send_to_uart(TUYA_UART_NUM_0, log_lvl, "\x1B[%sm %s[%d]:" X "\x1B[0m\n", txt_color, __FILE__, __LINE__, ##reg); \
+        log_and_send_to_uart(TUYA_UART_NUM_0, log_lvl, "\x1B[%sm %s[%d]:" X "\x1B[0m\n", txt_color, __FILENAME__, __LINE__, ##reg); \
     }
 
 #if 0

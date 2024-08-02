@@ -1,11 +1,11 @@
 #include <string.h>
 
-#include "tal_log.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
 // #include "trace.h"
 #include "ezlopi_cloud_registration.h"
+#include "ezlopi_util_trace.h"
 // #include "web_provisioning.h"
 // #include "ezlopi_cloud_constants.h"
 #include "ezlopi_core_websocket.h"
@@ -22,15 +22,15 @@ void registration_init(void)
 #define ezlopi_key_method_str "method"
 void registered(cJSON *cj_request, cJSON *cj_response)
 {
-    cJSON_AddItemReferenceToObject(cj_response, ezlopi_id_str, cJSON_GetObjectItem(cj_request, ezlopi_id_str)); //FIXME
+    cJSON_AddItemReferenceToObject(cj_response, ezlopi_id_str, cJSON_GetObjectItem(cj_request, ezlopi_id_str));
     cJSON_AddItemReferenceToObject(cj_response, ezlopi_key_method_str, cJSON_GetObjectItem(cj_request, ezlopi_key_method_str));
-    TAL_PR_ERR("Device registration successful.");
+    TRACE_S("Device registration successful.");
     is_registered = 1;
 }
 
 static void registration_process(void *pv)
 {
-    TAL_PR_DEBUG("Registration Process Started!");
+    TRACE_D("Registration Process Started!");
     char mac_str[18];
     uint8_t mac_addr[6];
     char reg_str[300] = "";
@@ -48,13 +48,13 @@ static void registration_process(void *pv)
 
     while (false == ezlopi_websocket_client_is_connected())
     {
-        TAL_PR_DEBUG("Websocket is Disconnected!");
+        TRACE_D("Websocket is Disconnected!");
         vTaskDelay(200 / portTICK_RATE_MS);
     }
 
     while (0 == is_registered)
     {
-        TAL_PR_DEBUG("Trying to Register device!");
+        TRACE_D("Trying to Register device!");
         char *cjson_str_data = cJSON_Print(cjson_data);
         ezlopi_websocket_client_send(cjson_str_data, strlen(cjson_str_data));
         free(cjson_str_data);
@@ -66,7 +66,7 @@ static void registration_process(void *pv)
     {
         cJSON_Delete(cjson_data);
     }
-    TAL_PR_DEBUG("Register Task Ended");
+    TRACE_D("Register Task Ended");
 
     vTaskDelete(NULL);
 }
