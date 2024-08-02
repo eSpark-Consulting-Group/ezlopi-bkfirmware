@@ -182,8 +182,8 @@ static int __send_cjson_data_to_nma_websocket(cJSON* cj_data)
 
     if (cj_data)
     {
-        uint32_t buffer_len = 1000;
-        char* data_buffer = (char*)malloc(buffer_len * sizeof(char));
+        uint32_t buffer_len = 0;
+        char* data_buffer = ezlopi_core_buffer_acquire(&buffer_len, 1000);
         if (data_buffer && buffer_len)
         {
             TRACE_I("-----------------------------> buffer acquired!");
@@ -198,7 +198,7 @@ static int __send_cjson_data_to_nma_websocket(cJSON* cj_data)
                 TRACE_E("FAILED!");
             }
 
-            free(data_buffer);
+            ezlopi_core_buffer_release();
             TRACE_I("-----------------------------> buffer released!");
         }
         else

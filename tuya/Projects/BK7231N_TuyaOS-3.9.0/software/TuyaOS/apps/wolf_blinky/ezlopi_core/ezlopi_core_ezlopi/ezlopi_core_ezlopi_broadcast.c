@@ -71,9 +71,8 @@ int ezlopi_core_ezlopi_broadcast_cjson(cJSON* cj_data)
 
     if (cj_data)
     {
-        uint32_t buffer_len = 1000;
-        // char* data_buffer = ezlopi_core_buffer_acquire(&buffer_len, 5000);
-        char* data_buffer = ezlopi_malloc(__FUNCTION__,1000*sizeof(uint32_t));
+        uint32_t buffer_len = 0;
+        char* data_buffer = ezlopi_core_buffer_acquire(&buffer_len, 1000);
         if (data_buffer && buffer_len)
         {
             TRACE_I("-----------------------------> buffer acquired!");
@@ -85,8 +84,7 @@ int ezlopi_core_ezlopi_broadcast_cjson(cJSON* cj_data)
                 ret = __call_broadcast_methods(data_buffer);
             }
 
-            // ezlopi_core_buffer_release();
-            ezlopi_free(__FUNCTION__, data_buffer);
+            ezlopi_core_buffer_release();
             TRACE_I("-----------------------------> buffer released!");
         }
         else

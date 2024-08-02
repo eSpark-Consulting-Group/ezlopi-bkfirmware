@@ -74,7 +74,7 @@ STATIC VOID user_main(VOID_T)
     THREAD_CFG_T thread_cfg = 
     {
         .thrdname = "free_heap",
-        .stackDepth = 1024,
+        .stackDepth = 1024 * 3,
         .priority = THREAD_PRIO_5,
     };
     if (NULL == free_heap_thrd) 
@@ -99,22 +99,22 @@ STATIC VOID user_main(VOID_T)
 
     ezlopi_service_web_provisioning_init();
     
-    while(1) {  
+    // while(1) {  
         // tkl_gpio_write(LED_PIN, TUYA_GPIO_LEVEL_HIGH);
         // tal_uart_write(TUYA_UART_NUM_0, turnOn, sizeof(turnOn));
-        tal_system_sleep(1000);
+        // tal_system_sleep(1000);
 
         // tkl_gpio_write(LED_PIN, TUYA_GPIO_LEVEL_LOW);
-        tal_log_set_manage_attr(TAL_LOG_LEVEL_DEBUG);
+        // tal_log_set_manage_attr(TAL_LOG_LEVEL_DEBUG);
         // tal_uart_write(TUYA_UART_NUM_0, turnOff, sizeof(turnOff));
         // tal_system_sleep(blink_interval);
-        TRACE_E("Tuya Alive");
+        // TRACE_E("Tuya Alive");
         // TRACE_D("CHECKING TRACEEEEEE ");
         // TRACE_W("CHECKING TRACEEEEEE ");
         // TRACE_I("CHECKING TRACEEEEEE ");
         // TRACE_S("CHECKING TRACEEEEEE ");
 
-    }
+    // }
 
     return;
 }
@@ -139,8 +139,8 @@ STATIC VOID __free_heap_task(PVOID_T args)
     for (;;) {
         free_heap = tal_system_get_free_heap_size();
         free_heap_kb = free_heap/1024;
-        TAL_PR_NOTICE("free heap: %d B       %.4f KB", free_heap, free_heap_kb);
-        // TRACE_W("Free Heap Size: %d B ", free_heap);
+        // TAL_PR_NOTICE("free heap: %d B       %.4f KB", free_heap, free_heap_kb);
+        TRACE_W("free heap: %d B       %.4f KB", free_heap, free_heap_kb);
         if(free_heap <= 5*1024)
         {
             tal_system_reset();

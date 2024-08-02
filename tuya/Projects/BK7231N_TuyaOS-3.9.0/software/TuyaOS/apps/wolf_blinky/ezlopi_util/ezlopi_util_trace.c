@@ -136,9 +136,6 @@ void log_and_send_to_uart(TUYA_UART_NUM_E port_id, TAL_LOG_LEVEL_E log_level, co
     offset = vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-    // Add reset color code and newline
-    strncat(buffer, "\x1B[0m\n", sizeof(buffer) - strlen(buffer) - 1);
-
     // Send the formatted message to UART
     tal_uart_write(port_id, (const UINT8_T *)buffer, strlen(buffer));
 }
