@@ -18,6 +18,8 @@ LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/ezlopi_cloud
 LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/ezlopi_services
 LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/ezlopi_util
 LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/ezlopi_user_config
+LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/ezlopi_hal
+LOCAL_TUYA_SDK_INC += $(LOCAL_PATH)/ezlopi_sensor_devices
 
 
 # 模块对外CFLAGS：其他组件编译时可感知到
@@ -31,6 +33,8 @@ LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/ezlopi_cloud -name "*.c" -o -name 
 LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/ezlopi_services -name "*.c" -o -name "*.cpp" -o -name "*.cc")
 LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/ezlopi_util -name "*.c" -o -name "*.cpp" -o -name "*.cc")
 LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/ezlopi_user_config -name "*.c" -o -name "*.cpp" -o -name "*.cc")
+LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/ezlopi_hal -name "*.c" -o -name "*.cpp" -o -name "*.cc")
+LOCAL_SRC_FILES += $(shell find $(LOCAL_PATH)/ezlopi_sensor_devices -name "*.c" -o -name "*.cpp" -o -name "*.cc")
 
 # 模块内部CFLAGS：仅供本组件使用
 LOCAL_CFLAGS += -DDEBUG_WOLFSSL

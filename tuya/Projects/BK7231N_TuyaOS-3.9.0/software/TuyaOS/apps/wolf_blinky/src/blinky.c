@@ -21,6 +21,7 @@
 #include "ezlopi_core_wifi.h"
 #include "ezlopi_service_webprov.h"
 #include "ezlopi_util_trace.h"
+#include "ezlopi_core_ezlopi.h"
 
 #define PID  "tvjs8eysp0imads8"
 #define LED_PIN TUYA_GPIO_NUM_26
@@ -45,15 +46,15 @@ STATIC VOID user_main(VOID_T)
     TUYA_LwIP_Init();
 #endif
 
-    TUYA_GPIO_NUM_E pin_id = LED_PIN;
+    // TUYA_GPIO_NUM_E pin_id = LED_PIN;
     TUYA_CALL_ERR_LOG(tuya_iot_init("./"));
-    TUYA_GPIO_BASE_CFG_T led_cfg = {
-        .mode = TUYA_GPIO_PUSH_PULL,
-        .direct = TUYA_GPIO_OUTPUT,
-        .level = TUYA_GPIO_LEVEL_LOW
-    };
-    TUYA_CALL_ERR_LOG(tkl_gpio_init(pin_id, &led_cfg));
-    UINT32_T blink_interval = 1000;
+    // TUYA_GPIO_BASE_CFG_T led_cfg = {
+    //     .mode = TUYA_GPIO_PUSH_PULL,
+    //     .direct = TUYA_GPIO_OUTPUT,
+    //     .level = TUYA_GPIO_LEVEL_LOW
+    // };
+    // TUYA_CALL_ERR_LOG(tkl_gpio_init(pin_id, &led_cfg));
+    // UINT32_T blink_interval = 1000;
 
     INT_T result = OPRT_OK;
     TAL_UART_CFG_T cfg = {0};
@@ -88,20 +89,23 @@ STATIC VOID user_main(VOID_T)
         tal_system_sleep(1000);
     }
     TRACE_S("Wifi Connected");
+
+    ezlopi_init();
+
     tal_system_sleep(1000);
 
     ezlopi_service_web_provisioning_init();
     
     while(1) {  
-        tkl_gpio_write(LED_PIN, TUYA_GPIO_LEVEL_HIGH);
+        // tkl_gpio_write(LED_PIN, TUYA_GPIO_LEVEL_HIGH);
         // tal_uart_write(TUYA_UART_NUM_0, turnOn, sizeof(turnOn));
-        tal_system_sleep(blink_interval);
+        tal_system_sleep(1000);
 
-        tkl_gpio_write(LED_PIN, TUYA_GPIO_LEVEL_LOW);
+        // tkl_gpio_write(LED_PIN, TUYA_GPIO_LEVEL_LOW);
         tal_log_set_manage_attr(TAL_LOG_LEVEL_DEBUG);
         // tal_uart_write(TUYA_UART_NUM_0, turnOff, sizeof(turnOff));
-        tal_system_sleep(blink_interval);
-        // TRACE_E("CHECKING TRACEEEEEE ");
+        // tal_system_sleep(blink_interval);
+        TRACE_E("Tuya Alive");
         // TRACE_D("CHECKING TRACEEEEEE ");
         // TRACE_W("CHECKING TRACEEEEEE ");
         // TRACE_I("CHECKING TRACEEEEEE ");
