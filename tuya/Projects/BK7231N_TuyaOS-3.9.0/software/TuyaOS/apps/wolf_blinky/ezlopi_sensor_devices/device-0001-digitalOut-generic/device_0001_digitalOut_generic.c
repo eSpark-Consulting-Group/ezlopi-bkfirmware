@@ -395,6 +395,7 @@ static int __init(l_ezlopi_item_t* item)
             {
                 // digital_io_write_gpio_value(item);
                 tkl_gpio_write(pin_id, TUYA_GPIO_LEVEL_HIGH);
+                item->interface.gpio.gpio_out.value = TUYA_GPIO_LEVEL_HIGH;
                 ret = 1;
             }
             else

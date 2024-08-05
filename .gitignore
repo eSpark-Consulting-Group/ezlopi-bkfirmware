@@ -1,7 +1,6 @@
 *.bin
 *.map
 output/
-docs/
 *.zip
 *.tar
 *.o
@@ -9,3 +8,4 @@ docs/
 *.stripped
 Debug/
 build_param
+/tuya/Projects/BK7231N_TuyaOS-3.9.0/software/TuyaOS/docs
