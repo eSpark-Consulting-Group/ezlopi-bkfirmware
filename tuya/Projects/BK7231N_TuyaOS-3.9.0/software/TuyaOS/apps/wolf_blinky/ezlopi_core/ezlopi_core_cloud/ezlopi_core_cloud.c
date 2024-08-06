@@ -26,27 +26,27 @@ static uint32_t g_expression_id = 0;
 
 static uint32_t ezlopi_get_mac_crc(void)
 {
-    uint32_t crc = 47861841;
-    // uint8_t mac_base[6] = { 0 };
+    uint32_t crc = 0;
+    uint8_t mac_base[6] = { 0xA8,0x80,0x55,0x0E,0x3D,0x9B };
     // esp_efuse_mac_get_default((uint8_t*)mac_base);
 
-    // // Perform CRC calculation on each byte of the MAC address
-    // for (int i = 0; i < 6; i++)
-    // {
-    //     crc ^= ((uint16_t)mac_base[i]) << 8;
+    // Perform CRC calculation on each byte of the MAC address
+    for (int i = 0; i < 6; i++)
+    {
+        crc ^= ((uint16_t)mac_base[i]) << 8;
 
-    //     for (int j = 0; j < 8; j++)
-    //     {
-    //         if (crc & 0x8000)
-    //         {
-    //             crc = (crc << 1) ^ CRC16_POLY;
-    //         }
-    //         else
-    //         {
-    //             crc <<= 1;
-    //         }
-    //     }
-    // }
+        for (int j = 0; j < 8; j++)
+        {
+            if (crc & 0x8000)
+            {
+                crc = (crc << 1) ^ CRC16_POLY;
+            }
+            else
+            {
+                crc <<= 1;
+            }
+        }
+    }
 
     return (crc << 8) & 0x00FFFF00;
 }

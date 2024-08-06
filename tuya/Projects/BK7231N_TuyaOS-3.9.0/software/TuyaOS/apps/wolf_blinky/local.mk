@@ -44,7 +44,10 @@ LOCAL_CFLAGS += -I$(TUYA_SDK_PATH)/software/TuyaOS/vendor/bk7231n/bk7231n_os/bek
 LOCAL_CFLAGS += -I$(TUYA_SDK_PATH)/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/app/config
 LOCAL_CFLAGS += -I$(TUYA_SDK_PATH)/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/os/FreeRTOSv9.0.0/FreeRTOS/Source/include
 LOCAL_CFLAGS += -I$(TUYA_SDK_PATH)/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/os/include
-
+LOCAL_CFLAGS += -I$(TUYA_SDK_PATH)/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/func/user_driver/
+LOCAL_CFLAGS += -I$(TUYA_SDK_PATH)/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/common/
+LOCAL_CFLAGS += -I$(TUYA_SDK_PATH)/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/driver/common/
+LOCAL_CFLAGS += -I$(TUYA_SDK_PATH)/software/TuyaOS/vendor/bk7231n/bk7231n_os/beken378/driver/include/
 # 全局变量赋值
 TUYA_SDK_INC += $(LOCAL_TUYA_SDK_INC)  # 此行勿修改
 TUYA_SDK_CFLAGS += $(LOCAL_TUYA_SDK_CFLAGS)  # 此行勿修改

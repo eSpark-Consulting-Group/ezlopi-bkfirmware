@@ -8,6 +8,7 @@
 #include "tal_thread.h"
 #include "tal_system.h"
 #include "tal_memory.h"
+#include "BkDriverFlash.h"
 
 #ifdef ENABLE_WIFI_SERVICE
 #include "tuya_iot_wifi_api.h"
@@ -31,6 +32,7 @@
 /* Function Prototypes */
 
 STATIC VOID __free_heap_task(PVOID_T args);
+void flash_read_write_test(void);
 
 /* Thread Handles */
 
@@ -47,15 +49,7 @@ STATIC VOID user_main(VOID_T)
     TUYA_LwIP_Init();
 #endif
 
-    // TUYA_GPIO_NUM_E pin_id = LED_PIN;
     TUYA_CALL_ERR_LOG(tuya_iot_init("./"));
-    // TUYA_GPIO_BASE_CFG_T led_cfg = {
-    //     .mode = TUYA_GPIO_PUSH_PULL,
-    //     .direct = TUYA_GPIO_OUTPUT,
-    //     .level = TUYA_GPIO_LEVEL_LOW
-    // };
-    // TUYA_CALL_ERR_LOG(tkl_gpio_init(pin_id, &led_cfg));
-    // UINT32_T blink_interval = 1000;
 
     INT_T result = OPRT_OK;
     TAL_UART_CFG_T cfg = {0};
@@ -87,7 +81,7 @@ STATIC VOID user_main(VOID_T)
     {  
         ezlopi_wifi_connect_from_id_bin();
         TRACE_E("Not Connected");
-        tal_system_sleep(1000);
+        tal_system_sleep(200);
     }
     TRACE_S("Wifi Connected");
 
@@ -99,22 +93,7 @@ STATIC VOID user_main(VOID_T)
 
     ezlopi_service_web_provisioning_init();
     
-    // while(1) {  
-        // tkl_gpio_write(LED_PIN, TUYA_GPIO_LEVEL_HIGH);
-        // tal_uart_write(TUYA_UART_NUM_0, turnOn, sizeof(turnOn));
-        // tal_system_sleep(1000);
-
-        // tkl_gpio_write(LED_PIN, TUYA_GPIO_LEVEL_LOW);
-        // tal_log_set_manage_attr(TAL_LOG_LEVEL_DEBUG);
-        // tal_uart_write(TUYA_UART_NUM_0, turnOff, sizeof(turnOff));
-        // tal_system_sleep(blink_interval);
-        // TRACE_E("Tuya Alive");
-        // TRACE_D("CHECKING TRACEEEEEE ");
-        // TRACE_W("CHECKING TRACEEEEEE ");
-        // TRACE_I("CHECKING TRACEEEEEE ");
-        // TRACE_S("CHECKING TRACEEEEEE ");
-
-    // }
+    flash_read_write_test();
 
     return;
 }
@@ -147,4 +126,45 @@ STATIC VOID __free_heap_task(PVOID_T args)
         }
         tal_system_sleep(3000);
     }
+}
+
+void flash_read_write_test()
+{
+    // Initialize the flash hardware
+    
+    hal_flash_init();
+    int data_offset = 0x0;
+    
+    // Prepare the input buffer and its length
+    char* inBuffer = "Hello Flash Write World!";
+    int inBufferLen = strlen(inBuffer);
+
+    // Ensure the output buffer is large enough
+    char outBuffer[256] = {0};
+
+    TRACE_S("Before -----> %s", outBuffer);
+
+    // Erase the flash sector before writing
+    if (bk_flash_erase(BK_PARTITION_NET_PARAM, data_offset, inBufferLen) != 0) {
+        TRACE_E("Flash Erase Failed");
+        return;
+    }
+
+    // Write to flash
+    if (bk_flash_write(BK_PARTITION_NET_PARAM, data_offset, inBuffer, inBufferLen) == 0) {
+        TRACE_I("Flash Write Success");
+    } else {
+        TRACE_E("Flash Write Failed");
+        return;
+    }
+
+    // Read from flash
+    if (bk_flash_read(BK_PARTITION_NET_PARAM, data_offset, outBuffer, inBufferLen) == 0) {
+        TRACE_I("Flash Read Success");
+    } else {
+        TRACE_E("Flash Read Failed");
+        return;
+    }
+
+    TRACE_S("After -----> %s", outBuffer);
 }
