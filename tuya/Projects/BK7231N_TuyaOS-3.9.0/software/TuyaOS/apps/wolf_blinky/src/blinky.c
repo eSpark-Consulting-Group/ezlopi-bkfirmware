@@ -8,7 +8,6 @@
 #include "tal_thread.h"
 #include "tal_system.h"
 #include "tal_memory.h"
-// #include "BkDriverFlash.h"
 
 #ifdef ENABLE_WIFI_SERVICE
 #include "tuya_iot_wifi_api.h"
@@ -35,6 +34,7 @@
 /* Function Prototypes */
 
 STATIC VOID __free_heap_task(PVOID_T args);
+uint32_t __ezlopi_factory_info_v3_get_abs_address(uint32_t relative_offset, e_factory_info_v3_partition_type_t partition_type);
 void flash_read_write_test(void);
 
 /* Thread Handles */
@@ -42,6 +42,21 @@ void flash_read_write_test(void);
 STATIC THREAD_HANDLE ty_app_thread = NULL;
 STATIC THREAD_HANDLE bk_rcv_thread = NULL;
 STATIC THREAD_HANDLE free_heap_thrd = NULL;
+
+void store_requried_data_in_flash()
+{
+    // #define PROVISION_DATA  "103300323"\
+    //                         "20000001"\
+    //                         "102uuid7891-815181-iam-prov-uuid1"\
+    //                         "9981-i-am-normal8761-uuid"\
+    //                         "https://cloud.ezlo.com"\
+    //                         "privisioning-token-665"\
+    //                         "https://cloud.ezlo.com"\
+    //                         "{\"hello\":\"world\"}"
+    // #define EZLOPI_CONFIG_JSON "{\"cmd\":3,\"dev_detail\":[{\"dev_type\":1,\"dev_name\":\"switch_temp\",\"id_room\":\"\",\"id_item\":1,\"gpio_in\":24,\"gpio_out\":26,\"pullup_ip\":false,\"pullup_op\":false,\"is_ip\":false,\"ip_inv\":false,\"op_inv\":false,\"val_ip\":false,\"val_op\":false}],\"config_id\":\"1234567\",\"config_time\":1696508363,\"config_name\":\"My moisture sensor\",\"chipset\":\"ESP32\"}"
+
+
+}
 
 STATIC VOID user_main(VOID_T)
 {
@@ -79,24 +94,23 @@ STATIC VOID user_main(VOID_T)
         tal_thread_create_and_start(&free_heap_thrd, NULL, NULL, __free_heap_task, NULL, &thread_cfg);
     }
 
-    ezlopi_wifi_initialize();
-    while (!ezlopi_wifi_is_connected()) 
-    {  
-        ezlopi_wifi_connect_from_id_bin();
-        TRACE_E("Not Connected");
-        tal_system_sleep(200);
-    }
-    TRACE_S("Wifi Connected");
+    // ezlopi_wifi_initialize();
+    // while (!ezlopi_wifi_is_connected()) 
+    // {  
+    //     ezlopi_wifi_connect_from_id_bin();
+    //     TRACE_E("Not Connected");
+    //     tal_system_sleep(700);
+    // }
+    // TRACE_S("Wifi Connected");
+
+    tal_system_sleep(300);
 
     ezlopi_init();
 
     ezlopi_service_broadcast_init();
 
-    tal_system_sleep(1000);
-
     ezlopi_service_web_provisioning_init();
     
-
     return;
 }
 
@@ -129,6 +143,7 @@ STATIC VOID __free_heap_task(PVOID_T args)
         tal_system_sleep(3000);
     }
 }
+
 uint32_t ezlopi_factory_info_v3_get_abs_address(uint32_t relative_offset, e_factory_info_v3_partition_type_t partition_type);
 #if 0
 void flash_read_write_test()
@@ -136,10 +151,10 @@ void flash_read_write_test()
     // Initialize the flash hardware
     
     hal_flash_init();
-    int data_offset = __ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_DEVICE_ID, E_EZLOPI_FACTORY_INFO_HUB_DATA);
+    int data_offset = __ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_WIFI_SSID, E_EZLOPI_FACTORY_INFO_HUB_DATA);
     
     // Prepare the input buffer and its length
-    char* inBuffer = "Hello Flash Write World!";
+    char* inBuffer = " Flash Hello World World Write !";
     int inBufferLen = strlen(inBuffer);
 
     // Ensure the output buffer is large enough
@@ -147,22 +162,22 @@ void flash_read_write_test()
 
     TRACE_S("Before -----> %s", outBuffer);
 
-    // Erase the flash sector before writing
-    if (bk_flash_erase(BK_PARTITION_PROV_DATA, data_offset, inBufferLen) != 0) {
-        TRACE_E("Flash Erase Failed");
-        return;
-    }
+    // // Erase the flash sector before writing
+    // if (bk_flash_erase(BK_PARTITION_PROV_DATA, data_offset, inBufferLen) != 0) {
+    //     TRACE_E("Flash Erase Failed");
+    //     return;
+    // }
 
     // Write to flash
-    if (bk_flash_write(BK_PARTITION_PROV_DATA, data_offset, inBuffer, inBufferLen) == 0) {
-        TRACE_I("Flash Write Success");
-    } else {
-        TRACE_E("Flash Write Failed");
-        return;
-    }
+    // if (bk_flash_write(BK_PARTITION_PROV_DATA, data_offset, inBuffer, inBufferLen) == 0) {
+    //     TRACE_I("Flash Write Success");
+    // } else {
+    //     TRACE_E("Flash Write Failed");
+    //     return;
+    // }
 
     // Read from flash
-    if (bk_flash_read(BK_PARTITION_PROV_DATA, data_offset, outBuffer, inBufferLen) == 0) {
+    if (bk_flash_read(BK_PARTITION_PROV_DATA, EZLOPI_FINFO_OFFSET_HUB_DATA + EZLOPI_FINFO_LEN_WIFI_SSID, outBuffer, 96) == 0) {
         TRACE_I("Flash Read Success");
     } else {
         TRACE_E("Flash Read Failed");
