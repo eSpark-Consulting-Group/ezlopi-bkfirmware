@@ -8,7 +8,7 @@
 #include "tal_thread.h"
 #include "tal_system.h"
 #include "tal_memory.h"
-#include "BkDriverFlash.h"
+// #include "BkDriverFlash.h"
 
 #ifdef ENABLE_WIFI_SERVICE
 #include "tuya_iot_wifi_api.h"
@@ -24,6 +24,9 @@
 #include "ezlopi_service_broadcast.h"
 #include "ezlopi_util_trace.h"
 #include "ezlopi_core_ezlopi.h"
+#include "ezlopi_core_factory_info.h"
+
+#include "esp_partition.h"
 
 #define PID  "tvjs8eysp0imads8"
 #define LED_PIN TUYA_GPIO_NUM_26
@@ -93,7 +96,6 @@ STATIC VOID user_main(VOID_T)
 
     ezlopi_service_web_provisioning_init();
     
-    flash_read_write_test();
 
     return;
 }
@@ -127,13 +129,14 @@ STATIC VOID __free_heap_task(PVOID_T args)
         tal_system_sleep(3000);
     }
 }
-
+uint32_t ezlopi_factory_info_v3_get_abs_address(uint32_t relative_offset, e_factory_info_v3_partition_type_t partition_type);
+#if 0
 void flash_read_write_test()
 {
     // Initialize the flash hardware
     
     hal_flash_init();
-    int data_offset = 0x0;
+    int data_offset = __ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_DEVICE_ID, E_EZLOPI_FACTORY_INFO_HUB_DATA);
     
     // Prepare the input buffer and its length
     char* inBuffer = "Hello Flash Write World!";
@@ -145,13 +148,13 @@ void flash_read_write_test()
     TRACE_S("Before -----> %s", outBuffer);
 
     // Erase the flash sector before writing
-    if (bk_flash_erase(BK_PARTITION_NET_PARAM, data_offset, inBufferLen) != 0) {
+    if (bk_flash_erase(BK_PARTITION_PROV_DATA, data_offset, inBufferLen) != 0) {
         TRACE_E("Flash Erase Failed");
         return;
     }
 
     // Write to flash
-    if (bk_flash_write(BK_PARTITION_NET_PARAM, data_offset, inBuffer, inBufferLen) == 0) {
+    if (bk_flash_write(BK_PARTITION_PROV_DATA, data_offset, inBuffer, inBufferLen) == 0) {
         TRACE_I("Flash Write Success");
     } else {
         TRACE_E("Flash Write Failed");
@@ -159,7 +162,7 @@ void flash_read_write_test()
     }
 
     // Read from flash
-    if (bk_flash_read(BK_PARTITION_NET_PARAM, data_offset, outBuffer, inBufferLen) == 0) {
+    if (bk_flash_read(BK_PARTITION_PROV_DATA, data_offset, outBuffer, inBufferLen) == 0) {
         TRACE_I("Flash Read Success");
     } else {
         TRACE_E("Flash Read Failed");
@@ -168,3 +171,43 @@ void flash_read_write_test()
 
     TRACE_S("After -----> %s", outBuffer);
 }
+#endif
+
+#if 0
+void flash_read_write_test()
+{
+    char* inBuffer = "Hello ESP BK Partition!";
+    char outBuffer[256] = "Garbage Value Garbage Value !";
+    int inBufferLen = strlen(inBuffer);
+    
+    esp_partition_t* partition_ctx_v3 = esp_partition_find_first(ESP_PARTITION_PROV_DATA, EZLOPI_FACTORY_INFO_V3_PARTITION_NAME);
+
+    if(NULL == partition_ctx_v3)
+    {
+        TRACE_E("Partition CTX is NULL");
+    }
+    TRACE_W("Before Write Output Buffer = %s", outBuffer);
+    esp_partition_write(partition_ctx_v3, 0x0, inBuffer, inBufferLen);
+    esp_partition_read(partition_ctx_v3, 0x0, outBuffer, inBufferLen);
+    TRACE_W("After Write Output Buffer = %s", outBuffer);
+    
+}
+#endif
+
+#if 0
+uint32_t __ezlopi_factory_info_v3_get_abs_address(uint32_t relative_offset, e_factory_info_v3_partition_type_t partition_type)
+{
+    if (partition_type == E_EZLOPI_FACTORY_INFO_CONN_DATA)
+    {
+        return (relative_offset + EZLOPI_FINFO_OFFSET_CONN_DATA);
+    }
+    else if (partition_type == E_EZLOPI_FACTORY_INFO_HUB_DATA)
+    {
+        return (relative_offset + EZLOPI_FINFO_OFFSET_HUB_DATA);
+    }
+    else
+    {
+        return 0;
+    }
+}
+#endif

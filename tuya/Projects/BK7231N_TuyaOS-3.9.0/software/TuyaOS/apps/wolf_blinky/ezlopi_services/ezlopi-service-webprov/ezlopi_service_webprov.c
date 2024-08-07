@@ -218,7 +218,7 @@ static int __send_str_data_to_nma_websocket(char* str_data)
         int retries = 3;
         while (--retries)
         {
-            if (ezlopi_websocket_client_send(str_data, strlen(str_data)))
+            if (ezlopi_websocket_client_send(str_data, strlen(str_data)) == ESP_OK)
             {
                 ret = 1;
                 message_counter++;

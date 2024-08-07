@@ -77,7 +77,10 @@
         "stdio.h": "c",
         "ezlopi_core_ezlopi_broadcast.h": "c",
         "ezlopi_service_broadcast.h": "c",
-        "ezlopi_core_processes.h": "c"
+        "ezlopi_core_processes.h": "c",
+        "esp_partition.h": "c",
+        "bkdriverflash.h": "c",
+        "ezlopi_core_factory_info.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

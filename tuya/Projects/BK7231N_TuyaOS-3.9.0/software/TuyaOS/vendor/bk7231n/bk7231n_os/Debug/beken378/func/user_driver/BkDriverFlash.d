@@ -6,10 +6,10 @@ Debug/./beken378/func/user_driver/BkDriverFlash.o: \
  beken378/common/generic.h beken378/ip/common/co_int.h \
  beken378/common/typedef.h \
  beken378/os/FreeRTOSv9.0.0/FreeRTOS/Source/portable/Keil/ARM968es/portmacro.h \
- beken378/os/include/rtos_pub.h beken378/os/FreeRTOSv9.0.0/rtos_error.h \
+ beken378/os/include/rtos_pub.h beken378/os/include/rtos_error.h \
  beken378/func/user_driver/BkDriverFlash.h \
  beken378/driver/include/flash_pub.h \
- beken378/driver/include/drv_model_pub.h \
+ beken378/driver/include/drv_model_pub.h beken378/os/include/rtos_error.h \
  beken378/driver/include/uart_pub.h beken378/os/include/mem_pub.h \
  beken378/os/include/sys_rtos.h beken378/os/include/FreeRTOSConfig.h \
  beken378/os/FreeRTOSv9.0.0/FreeRTOS/Source/include/FreeRTOS.h \

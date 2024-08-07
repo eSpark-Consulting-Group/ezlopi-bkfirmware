@@ -12,7 +12,7 @@ static void websocket_event_handler(esp_websocket_client_event_t *evt);
 
 int ezlopi_websocket_client_send(char *data, uint32_t len)
 {
-    int ret = 0;
+    int ret = ESP_OK;
 
     if ((NULL != data) && (len > 0))
     {

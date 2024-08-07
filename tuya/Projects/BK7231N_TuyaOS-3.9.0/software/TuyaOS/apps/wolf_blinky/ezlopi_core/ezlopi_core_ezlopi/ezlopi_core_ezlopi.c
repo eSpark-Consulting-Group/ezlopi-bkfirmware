@@ -1,6 +1,7 @@
 #include "ezlopi_core_ezlopi.h"
 #include "ezlopi_core_devices.h"
 #include "ezlopi_core_buffer.h"
+#include "ezlopi_core_factory_info.h"
 
 static void ezlopi_initialize_devices_v3(void);
 
@@ -8,6 +9,8 @@ void ezlopi_init()
 {
     #define CONFIG_EZPI_CORE_STATIC_BUFFER_SIZE 5*1024 //FIXME_AUTO
     ezlopi_core_buffer_init(CONFIG_EZPI_CORE_STATIC_BUFFER_SIZE); // allocate 10kB
+    ezlopi_factory_info_v3_init();
+    print_factory_info_v3();
     ezlopi_device_prepare();
     ezlopi_initialize_devices_v3();
 }

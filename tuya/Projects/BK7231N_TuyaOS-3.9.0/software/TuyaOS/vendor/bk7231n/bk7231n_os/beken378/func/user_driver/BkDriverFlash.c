@@ -78,6 +78,14 @@ const bk_logic_partition_t bk7231_partitions[BK_PARTITION_MAX] =
         .partition_start_addr      = 0x1D1000,// for net related info
         .partition_length          = 0x1000,
         .partition_options         = PAR_OPT_READ_EN | PAR_OPT_WRITE_DIS,
+    },
+    [BK_PARTITION_PROV_DATA] = 
+    {
+        .partition_owner           = BK_FLASH_EMBEDDED,
+        .partition_description     = "prov_data",
+        .partition_start_addr      = 0x1D2000,// for net related info
+        .partition_length          = 0x2000,
+        .partition_options         = PAR_OPT_READ_EN | PAR_OPT_WRITE_EN,
     }
 };
 
