@@ -1,7 +1,7 @@
 #include "ezlopi_util_trace.h"
 #include "FreeRTOS.h"
 #include "ezlopi_core_websocket.h"
-#include "cert.h"
+#include "ezlopi_core_factory_info.h"
 #include "cJSON.h"
 
 // Web Socket Configurations
@@ -30,9 +30,9 @@ esp_websocket_client_handle_t ezlopi_websocket_client_init(cJSON* uri, void (*ms
     if ((NULL == client) && (NULL != uri) && (NULL != uri->valuestring)  && (NULL != msg_upcall)
      )
     {
-        char * ca_cert = CA_CERT;
-        char * ssl_priv = SSL_PRIVATE_KEY;
-        char * ssl_shared = SHARED_KEY;
+        char * ca_cert = ezlopi_factory_info_v3_get_ca_certificate();
+        char * ssl_priv = ezlopi_factory_info_v3_get_ssl_private_key();
+        char * ssl_shared = ezlopi_factory_info_v3_get_ssl_shared_key();
 
         esp_websocket_client_config_t websocket_cfg = {
             .url = uri->valuestring,

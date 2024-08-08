@@ -14,15 +14,14 @@
 // #include "ezlopi_core_processes.h"
 #include "ezlopi_core_api_methods.h"
 // #include "ezlopi_core_event_group.h"
-// #include "ezlopi_core_factory_info.h"
+#include "ezlopi_core_factory_info.h"
 // #include "ezlopi_core_cjson_macros.h"
 #include "ezlopi_core_websocket.h"
 #include "ezlopi_core_ezlopi_broadcast.h"
 
 #include "ezlopi_service_webprov.h"
-// #include "EZLOPI_USER_CONFIG.h"
+#include "EZLOPI_USER_CONFIG.h"
 
-#include "cert.h"
 
 #define CONFIG_EZPI_WEBSOCKET_CLIENT
 #if defined(CONFIG_EZPI_WEBSOCKET_CLIENT)
@@ -97,10 +96,10 @@ static void __connection_upcall(bool connected)
 static void __fetch_wss_endpoint(void* pv)
 {
 
-    char* cloud_server = "cloud.ezlo.com";
-    char* ca_certificate = CA_CERT;
-    char* ssl_shared_key = SHARED_KEY;
-    char* ssl_private_key = SSL_PRIVATE_KEY;
+    char* cloud_server = ezlopi_factory_info_v3_get_cloud_server();
+    char* ca_certificate = ezlopi_factory_info_v3_get_ca_certificate();
+    char* ssl_shared_key = ezlopi_factory_info_v3_get_ssl_shared_key();
+    char* ssl_private_key = ezlopi_factory_info_v3_get_ssl_private_key();
 
     // ezlopi_wait_for_wifi_to_connect(portMAX_DELAY);
 
@@ -111,7 +110,7 @@ static void __fetch_wss_endpoint(void* pv)
         vTaskDelay(100 / portTICK_RATE_MS);
 
         char http_request[128];
-        snprintf(http_request, sizeof(http_request), "%s/getserver?json=true", cloud_server);
+        snprintf(http_request, sizeof(http_request), "%s?json=true", cloud_server);
         TRACE_D("http_request: %s", http_request);
 
         s_ezlopi_http_data_t * ws_endpoint = ezlopi_http_get_request(http_request, ssl_private_key, ssl_shared_key, ca_certificate);

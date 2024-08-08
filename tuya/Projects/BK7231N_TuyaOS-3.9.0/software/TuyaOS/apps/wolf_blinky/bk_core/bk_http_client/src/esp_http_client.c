@@ -115,18 +115,29 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if(NULL != client->url)
     {
+        // Skip the protocol (e.g., "https://")
+        const char* start_of_host = strstr(config->url, "://");
+        if (start_of_host != NULL) 
+        {
+            start_of_host += 3;  // Move past "://"
+        } 
+        else 
+        {
+            start_of_host = config->url;  // No protocol found, assume the URL starts with the host
+        }
+
         // Find the position of the first '/'
-        const char* slash = strchr(config->url, '/');
+        const char* slash = strchr(start_of_host, '/');
         
         if (slash != NULL) 
         {
             TAL_PR_DEBUG("Slash found started parsing!\n");
-            // Length of the host is the distance from the start of the URL to the slash
-            size_t host_len = slash - config->url;  
+            // Length of the host is the distance from the start of the host to the slash
+            size_t host_len = slash - start_of_host;  
             
             // Allocate memory for host and path
             client->host = (char*)malloc(host_len + 1);
-            client->path = (char*)malloc(strlen(config->url) - host_len + 1);
+            client->path = (char*)malloc(strlen(slash) + 1);  // The path is from the slash to the end of the URL
             if(NULL == client->host || NULL == client->path)
             {
                 TAL_PR_ERR("ERROR: Unable to malloc path and host");
@@ -134,22 +145,23 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
             }
             
             // Copy the host and path
-            strncpy((char*)client->host, config->url, host_len);
+            strncpy((char*)client->host, start_of_host, host_len);
             ((char*)client->host)[host_len] = '\0';  // Null-terminate the host string
 
-            strcpy((char*)client->path, slash);      // Copy the path including the slash
+            strcpy((char*)client->path, slash);    // Copy the path including the slash
             
             // Print the results for debugging
             TAL_PR_DEBUG("Host: %s\n", client->host);
             TAL_PR_DEBUG("Path: %s\n", client->path);
-        } else 
+        } 
+        else 
         {
-            size_t url_len = strlen(config->url);
+            size_t url_len = strlen(start_of_host);
             TAL_PR_DEBUG("Invalid URL format or path not found!\n");
             client->host = (char*)malloc(url_len + 1);
-            strncpy((char*)client->host, config->url, url_len);
+            strncpy((char*)client->host, start_of_host, url_len);
             ((char*)client->host)[url_len] = '\0';  // Null-terminate the host string
-            client->path = (char*)malloc(sizeof(char)*2);
+            client->path = (char*)malloc(2 * sizeof(char));
             strcpy((char*)client->path, "/");
 
             // Print the results for debugging

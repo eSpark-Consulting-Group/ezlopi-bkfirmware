@@ -2,6 +2,7 @@
 #include "tuya_iot_wifi_api.h"
 #include "ezlopi_core_wifi.h"
 #include "ezlopi_util_trace.h"
+#include "ezlopi_core_factory_info.h"
 
 bool is_connected = false;
 
@@ -91,8 +92,8 @@ VOID ezlopi_wifi_initialize(VOID)
 VOID ezlopi_wifi_connect_from_id_bin(VOID)
 {
     OPERATE_RET rt = OPRT_OK;
-    CHAR_T wifi_ssid[]     = "eSpark Wifi";
-    CHAR_T wifi_password[] = "47356880";
+    CHAR_T *wifi_ssid     = ezlopi_factory_info_v3_get_ssid();
+    CHAR_T *wifi_password = ezlopi_factory_info_v3_get_password();
     if ((NULL != wifi_ssid) && ('\0' != wifi_ssid[0]) &&
         (NULL != wifi_password) && ('\0' != wifi_password[0]))
     {

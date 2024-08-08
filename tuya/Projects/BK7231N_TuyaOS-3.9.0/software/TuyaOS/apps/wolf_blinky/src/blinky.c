@@ -43,21 +43,6 @@ STATIC THREAD_HANDLE ty_app_thread = NULL;
 STATIC THREAD_HANDLE bk_rcv_thread = NULL;
 STATIC THREAD_HANDLE free_heap_thrd = NULL;
 
-void store_requried_data_in_flash()
-{
-    // #define PROVISION_DATA  "103300323"\
-    //                         "20000001"\
-    //                         "102uuid7891-815181-iam-prov-uuid1"\
-    //                         "9981-i-am-normal8761-uuid"\
-    //                         "https://cloud.ezlo.com"\
-    //                         "privisioning-token-665"\
-    //                         "https://cloud.ezlo.com"\
-    //                         "{\"hello\":\"world\"}"
-    // #define EZLOPI_CONFIG_JSON "{\"cmd\":3,\"dev_detail\":[{\"dev_type\":1,\"dev_name\":\"switch_temp\",\"id_room\":\"\",\"id_item\":1,\"gpio_in\":24,\"gpio_out\":26,\"pullup_ip\":false,\"pullup_op\":false,\"is_ip\":false,\"ip_inv\":false,\"op_inv\":false,\"val_ip\":false,\"val_op\":false}],\"config_id\":\"1234567\",\"config_time\":1696508363,\"config_name\":\"My moisture sensor\",\"chipset\":\"ESP32\"}"
-
-
-}
-
 STATIC VOID user_main(VOID_T)
 {
         OPERATE_RET rt = OPRT_OK;
@@ -144,8 +129,8 @@ STATIC VOID __free_heap_task(PVOID_T args)
     }
 }
 
-uint32_t ezlopi_factory_info_v3_get_abs_address(uint32_t relative_offset, e_factory_info_v3_partition_type_t partition_type);
 #if 0
+uint32_t ezlopi_factory_info_v3_get_abs_address(uint32_t relative_offset, e_factory_info_v3_partition_type_t partition_type);
 void flash_read_write_test()
 {
     // Initialize the flash hardware

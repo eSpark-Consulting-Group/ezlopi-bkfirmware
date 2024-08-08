@@ -3,7 +3,6 @@
 #include "ezlopi_http_client.h"
 #include "ezlopi_util_trace.h"
 #include "httpc.h"
-#include "cert.h"
 
 static http_session_t https_handle;
 
@@ -307,9 +306,9 @@ s_ezlopi_http_data_t* ezlopi_http_get_request(const char* cloud_url, const char*
 
         esp_http_client_config_t config = {
             .url = cloud_url,
-            .cert_pem = CA_CERT,
-            .client_cert_pem = SHARED_KEY,
-            .client_key_pem = SSL_PRIVATE_KEY,
+            .cert_pem = ca_certificate,
+            .client_cert_pem = shared_key,
+            .client_key_pem = private_key,
             .event_handler = NULL,
             .port = 7000,
             .event_handler = ezlopi_http_event_handler,
