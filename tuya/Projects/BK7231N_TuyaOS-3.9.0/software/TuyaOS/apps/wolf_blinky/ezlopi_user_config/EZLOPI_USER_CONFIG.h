@@ -150,4 +150,7 @@
 #undef EZPI_SERV_BLE_ENABLE_READ_PROV
 #undef EZPI_SERV_BLE_ENABLE_STAT_PROV
 
+/* For manual device Provisioning be default undefine it */
+// #define DEVICE_PROVISION_BOOT
+
 // #endif // _EZLOPI_USER_CONFIG_H_

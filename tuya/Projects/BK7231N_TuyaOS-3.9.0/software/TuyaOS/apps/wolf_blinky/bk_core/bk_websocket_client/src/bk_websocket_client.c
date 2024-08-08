@@ -15,7 +15,7 @@
 #include <wolfssl/options.h>
 #include <wolfssl/ssl.h>
 
-// #define TAL_PR_DEBUG
+#define TAL_PR_DEBUG
 #define RX_TX_BUFFER_SIZE 256
 #define WS_UPGRADE_REQ "GET / HTTP/1.1\r\nHost: nma-server6-cloud.ezlo.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-Websocket-Extensions: premessage-deflate; client_max_window_bits\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Protocol: chat, superchat\r\n\r\n"
 

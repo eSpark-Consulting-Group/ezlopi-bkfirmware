@@ -94,14 +94,14 @@ STATIC VOID user_main(VOID_T)
         tal_thread_create_and_start(&free_heap_thrd, NULL, NULL, __free_heap_task, NULL, &thread_cfg);
     }
 
-    // ezlopi_wifi_initialize();
-    // while (!ezlopi_wifi_is_connected()) 
-    // {  
-    //     ezlopi_wifi_connect_from_id_bin();
-    //     TRACE_E("Not Connected");
-    //     tal_system_sleep(700);
-    // }
-    // TRACE_S("Wifi Connected");
+    ezlopi_wifi_initialize();
+    while (!ezlopi_wifi_is_connected()) 
+    {  
+        ezlopi_wifi_connect_from_id_bin();
+        TRACE_E("Not Connected");
+        tal_system_sleep(700);
+    }
+    TRACE_S("Wifi Connected");
 
     tal_system_sleep(300);
 

@@ -57,6 +57,7 @@ static int ezlopi_factory_info_v3_set_4kb(const char* data, uint32_t offset, uin
     return ret;
 }
 
+#if defined(DEVICE_PROVISION_BOOT)
 int pub_ezlopi_factory_info_v3_set_4kb(const char* data, uint32_t offset, uint32_t len)
 {
     int ret = 0;
@@ -66,9 +67,9 @@ int pub_ezlopi_factory_info_v3_set_4kb(const char* data, uint32_t offset, uint32
     // {
         // snprintf(tmp_variable, len + 1, "%.*s", len, data);
 
-        // if (ESP_OK == esp_partition_erase_range(partition_ctx_v3, offset, EZLOPI_FINFO_READ_LEN_4KB))
-        // {
-            if (ESP_OK == esp_partition_write(partition_ctx_v3, offset, data, len + 1))
+        if (ESP_OK == esp_partition_erase_range(partition_ctx_v3, offset, len))
+        {
+            if (ESP_OK == esp_partition_write(partition_ctx_v3, offset, data, len))
             {
                 TRACE_S("Flash write successful");
                 ret = 1;
@@ -77,17 +78,18 @@ int pub_ezlopi_factory_info_v3_set_4kb(const char* data, uint32_t offset, uint32
             {
                 TRACE_E("esp-partition write failed!");
             }
-        // }
-        // else
-        // {
-        //     TRACE_E("esp-partition erase failed!");
-        // }
+        }
+        else
+        {
+            TRACE_E("esp-partition erase failed!");
+        }
 
         // ezlopi_free(__FUNCTION__, tmp_variable);
     // }
 
     return ret;
 }
+#endif
 
 uint32_t ezlopi_factory_info_v3_get_abs_address(uint32_t relative_offset, e_factory_info_v3_partition_type_t partition_type)
 {
@@ -367,14 +369,14 @@ unsigned long long ezlopi_factory_info_v3_get_id(void)
 
     if (ezlopi_factory_info_v3_init())
     {
-        uint8_t tmp_id_arr[8];
-        memset(tmp_id_arr, 0, 8);
-        esp_partition_read(partition_ctx_v3, ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_DEVICE_ID, E_EZLOPI_FACTORY_INFO_HUB_DATA), tmp_id_arr, EZLOPI_FINFO_LEN_DEVICE_ID);
+        // uint8_t tmp_id_arr[8];
+        // memset(tmp_id_arr, 0, 8);
+        esp_partition_read(partition_ctx_v3, ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_DEVICE_ID, E_EZLOPI_FACTORY_INFO_HUB_DATA), &_id, EZLOPI_FINFO_LEN_DEVICE_ID);
 
-        for (int i = 0; i < 8; i++)
-        {
-            _id |= tmp_id_arr[i] << (i * 8);
-        }
+        // for (int i = 0; i < 8; i++)
+        // {
+        //     _id |= tmp_id_arr[i] << (i * 8);
+        // }
     }
 
     return _id;

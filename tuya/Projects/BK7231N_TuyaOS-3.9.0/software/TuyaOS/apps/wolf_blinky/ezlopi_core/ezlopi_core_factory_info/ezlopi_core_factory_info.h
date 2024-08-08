@@ -22,14 +22,14 @@ extern "C"
 #endif
 
 #define EZLOPI_FACTORY_INFO_V3_PARTITION_NAME "prov_data"
-#define EZLOPI_FACTORY_INFO_V3_PARTITION_SIZE 0x2000 // 32KB
+#define EZLOPI_FACTORY_INFO_V3_PARTITION_SIZE 0x8000 // 32KB
 #define EZLOPI_FACTORY_INFO_V3_PARTITION_TYPE 0x40
 #define EZLOPI_FACTORY_INFO_V3_SUBTYPE ESP_PARTITION_SUBTYPE_APP_FACTORY // ESP_PARTITION_SUBTYPE_ANY
 
-#define EZLOPI_FINFO_OFFSET_CONN_DATA 0x0000 //6kb
-#define EZLOPI_FINFO_OFFSET_HUB_DATA 0x2400 //2kb
+#define EZLOPI_FINFO_OFFSET_CONN_DATA 0x0000
+#define EZLOPI_FINFO_OFFSET_HUB_DATA 0x6000
 
-#define EZLOPI_FINFO_READ_LEN_4KB 1024*4
+#define EZLOPI_FINFO_READ_LEN_4KB 4096
 
     typedef enum e_factory_info_v3_partition_type
     {
@@ -47,10 +47,10 @@ extern "C"
         EZLOPI_FINFO_REL_OFFSET_PROVISIONING_SERVER_URL = 0X100,
         EZLOPI_FINFO_REL_OFFSET_PROVISIONING_TOKEN = 0X200,
         EZLOPI_FINFO_REL_OFFSET_CLOUD_SERVER_URL = 0x0400,
-        EZLOPI_FINFO_REL_OFFSET_EZLOPI_CONFIG_JSON = 0x0800,
-        EZLOPI_FINFO_REL_OFFSET_CA_CERTIFICATE = 0x1800,
-        EZLOPI_FINFO_REL_OFFSET_SSL_PRIVATE_KEY = 0x2800,
-        EZLOPI_FINFO_REL_OFFSET_SSL_SHARED_KEY = 0x3800,
+        EZLOPI_FINFO_REL_OFFSET_EZLOPI_CONFIG_JSON = 0x1000,
+        EZLOPI_FINFO_REL_OFFSET_CA_CERTIFICATE = 0x3000,
+        EZLOPI_FINFO_REL_OFFSET_SSL_PRIVATE_KEY = 0x4000,
+        EZLOPI_FINFO_REL_OFFSET_SSL_SHARED_KEY = 0x5000,
 
         // Offset Hub Data
         EZLOPI_FINFO_REL_OFFSET_SERIAL_NUMBER = 0,
@@ -117,7 +117,6 @@ extern "C"
 
     void print_factory_info_v3(void);
     const esp_partition_t* ezlopi_factory_info_v3_init(void);
-    // void ezlopi_factory_info_v3_init(void);
 
     uint32_t ezlopi_factory_info_v3_get_provisioning_status(void);
 
@@ -164,8 +163,11 @@ extern "C"
     int ezlopi_factory_info_v3_scenes_factory_soft_reset(void);
 
     int EZPI_CORE_factory_info_prov_init(void);
-
+    
+    /* For saving data to flash only */
+    #if defined(DEVICE_PROVISION_BOOT)
     int pub_ezlopi_factory_info_v3_set_4kb(const char* data, uint32_t offset, uint32_t len);
+    #endif
 
 #if (EZLOPI_DEVICE_TYPE_GENERIC == EZLOPI_DEVICE_TYPE)
 
