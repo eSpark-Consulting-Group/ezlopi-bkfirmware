@@ -1,9 +1,13 @@
 //          ("name",           func,          updater_func)
 // #define CONFIG_EZPI_WEBSOCKET_CLIENT
-CLOUD_METHOD("registered", registered, NULL)
-CLOUD_METHOD("hub.devices.list", devices_list_v3, NULL)
 CLOUD_METHOD("hub.items.list", items_list_v3, NULL)
 CLOUD_METHOD("hub.item.value.set", items_set_value_v3, NULL)
+
+CLOUD_METHOD("registered", registered, NULL)
+
+CLOUD_METHOD("hub.devices.list", devices_list_v3, NULL)
+CLOUD_METHOD("hub.device.name.set", device_name_set, device_updated)
+CLOUD_METHOD("hub.device.armed.set", device_armed_set, device_updated)
 
 CLOUD_METHOD("hub.status.get", EZPI_CLOUD_status_get, NULL)
 
@@ -13,13 +17,11 @@ CLOUD_METHOD("hub.network.get", network_get, NULL)
 CLOUD_METHOD("hub.network.wifi.scan.start", network_wifi_scan_start, NULL)
 CLOUD_METHOD("hub.network.wifi.scan.stop", network_wifi_scan_stop, NULL)
 
+CLOUD_METHOD("hub.reboot", ezlopi_core_ezlopi_methods_reboot, NULL)
+
 #if (defined(CONFIG_EZPI_WEBSOCKET_CLIENT) || defined(CONFIG_EZPI_LOCAL_WEBSOCKET_SERVER))
 
-CLOUD_METHOD("hub.items.list", items_list_v3, NULL)
 
-CLOUD_METHOD("hub.devices.list", devices_list_v3, NULL)
-CLOUD_METHOD("hub.device.name.set", device_name_set, device_updated)
-CLOUD_METHOD("hub.device.armed.set", device_armed_set, device_updated)
 
 #ifdef CONFIG_EZPI_UTIL_TRACE_EN
 CLOUD_METHOD("hub.log.set", ezlopi_hub_cloud_log_set, NULL)
@@ -58,10 +60,6 @@ CLOUD_METHOD("hub.favorite.list", favorite_list_v3, NULL)
 CLOUD_METHOD("hub.gateways.list", gateways_list, NULL)
 
 CLOUD_METHOD("hub.info.get", info_get, NULL)
-
-CLOUD_METHOD("hub.network.get", network_get, NULL)
-CLOUD_METHOD("hub.network.wifi.scan.start", network_wifi_scan_start, NULL)
-CLOUD_METHOD("hub.network.wifi.scan.stop", network_wifi_scan_stop, NULL)
 
 #if defined(CONFIG_EZPI_ENABLE_OTA)
 CLOUD_METHOD("cloud.firmware.info.get", firmware_info_get, NULL)
@@ -116,16 +114,11 @@ CLOUD_METHOD("hub.scenes.expressions.list", scenes_expressions_list, NULL)
 CLOUD_METHOD("hub.scenes.expressions.delete", scenes_expressions_delete, NULL)
 #endif //CONFIG_EZPI_SERV_ENABLE_MESHBOTS
 
-CLOUD_METHOD("hub.nma.register.repeat", register_repeat, NULL)
-
 CLOUD_METHOD("hub.reboot", ezlopi_core_ezlopi_methods_reboot, NULL)
-
-CLOUD_METHOD("hub.status.get", EZPI_CLOUD_status_get, NULL)
 
 CLOUD_METHOD("hub.coordinates.set", hub_coordinates_set, NULL)
 CLOUD_METHOD("hub.coordinates.get", hub_coordinates_get, NULL)
 CLOUD_METHOD("hub.offline.login.ui", EZPI_CLOUD_offline_login, NULL)
 
-CLOUD_METHOD("registered", registered, NULL)
 
 #endif // (defined(CONFIG_EZPI_WEBSOCKET_CLIENT) || defined(EZPI_LOCAL_WEBSOCKET_SERVER))

@@ -1,10 +1,13 @@
 #include "ezlopi_cloud_constants.h"
-#include "ezlopi_core_api_methods.h"
 #include "ezlopi_cloud_status.h"
 #include "ezlopi_cloud_items.h"
 #include "ezlopi_cloud_devices.h"
 #include "ezlopi_cloud_registration.h"
 #include "ezlopi_cloud_network.h"
+
+
+#include "ezlopi_core_reset.h"
+#include "ezlopi_core_api_methods.h"
 
 static const s_method_list_v2_t method_list_v2[] = {
 #define CLOUD_METHOD(name, _method, _updater) {.method_name = name, .method = _method, .updater = _updater},
@@ -81,4 +84,9 @@ void ezlopi_core_ezlopi_methods_rpc_method_notfound(cJSON* cj_request, cJSON* cj
     }
 
     cJSON_AddObjectToObject(cj_response, ezlopi_result_str);
+}
+
+void ezlopi_core_ezlopi_methods_reboot(cJSON* cj_request, cJSON* cj_response)
+{
+    EZPI_CORE_reset_reboot();
 }
