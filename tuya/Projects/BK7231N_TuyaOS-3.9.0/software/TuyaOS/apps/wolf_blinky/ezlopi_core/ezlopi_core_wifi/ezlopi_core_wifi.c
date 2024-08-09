@@ -5,11 +5,11 @@
 #include "ezlopi_core_factory_info.h"
 
 bool is_connected = false;
+static NW_IP_S sta_info;
 
 STATIC VOID_T wifi_event_callback(WF_EVENT_E event, VOID_T *arg)
 {
     OPERATE_RET op_ret = OPRT_OK;
-    NW_IP_S sta_info;
     memset(&sta_info, 0, SIZEOF(NW_IP_S));
 
     TRACE_D("-------------event callback-------------");
@@ -118,4 +118,86 @@ VOID ezlopi_wifi_connect(const char* ssid, const char* pass)
 bool ezlopi_wifi_is_connected()
 {
     return is_connected;
+}
+
+NW_IP_S* ezlopi_wifi_get_ip_infos()
+{
+    return &sta_info;
+}
+
+void ezlopi_wifi_read_mac(uint8_t* mac_addr, WF_IF_E mode)
+{
+    tal_wifi_get_mac(mode, mac_addr);
+}
+
+#if 0
+void ezlopi_wifi_scan_start()
+{
+    AP_IF_S *ap_list = NULL;
+    UINT_T num_aps = 0;
+    OPERATE_RET result = tkl_wifi_scan_ap(NULL, &ap_list, &num_aps);
+
+    if (result == OPRT_OK) {
+        TRACE_S("Found %u APs:\n", num_aps);
+        for (UINT_T i = 0; i < num_aps; ++i) {
+            TRACE_I("AP %u: SSID: %s, Signal Strength: %d\n", i + 1, ap_list[i].ssid, ap_list[i].rssi);
+            // You might have other fields in AP_IF_S to print or use.
+        }
+    } else {
+        TRACE_E("Wi-Fi scan failed or function not supported. Error code: %d\n", result);
+    }
+
+    // Don't forget to free the memory if necessary
+    if (ap_list) {
+        free(ap_list);
+    }
+
+    return 0;
+}
+#endif
+
+
+OPERATE_RET ezlopi_wifi_scan_start(CHAR_T ***ssids, CHAR_T ***rssis, UINT_T *num_aps)
+{
+    AP_IF_S *ap_list = NULL;
+    *num_aps = 0;
+    OPERATE_RET result = tkl_wifi_scan_ap(NULL, &ap_list, num_aps);
+
+    if (result == OPRT_OK && *num_aps > 0) {
+        // Allocate memory for SSID and RSSI arrays
+        *ssids = (CHAR_T**)malloc(*num_aps * sizeof(CHAR_T*));
+        *rssis = (CHAR_T**)malloc(*num_aps * sizeof(CHAR_T*));
+
+        if (!(*ssids) || !(*rssis)) {
+            TRACE_E("Memory allocation failed\n");
+            free(ap_list);
+            if (*ssids) free(*ssids);
+            if (*rssis) free(*rssis);
+            return OPRT_COM_ERROR; // Return a suitable error code
+        }
+
+        // Populate the SSID and RSSI arrays
+        for (UINT_T i = 0; i < *num_aps; ++i) {
+            (*ssids)[i] = strdup(ap_list[i].ssid); // Allocate and copy SSID
+            (*rssis)[i] = (CHAR_T*)malloc(10);     // Allocate space for RSSI string
+            snprintf((*rssis)[i], 10, "%d", ap_list[i].rssi); // Convert RSSI to string
+        }
+
+        // TRACE_S("Found %u APs. Arrays populated.\n", *num_aps);
+    } else {
+        TRACE_E("Wi-Fi scan failed or function not supported. Error code: %d\n", result);
+        return result;
+    }
+
+    // Free the memory allocated for AP list
+    if (ap_list) {
+        free(ap_list);
+    }
+
+    return OPRT_OK;
+}
+
+void ezlopi_wifi_scan_stop()
+{
+
 }

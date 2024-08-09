@@ -11,6 +11,7 @@ extern "C"
 #endif
     void registration_init(void);
     void registered(cJSON *cj_request, cJSON *cj_response);
+    void register_repeat(cJSON* cj_request, cJSON* cj_response);
 
 #ifdef __cplusplus
 }

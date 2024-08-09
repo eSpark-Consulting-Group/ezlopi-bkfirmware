@@ -81,7 +81,10 @@
         "esp_partition.h": "c",
         "bkdriverflash.h": "c",
         "ezlopi_core_factory_info.h": "c",
-        "cert.h": "c"
+        "cert.h": "c",
+        "ezlopi_cloud_status.h": "c",
+        "ezlopi_cloud_network.h": "c",
+        "cjson.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

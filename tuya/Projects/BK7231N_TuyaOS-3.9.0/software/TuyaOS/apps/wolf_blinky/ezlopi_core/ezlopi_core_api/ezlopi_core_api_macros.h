@@ -4,6 +4,15 @@ CLOUD_METHOD("registered", registered, NULL)
 CLOUD_METHOD("hub.devices.list", devices_list_v3, NULL)
 CLOUD_METHOD("hub.items.list", items_list_v3, NULL)
 CLOUD_METHOD("hub.item.value.set", items_set_value_v3, NULL)
+
+CLOUD_METHOD("hub.status.get", EZPI_CLOUD_status_get, NULL)
+
+CLOUD_METHOD("hub.nma.register.repeat", register_repeat, NULL)
+
+CLOUD_METHOD("hub.network.get", network_get, NULL)
+CLOUD_METHOD("hub.network.wifi.scan.start", network_wifi_scan_start, NULL)
+CLOUD_METHOD("hub.network.wifi.scan.stop", network_wifi_scan_stop, NULL)
+
 #if (defined(CONFIG_EZPI_WEBSOCKET_CLIENT) || defined(CONFIG_EZPI_LOCAL_WEBSOCKET_SERVER))
 
 CLOUD_METHOD("hub.items.list", items_list_v3, NULL)

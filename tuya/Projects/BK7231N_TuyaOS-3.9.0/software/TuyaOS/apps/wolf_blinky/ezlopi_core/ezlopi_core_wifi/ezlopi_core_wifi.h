@@ -28,6 +28,8 @@ VOID ezlopi_wifi_initialize(VOID);
 VOID ezlopi_wifi_connect(const char* ssid, const char* pass);
 VOID ezlopi_wifi_connect_from_id_bin(VOID);
 // int ezlopi_wait_for_wifi_to_connect(uint32_t wait_time_ms);
+NW_IP_S* ezlopi_wifi_get_ip_infos(void);
+void ezlopi_wifi_read_mac(uint8_t* mac_addr, WF_IF_E mode);
 // esp_netif_ip_info_t* ezlopi_wifi_get_ip_infos(void);
 // const char* ezlopi_wifi_get_last_disconnect_reason(void);
 
@@ -37,6 +39,6 @@ VOID ezlopi_wifi_connect_from_id_bin(VOID);
 
 // int ezlopi_wifi_get_wifi_mac(uint8_t mac[6]);
 
-// void ezlopi_wifi_scan_start();
-// void ezlopi_wifi_scan_stop();
+OPERATE_RET ezlopi_wifi_scan_start(CHAR_T ***ssids, CHAR_T ***rssis, UINT_T *num_aps);
+void ezlopi_wifi_scan_stop();
 bool ezlopi_wifi_is_connected();

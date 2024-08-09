@@ -1,8 +1,10 @@
 #include "ezlopi_cloud_constants.h"
 #include "ezlopi_core_api_methods.h"
+#include "ezlopi_cloud_status.h"
 #include "ezlopi_cloud_items.h"
 #include "ezlopi_cloud_devices.h"
 #include "ezlopi_cloud_registration.h"
+#include "ezlopi_cloud_network.h"
 
 static const s_method_list_v2_t method_list_v2[] = {
 #define CLOUD_METHOD(name, _method, _updater) {.method_name = name, .method = _method, .updater = _updater},
