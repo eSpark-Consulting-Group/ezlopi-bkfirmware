@@ -85,7 +85,11 @@
         "ezlopi_cloud_status.h": "c",
         "ezlopi_cloud_network.h": "c",
         "cjson.h": "c",
-        "tal_system.h": "c"
+        "tal_system.h": "c",
+        "thread": "c",
+        "ezlopi_cloud_settings.h": "c",
+        "ezlopi_core_settings.h": "c",
+        "ezlopi_core_valueformatter.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

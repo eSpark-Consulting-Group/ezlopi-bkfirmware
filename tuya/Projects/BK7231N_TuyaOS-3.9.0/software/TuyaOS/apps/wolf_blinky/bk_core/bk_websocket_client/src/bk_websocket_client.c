@@ -20,6 +20,7 @@
 #define WS_UPGRADE_REQ "GET / HTTP/1.1\r\nHost: nma-server6-cloud.ezlo.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-Websocket-Extensions: premessage-deflate; client_max_window_bits\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Protocol: chat, superchat\r\n\r\n"
 
 THREAD_HANDLE bk_ws_rcv_thread = NULL;
+THREAD_HANDLE bk_ws_ping_thread = NULL;
 
 typedef enum {
     WEBSOCKET_STATE_UNINIT = 0,
@@ -59,14 +60,28 @@ struct esp_websocket_client {
     void (*msg_upcall)(const char*, uint32_t)
 };
 
+typedef enum ws_transport_opcodes {
+    WS_TRANSPORT_OPCODES_CONT =  0x00,
+    WS_TRANSPORT_OPCODES_TEXT =  0x01,
+    WS_TRANSPORT_OPCODES_BINARY = 0x02,
+    WS_TRANSPORT_OPCODES_CLOSE = 0x08,
+    WS_TRANSPORT_OPCODES_PING = 0x09,
+    WS_TRANSPORT_OPCODES_PONG = 0x0a,
+    WS_TRANSPORT_OPCODES_FIN = 0x80,
+    WS_TRANSPORT_OPCODES_NONE = 0x100,   /*!< not a valid opcode to indicate no message previously received
+                                          * from the API esp_transport_ws_get_read_opcode() */
+} ws_transport_opcodes_t;
+
 /* Prototypes */
 void ws_receive(esp_websocket_client_handle_t client);
+void ws_ping(esp_websocket_client_handle_t client);
 esp_err_t parse_url(esp_websocket_client_handle_t client, const char* url);
 int parse_http_response_code(const char *response);
+int ws_send_websocket_message(WOLFSSL* ssl, const char* strdata, ws_transport_opcodes_t opcode);
 
 esp_err_t esp_websocket_client_send_text(esp_websocket_client_handle_t client, const char* data, int len, int delay)
 {
-    return ws_send_websocket_message(client->ssl, data);
+    return ws_send_websocket_message(client->ssl, data, WS_TRANSPORT_OPCODES_TEXT);
 }
 
 esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_client_config_t *config)
@@ -317,6 +332,8 @@ int ws_server_connect(esp_websocket_client_handle_t client)
         TAL_PR_DEBUG("Connect to wolfSSL on the server side SUCCESS!\n");
         THREAD_CFG_T thrd_param = {4096, 4, "beken-ws-rcv"};
         tal_thread_create_and_start(&bk_ws_rcv_thread, NULL, NULL, ws_receive, client, &thrd_param);
+        // THREAD_CFG_T ping_thrd_param = {1024, 4, "beken-ws-ping"};
+        // tal_thread_create_and_start(&bk_ws_ping_thread, NULL, NULL, ws_ping, client, &ping_thrd_param);
     }
     else
     {
@@ -370,7 +387,22 @@ void ws_receive(esp_websocket_client_handle_t client)
 
 	}while( 1 );
     esp_ws_client_cleanup(client);
+    tal_thread_delete(bk_ws_rcv_thread);
+    bk_ws_rcv_thread = NULL;
 	TAL_PR_DEBUG( "  Ended Receiving WS data\n" );
+
+}
+
+void ws_ping(esp_websocket_client_handle_t client)
+{
+    while(esp_websocket_client_is_connected(client))
+    {
+        vTaskDelay(20000/portTICK_PERIOD_MS);
+        TAL_PR_ERR("SEDNIGN PING");
+        ws_send_websocket_message(client->ssl, "ping", WS_TRANSPORT_OPCODES_PING);
+    }
+    tal_thread_delete(bk_ws_ping_thread);
+    bk_ws_ping_thread = NULL;
 
 }
 
@@ -511,7 +543,7 @@ int parse_http_response_code(const char *response) {
     return status_code;
 }
 
-int ws_send_websocket_message(WOLFSSL* ssl, const char* strdata) 
+int ws_send_websocket_message(WOLFSSL* ssl, const char* strdata, ws_transport_opcodes_t opcode)
 {
     unsigned char mask[4];
 	unsigned int mask_int;
@@ -528,7 +560,7 @@ int ws_send_websocket_message(WOLFSSL* ssl, const char* strdata)
     int ret;
 
 
-	finNopcode = 0x81; //FIN and text opcode.
+	finNopcode = 0x80 | opcode; //FIN and text opcode.
 	mask_int = (unsigned int) 1234;
 	memcpy(mask, &mask_int, 4);
 	payload_len = strlen(strdata);

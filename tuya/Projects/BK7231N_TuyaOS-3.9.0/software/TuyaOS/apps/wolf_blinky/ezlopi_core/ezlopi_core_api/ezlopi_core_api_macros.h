@@ -19,6 +19,10 @@ CLOUD_METHOD("hub.network.wifi.scan.stop", network_wifi_scan_stop, NULL)
 
 CLOUD_METHOD("hub.reboot", ezlopi_core_ezlopi_methods_reboot, NULL)
 
+CLOUD_METHOD("hub.device.settings.list", ezlopi_device_settings_list_v3, NULL)
+CLOUD_METHOD("hub.device.setting.value.set", ezlopi_device_settings_value_set_v3, NULL)
+CLOUD_METHOD("hub.device.setting.reset", ezlopi_device_settings_reset_v3, NULL)
+
 #if (defined(CONFIG_EZPI_WEBSOCKET_CLIENT) || defined(CONFIG_EZPI_LOCAL_WEBSOCKET_SERVER))
 
 
@@ -66,10 +70,6 @@ CLOUD_METHOD("cloud.firmware.info.get", firmware_info_get, NULL)
 CLOUD_METHOD("hub.firmware.update.start", firmware_update_start, NULL)
 #endif // CONFIG_EZPI_ENABLE_OTA
 
-CLOUD_METHOD("hub.device.settings.list", ezlopi_device_settings_list_v3, NULL)
-CLOUD_METHOD("hub.device.setting.value.set", ezlopi_device_settings_value_set_v3, NULL)
-CLOUD_METHOD("hub.device.setting.reset", ezlopi_device_settings_reset_v3, NULL)
-
 CLOUD_METHOD("hub.time.location.list", EZPI_CLOUD_location_list, NULL)
 CLOUD_METHOD("hub.time.location.set", EZPI_CLOUD_location_set, NULL)
 CLOUD_METHOD("hub.time.location.get", EZPI_CLOUD_location_get, NULL)
@@ -113,8 +113,6 @@ CLOUD_METHOD("hub.scenes.expressions.set", scenes_expressions_set, NULL)
 CLOUD_METHOD("hub.scenes.expressions.list", scenes_expressions_list, NULL)
 CLOUD_METHOD("hub.scenes.expressions.delete", scenes_expressions_delete, NULL)
 #endif //CONFIG_EZPI_SERV_ENABLE_MESHBOTS
-
-CLOUD_METHOD("hub.reboot", ezlopi_core_ezlopi_methods_reboot, NULL)
 
 CLOUD_METHOD("hub.coordinates.set", hub_coordinates_set, NULL)
 CLOUD_METHOD("hub.coordinates.get", hub_coordinates_get, NULL)

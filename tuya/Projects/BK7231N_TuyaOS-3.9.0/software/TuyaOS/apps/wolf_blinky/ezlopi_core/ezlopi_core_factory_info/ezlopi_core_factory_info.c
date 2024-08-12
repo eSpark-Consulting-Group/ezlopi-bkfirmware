@@ -28,15 +28,15 @@ static char * __pub_key = NULL;
 static int ezlopi_factory_info_v3_set_4kb(const char* data, uint32_t offset, uint32_t len)
 {
     int ret = 0;
-    char * tmp_variable = ezlopi_malloc(__FUNCTION__, len + 1);
+    // char * tmp_variable = ezlopi_malloc(__FUNCTION__, len + 1);
 
-    if (tmp_variable)
-    {
-        snprintf(tmp_variable, len + 1, "%.*s", len, data);
+    // if (tmp_variable)
+    // {
+    //     snprintf(tmp_variable, len + 1, "%.*s", len, data);
 
-        if (ESP_OK == esp_partition_erase_range(partition_ctx_v3, offset, EZLOPI_FINFO_READ_LEN_4KB))
+        if (ESP_OK == esp_partition_erase_range(partition_ctx_v3, offset, len))
         {
-            if (ESP_OK == esp_partition_write(partition_ctx_v3, offset, tmp_variable, len + 1))
+            if (ESP_OK == esp_partition_write(partition_ctx_v3, offset, data, len))
             {
                 TRACE_S("Flash write successful");
                 ret = 1;
@@ -51,8 +51,8 @@ static int ezlopi_factory_info_v3_set_4kb(const char* data, uint32_t offset, uin
             TRACE_E("esp-partition erase failed!");
         }
 
-        ezlopi_free(__FUNCTION__, tmp_variable);
-    }
+    //     ezlopi_free(__FUNCTION__, tmp_variable);
+    // }
 
     return ret;
 }
@@ -786,12 +786,13 @@ int ezlopi_factory_info_v3_set_ezlopi_config(cJSON * cj_data)
     if (cj_data)
     {
         char * tmp_data = ezlopi_malloc(__FUNCTION__, 4 * 1024);
+        memset(tmp_data, 0, 4 * 1024);
         if (tmp_data)
         {
             if (cJSON_PrintPreallocated( cj_data, tmp_data, 4 * 1024, false))
             {
-                // TRACE_D("added-chipset: %.*s", tmp_data);
-                ret = ezlopi_factory_info_v3_set_4kb(tmp_data, ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_EZLOPI_CONFIG_JSON, E_EZLOPI_FACTORY_INFO_CONN_DATA), strlen(tmp_data) + 1);
+                TRACE_D("added-chipset: %.*s", tmp_data);
+                ret = ezlopi_factory_info_v3_set_4kb(tmp_data, ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_EZLOPI_CONFIG_JSON, E_EZLOPI_FACTORY_INFO_CONN_DATA), EZLOPI_FINFO_READ_LEN_4KB);
             }
 
             ezlopi_free(__FUNCTION__, tmp_data);
