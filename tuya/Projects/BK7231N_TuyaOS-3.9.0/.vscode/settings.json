@@ -92,7 +92,9 @@
         "ezlopi_core_valueformatter.h": "c",
         "time.h": "c",
         "ezlopi_core_nvs.h": "c",
-        "esp_nvs.h": "c"
+        "esp_nvs.h": "c",
+        "ezlopi_hal_system_info.h": "c",
+        "sdkconfig.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
