@@ -89,7 +89,10 @@
         "thread": "c",
         "ezlopi_cloud_settings.h": "c",
         "ezlopi_core_settings.h": "c",
-        "ezlopi_core_valueformatter.h": "c"
+        "ezlopi_core_valueformatter.h": "c",
+        "time.h": "c",
+        "ezlopi_core_nvs.h": "c",
+        "esp_nvs.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
