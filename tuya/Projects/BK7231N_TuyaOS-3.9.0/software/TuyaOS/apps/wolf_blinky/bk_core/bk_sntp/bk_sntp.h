@@ -1,0 +1,1 @@
+int bk_sntp_init();

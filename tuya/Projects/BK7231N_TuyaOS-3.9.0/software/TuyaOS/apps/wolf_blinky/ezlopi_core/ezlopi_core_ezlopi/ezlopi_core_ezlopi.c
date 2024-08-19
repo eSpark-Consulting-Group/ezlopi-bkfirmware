@@ -2,6 +2,7 @@
 #include "ezlopi_core_devices.h"
 #include "ezlopi_core_buffer.h"
 #include "ezlopi_core_factory_info.h"
+#include "ezlopi_core_sntp.h"
 
 #if defined(DEVICE_PROVISION_BOOT)
 #include "cert.h"
@@ -21,6 +22,7 @@ void ezlopi_init()
     print_factory_info_v3();
     ezlopi_device_prepare();
     ezlopi_initialize_devices_v3();
+    EZPI_CORE_sntp_init();
 }
 
 l_ezlopi_device_t* link_next_parent_id(uint32_t target_to_clear_parent_id)

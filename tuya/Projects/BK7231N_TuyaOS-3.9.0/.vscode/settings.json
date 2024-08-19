@@ -94,7 +94,23 @@
         "ezlopi_core_nvs.h": "c",
         "esp_nvs.h": "c",
         "ezlopi_hal_system_info.h": "c",
-        "sdkconfig.h": "c"
+        "sdkconfig.h": "c",
+        "sys.h": "c",
+        "ip_addr.h": "c",
+        "pbuf.h": "c",
+        "netif.h": "c",
+        "init.h": "c",
+        "dns.h": "c",
+        "udp.h": "c",
+        "timeouts.h": "c",
+        "netdb.h": "c",
+        "inet.h": "c",
+        "unistd.h": "c",
+        "sntp.h": "c",
+        "bk_sntp.h": "c",
+        "ezlopi_core_sntp.h": "c",
+        "zones.h": "c",
+        "cstdlib": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
