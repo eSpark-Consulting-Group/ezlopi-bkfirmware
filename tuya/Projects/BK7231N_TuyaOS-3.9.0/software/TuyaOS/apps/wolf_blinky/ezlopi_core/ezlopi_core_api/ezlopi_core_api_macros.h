@@ -23,6 +23,8 @@ CLOUD_METHOD("hub.device.settings.list", ezlopi_device_settings_list_v3, NULL)
 CLOUD_METHOD("hub.device.setting.value.set", ezlopi_device_settings_value_set_v3, NULL)
 CLOUD_METHOD("hub.device.setting.reset", ezlopi_device_settings_reset_v3, NULL)
 
+CLOUD_METHOD("hub.info.get", info_get, NULL)
+
 #if (defined(CONFIG_EZPI_WEBSOCKET_CLIENT) || defined(CONFIG_EZPI_LOCAL_WEBSOCKET_SERVER))
 
 
@@ -62,8 +64,6 @@ CLOUD_METHOD("hub.modes.entry_delay.reset", ezlopi_cloud_modes_entry_delay_reset
 CLOUD_METHOD("hub.favorite.list", favorite_list_v3, NULL)
 
 CLOUD_METHOD("hub.gateways.list", gateways_list, NULL)
-
-CLOUD_METHOD("hub.info.get", info_get, NULL)
 
 #if defined(CONFIG_EZPI_ENABLE_OTA)
 CLOUD_METHOD("cloud.firmware.info.get", firmware_info_get, NULL)

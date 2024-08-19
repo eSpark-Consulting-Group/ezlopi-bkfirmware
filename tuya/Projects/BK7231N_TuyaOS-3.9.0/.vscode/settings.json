@@ -110,7 +110,9 @@
         "bk_sntp.h": "c",
         "ezlopi_core_sntp.h": "c",
         "zones.h": "c",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "ezlopi_cloud_info.h": "c",
+        "ezlopi_util_version.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

@@ -20,23 +20,38 @@ RELATIVE_APP_PATH=$(realpath --relative-to="$SDK_PATH" "$ABSOLUTE_APP_PATH") || 
 # Set the APP_NAME based on the project directory name
 APP_NAME=$(basename "$RELATIVE_APP_PATH")
 
-echo APP_PATH=$RELATIVE_APP_PATH
-echo APP_NAME=$APP_NAME
-echo APP_VERSION=$APP_VERSION
-echo BUILD_CMD=$BUILD_CMD
-echo COM_PORT=$COM_PORT
-echo SDK_PATH=$SDK_PATH
+# Path to create_version_header.sh
+CREATE_VERSION_HEADER_PATH="${SDK_PATH}/apps/wolf_blinky/ezlopi_util/ezlopi-util-version/create_version_header.sh"
+
+echo "APP_PATH=$RELATIVE_APP_PATH"
+echo "APP_NAME=$APP_NAME"
+echo "APP_VERSION=$APP_VERSION"
+echo "BUILD_CMD=$BUILD_CMD"
+echo "COM_PORT=$COM_PORT"
+echo "SDK_PATH=$SDK_PATH"
+echo "CREATE_VERSION_HEADER_PATH=$CREATE_VERSION_HEADER_PATH"
 
 fatal() {
     echo -e "\033[0;31merror: $1\033[0m"
     exit 1
 }
 
-[ -z $APP_VERSION ] && fatal "no version!"
+[ -z "$APP_VERSION" ] && fatal "No version provided!"
 
 # Function to build the application
 build_app() {
-    sh build_app.sh "$RELATIVE_APP_PATH" $APP_NAME $APP_VERSION
+    echo "Running create_version_header.sh..."
+    if [ -f "$CREATE_VERSION_HEADER_PATH" ]; then
+        sh "$CREATE_VERSION_HEADER_PATH"
+        if [ $? -ne 0 ]; then
+            fatal "Failed to create version header!"
+        fi
+    else
+        fatal "create_version_header.sh not found at $CREATE_VERSION_HEADER_PATH"
+    fi
+
+    echo "Building application..."
+    sh build_app.sh "$RELATIVE_APP_PATH" "$APP_NAME" "$APP_VERSION"
     if [ $? -ne 0 ]; then
         fatal "Build failed!"
     fi
@@ -44,7 +59,11 @@ build_app() {
 
 # Function to clean the application build
 clean_app() {
-    sh build_app.sh "$RELATIVE_APP_PATH" $APP_NAME $APP_VERSION clean
+    echo "Cleaning application build..."
+    sh build_app.sh "$RELATIVE_APP_PATH" "$APP_NAME" "$APP_VERSION" clean
+    if [ $? -ne 0 ]; then
+        fatal "Clean failed!"
+    fi
     exit 0
 }
 
@@ -52,8 +71,9 @@ clean_app() {
 flash_app() {
     BINARY_PATH="$APP_PATH/output/$APP_VERSION/${APP_NAME}_QIO_${APP_VERSION}.bin"
     if [ -f "$BINARY_PATH" ]; then
+        echo "Flashing binary..."
         cd hid_flasher || { echo "Failed to change directory to hid_flasher"; exit 1; }
-        sudo python3 uartprogram $BINARY_PATH -d $COM_PORT -w -u -s 0x0
+        sudo python3 uartprogram "$BINARY_PATH" -d "$COM_PORT" -w -u -s 0x0
         if [ $? -ne 0 ]; then
             fatal "Flashing failed!"
         else

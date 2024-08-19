@@ -5,7 +5,7 @@
 #include "ezlopi_cloud_registration.h"
 #include "ezlopi_cloud_network.h"
 #include "ezlopi_cloud_settings.h"
-
+#include "ezlopi_cloud_info.h"
 
 #include "ezlopi_core_reset.h"
 #include "ezlopi_core_api_methods.h"
