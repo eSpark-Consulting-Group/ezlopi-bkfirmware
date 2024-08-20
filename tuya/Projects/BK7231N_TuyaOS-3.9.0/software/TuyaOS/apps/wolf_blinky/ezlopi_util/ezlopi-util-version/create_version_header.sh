@@ -14,6 +14,9 @@ compile_time=$(date "+%a %b %d %r %Z %Y") # Human-readable format
 commit_hash=$(git rev-parse HEAD) # Full commit hash
 branch_name=$(git rev-parse --abbrev-ref HEAD) # Current branch name
 
+# Get the developer's email from Git config
+developer_email=$(git config user.email)
+
 # Write the header content
 cat <<EOF > "$header_filename"
 #ifndef __VERSION_H__
@@ -29,7 +32,7 @@ extern "C" {
 #define BATCH 4
 #define BUILD 194
 #define VERSION_STR "4.1.4"
-#define DEVELOPER "maaz@esparkconsultants.com"
+#define DEVELOPER "$developer_email"
 #define COMPILE_TIME "$compile_time"
 #define CURRENT_BRANCH "$branch_name"
 #define COMMIT_HASH "$commit_hash"

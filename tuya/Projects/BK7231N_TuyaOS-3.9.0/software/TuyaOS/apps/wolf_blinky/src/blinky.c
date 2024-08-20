@@ -182,7 +182,7 @@ void test_nvs_apis() {
 
 STATIC VOID user_main(VOID_T)
 {
-        OPERATE_RET rt = OPRT_OK;
+    OPERATE_RET rt = OPRT_OK;
 
     /* LwIP Initialization */
 #if defined(ENABLE_LWIP) && (ENABLE_LWIP == 1)
@@ -204,7 +204,7 @@ STATIC VOID user_main(VOID_T)
         TAL_PR_ERR("uart init failed", result);
     }
 
-    TAL_PR_DEBUG("hello Ash-----");
+    // TAL_PR_DEBUG("hello Ash-----");
     THREAD_CFG_T thread_cfg = 
     {
         .thrdname = "free_heap",
@@ -253,6 +253,7 @@ STATIC VOID __free_heap_task(PVOID_T args)
 {
     int free_heap = 0;
     float free_heap_kb;
+    uint32_t last_tick_count = 0;
     for (;;) {
         free_heap = tal_system_get_free_heap_size();
         free_heap_kb = free_heap/1024;
@@ -262,7 +263,11 @@ STATIC VOID __free_heap_task(PVOID_T args)
         {
             tal_system_reset();
         }
-        tal_system_sleep(3000);
+         
+        uint32_t tick_count_ms = xTaskGetTickCount() / portTICK_PERIOD_MS;
+        TRACE_I("TICK COUNT = %d, TICK DIFF = %d", tick_count_ms, tick_count_ms - last_tick_count);
+        last_tick_count = tick_count_ms;
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
     }
 }
 

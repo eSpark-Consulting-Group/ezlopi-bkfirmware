@@ -13,10 +13,10 @@
 #include "cJSON.h"
 #include "ezlopi_cloud_methods_str.h"
 #include "ezlopi_cloud_keywords.h"
-// #include "ezlopi_cloud_coordinates.h"
+#include "ezlopi_cloud_coordinates.h"
 #include "ezlopi_core_factory_info.h"
 #include "ezlopi_core_sntp.h"
-// #include "ezlopi_core_info.h"
+#include "ezlopi_core_info.h"
 
 void info_get(cJSON* cj_request, cJSON* cj_response)
 {
@@ -39,12 +39,9 @@ void info_get(cJSON* cj_request, cJSON* cj_response)
         cJSON* cjson_location = cJSON_AddObjectToObject( cjson_result, "location");
         if (cjson_location)
         {
-            // cJSON_AddNumberToObject( cjson_location, "latitude", ezlopi_cloud_get_latitude()); //FIXME: ezlopi_cloud_coordinates.
-            // cJSON_AddNumberToObject( cjson_location, "longitude", ezlopi_cloud_get_longitude());
+            cJSON_AddNumberToObject( cjson_location, "latitude", ezlopi_cloud_get_latitude()); //FIXME: ezlopi_cloud_coordinates.
+            cJSON_AddNumberToObject( cjson_location, "longitude", ezlopi_cloud_get_longitude());
             
-            cJSON_AddNumberToObject( cjson_location, "latitude", 24.860735);
-            cJSON_AddNumberToObject( cjson_location, "longitude", 67.001137);
-
             char* location = EZPI_CORE_sntp_get_location();
             if (location)
             {
@@ -88,7 +85,7 @@ void info_get(cJSON* cj_request, cJSON* cj_response)
             cJSON_AddStringToObject( cjson_result, "localtime", local_time);
         }
 
-#if 1 //FIXME: ezlopi_core_info
+#if 0 //FIXME: ezlopi_core_info
         {
             char local_time[100];
             EZPI_CORE_sntp_get_up_time(local_time, sizeof(local_time));

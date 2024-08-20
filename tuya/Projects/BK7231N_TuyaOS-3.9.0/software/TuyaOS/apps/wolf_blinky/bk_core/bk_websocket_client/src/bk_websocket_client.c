@@ -330,7 +330,7 @@ int ws_server_connect(esp_websocket_client_handle_t client)
         client->event_handler(&ws_event);
         client->state = WEBSOCKET_STATE_CONNECTED;
         TAL_PR_DEBUG("Connect to wolfSSL on the server side SUCCESS!\n");
-        THREAD_CFG_T thrd_param = {4096, 4, "beken-ws-rcv"};
+        THREAD_CFG_T thrd_param = {4096, THREAD_PRIO_6, "beken-ws-rcv"};
         tal_thread_create_and_start(&bk_ws_rcv_thread, NULL, NULL, ws_receive, client, &thrd_param);
         // THREAD_CFG_T ping_thrd_param = {1024, 4, "beken-ws-ping"};
         // tal_thread_create_and_start(&bk_ws_ping_thread, NULL, NULL, ws_ping, client, &ping_thrd_param);

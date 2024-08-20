@@ -112,7 +112,11 @@
         "zones.h": "c",
         "cstdlib": "c",
         "ezlopi_cloud_info.h": "c",
-        "ezlopi_util_version.h": "c"
+        "ezlopi_util_version.h": "c",
+        "ezlopi_cloud_coordinates.h": "c",
+        "ezlopi_core_reset.h": "c",
+        "ezlopi_core_info.h": "c",
+        "freertosconfig.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

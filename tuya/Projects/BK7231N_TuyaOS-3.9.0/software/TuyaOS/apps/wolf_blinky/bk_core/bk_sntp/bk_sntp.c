@@ -17,6 +17,8 @@
 // #define TIMEZONE_OFFSET (5*3600) // Adjust for your timezone
 #define TIMEZONE_OFFSET (0) // Adjust for your timezone
 
+#define TAL_PR_DEBUG
+
 uint8_t packetBuffer[NTP_PACKET_SIZE];
 
 void send_ntp_request(int sockfd, struct sockaddr_in *server_addr) {

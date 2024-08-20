@@ -25,6 +25,9 @@ CLOUD_METHOD("hub.device.setting.reset", ezlopi_device_settings_reset_v3, NULL)
 
 CLOUD_METHOD("hub.info.get", info_get, NULL)
 
+CLOUD_METHOD("hub.coordinates.set", hub_coordinates_set, NULL)
+CLOUD_METHOD("hub.coordinates.get", hub_coordinates_get, NULL)
+
 #if (defined(CONFIG_EZPI_WEBSOCKET_CLIENT) || defined(CONFIG_EZPI_LOCAL_WEBSOCKET_SERVER))
 
 
@@ -114,8 +117,6 @@ CLOUD_METHOD("hub.scenes.expressions.list", scenes_expressions_list, NULL)
 CLOUD_METHOD("hub.scenes.expressions.delete", scenes_expressions_delete, NULL)
 #endif //CONFIG_EZPI_SERV_ENABLE_MESHBOTS
 
-CLOUD_METHOD("hub.coordinates.set", hub_coordinates_set, NULL)
-CLOUD_METHOD("hub.coordinates.get", hub_coordinates_get, NULL)
 CLOUD_METHOD("hub.offline.login.ui", EZPI_CLOUD_offline_login, NULL)
 
 
