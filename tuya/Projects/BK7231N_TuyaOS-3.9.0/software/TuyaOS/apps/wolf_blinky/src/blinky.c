@@ -29,6 +29,7 @@
 #include "ezlopi_core_nvs.h"
 
 #include "esp_partition.h"
+#include "one_wire_test.h"
 
 #define PID  "tvjs8eysp0imads8"
 #define LED_PIN TUYA_GPIO_NUM_26
@@ -217,24 +218,35 @@ STATIC VOID user_main(VOID_T)
         tal_thread_create_and_start(&free_heap_thrd, NULL, NULL, __free_heap_task, NULL, &thread_cfg);
     }
 
-    ezlopi_wifi_initialize();
-    while (!ezlopi_wifi_is_connected()) 
-    {  
-        ezlopi_wifi_connect_from_id_bin();
-        TRACE_E("Not Connected");
-        tal_system_sleep(700);
-    }
-    TRACE_S("Wifi Connected");
+    // ezlopi_wifi_initialize();
+    // while (!ezlopi_wifi_is_connected()) 
+    // {  
+    //     ezlopi_wifi_connect_from_id_bin();
+    //     TRACE_E("Not Connected");
+    //     tal_system_sleep(700);
+    // }
+    // TRACE_S("Wifi Connected");
     
-    ezlopi_core_set_log_upcalls();
+    // ezlopi_core_set_log_upcalls();
 
-    ezlopi_init();
+    // ezlopi_init();
 
-    ezlopi_service_broadcast_init();
+    // ezlopi_service_broadcast_init();
 
-    ezlopi_service_web_provisioning_init();
+    // ezlopi_service_web_provisioning_init();
 
-    ezlopi_nvs_set_boot_count(ezlopi_system_info_get_boot_count() + 1);
+    // ezlopi_nvs_set_boot_count(ezlopi_system_info_get_boot_count() + 1);
+    // dht11_init();
+
+    while(true)
+    {
+        dht11_test();
+        // SYS_TICK_T ticks_before = tal_system_get_tick_count();
+        vTaskDelay(2500);
+        // SYS_TICK_T ticks_after = tal_system_get_tick_count();
+        // TAL_PR_DEBUG("Before %d, AFter %d, diff %d\n", ticks_before, ticks_after, ticks_after - ticks_before);
+        // delay_test();
+    }
 
    return;
 }
