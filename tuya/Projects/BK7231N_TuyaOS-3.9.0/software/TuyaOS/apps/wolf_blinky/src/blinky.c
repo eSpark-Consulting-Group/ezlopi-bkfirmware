@@ -268,7 +268,7 @@ STATIC VOID __free_heap_task(PVOID_T args)
         }
          
         uint32_t tick_count_ms = xTaskGetTickCount() / portTICK_PERIOD_MS;
-        TRACE_I("TICK COUNT = %d, TICK DIFF = %d", tick_count_ms, tick_count_ms - last_tick_count);
+        // TRACE_I("TICK COUNT = %d, TICK DIFF = %d", tick_count_ms, tick_count_ms - last_tick_count);
         last_tick_count = tick_count_ms;
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }

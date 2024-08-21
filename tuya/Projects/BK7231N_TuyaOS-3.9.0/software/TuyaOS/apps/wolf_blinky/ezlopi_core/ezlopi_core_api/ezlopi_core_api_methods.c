@@ -8,6 +8,7 @@
 #include "ezlopi_cloud_info.h"
 #include "ezlopi_cloud_coordinates.h"
 #include "ezlopi_cloud_location.h"
+#include "ezlopi_cloud_log.h"
 
 #include "ezlopi_core_reset.h"
 #include "ezlopi_core_api_methods.h"

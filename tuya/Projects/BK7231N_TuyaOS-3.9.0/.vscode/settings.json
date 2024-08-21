@@ -120,7 +120,8 @@
         "stdarg.h": "c",
         "ezlopi_core_log.h": "c",
         "event_groups.h": "c",
-        "ezlopi_core_event_group.h": "c"
+        "ezlopi_core_event_group.h": "c",
+        "ezlopi_cloud_log.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
