@@ -28,6 +28,10 @@ CLOUD_METHOD("hub.info.get", info_get, NULL)
 CLOUD_METHOD("hub.coordinates.set", hub_coordinates_set, NULL)
 CLOUD_METHOD("hub.coordinates.get", hub_coordinates_get, NULL)
 
+CLOUD_METHOD("hub.time.location.list", EZPI_CLOUD_location_list, NULL)
+CLOUD_METHOD("hub.time.location.set", EZPI_CLOUD_location_set, NULL)
+CLOUD_METHOD("hub.time.location.get", EZPI_CLOUD_location_get, NULL)
+
 #if (defined(CONFIG_EZPI_WEBSOCKET_CLIENT) || defined(CONFIG_EZPI_LOCAL_WEBSOCKET_SERVER))
 
 
@@ -72,10 +76,6 @@ CLOUD_METHOD("hub.gateways.list", gateways_list, NULL)
 CLOUD_METHOD("cloud.firmware.info.get", firmware_info_get, NULL)
 CLOUD_METHOD("hub.firmware.update.start", firmware_update_start, NULL)
 #endif // CONFIG_EZPI_ENABLE_OTA
-
-CLOUD_METHOD("hub.time.location.list", EZPI_CLOUD_location_list, NULL)
-CLOUD_METHOD("hub.time.location.set", EZPI_CLOUD_location_set, NULL)
-CLOUD_METHOD("hub.time.location.get", EZPI_CLOUD_location_get, NULL)
 
 #if defined(CONFIG_EZPI_SERV_ENABLE_MESHBOTS)
 CLOUD_METHOD("hub.scenes.list", scenes_list, NULL)
