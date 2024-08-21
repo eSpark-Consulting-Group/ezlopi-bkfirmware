@@ -24,6 +24,7 @@
 #include "ezlopi_util_trace.h"
 #include "ezlopi_core_ezlopi.h"
 #include "ezlopi_core_factory_info.h"
+#include "ezlopi_core_log.h"
 
 #include "ezlopi_core_nvs.h"
 
@@ -225,6 +226,8 @@ STATIC VOID user_main(VOID_T)
     }
     TRACE_S("Wifi Connected");
     
+    ezlopi_core_set_log_upcalls();
+
     ezlopi_init();
 
     ezlopi_service_broadcast_init();
@@ -267,7 +270,7 @@ STATIC VOID __free_heap_task(PVOID_T args)
         uint32_t tick_count_ms = xTaskGetTickCount() / portTICK_PERIOD_MS;
         TRACE_I("TICK COUNT = %d, TICK DIFF = %d", tick_count_ms, tick_count_ms - last_tick_count);
         last_tick_count = tick_count_ms;
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
 

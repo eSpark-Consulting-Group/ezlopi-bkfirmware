@@ -73,11 +73,11 @@ extern "C"
         printf("%s[%d]:" X "\n", __FILE__, __LINE__, ##reg); \
     }
 
-#define trace_log_sev_error(X, reg...)  trace_color_print(COLOR_FONT_RED, __FILE__, __LINE__, X, ##reg)
-#define trace_log_sev_warning(X, reg...) trace_color_print(COLOR_FONT_YELLOW, __FILE__, __LINE__, X, ##reg)
-#define trace_log_sev_info(X, reg...) trace_color_print(COLOR_FONT_BLUE, __FILE__, __LINE__, X, ##reg)
-#define trace_log_sev_debug(X, reg...) trace_color_print(COLOR_FONT_CYAN, __FILE__, __LINE__, X, ##reg)
-#define trace_log_sev_trace(X, reg...) trace_color_print(COLOR_FONT_GREEN, __FILE__, __LINE__, X, ##reg)
+#define trace_log_sev_error(X, reg...)  trace_color_print(COLOR_FONT_RED, 1, __FILENAME__, __LINE__, X, ##reg)
+#define trace_log_sev_warning(X, reg...) trace_color_print(COLOR_FONT_YELLOW, 2, __FILENAME__, __LINE__, X, ##reg)
+#define trace_log_sev_info(X, reg...) trace_color_print(COLOR_FONT_BLUE, 3, __FILENAME__, __LINE__, X, ##reg)
+#define trace_log_sev_debug(X, reg...) trace_color_print(COLOR_FONT_WHITE, 4, __FILENAME__, __LINE__, X, ##reg)
+#define trace_log_sev_trace(X, reg...) trace_color_print(COLOR_FONT_GREEN, 5, __FILENAME__, __LINE__, X, ##reg)
 
 
 #define trace_debug(X, reg...) trace_color(TAL_LOG_LEVEL_DEBUG, COLOR_FONT_WHITE, X, ##reg)
@@ -107,17 +107,17 @@ extern "C"
 
 #define F(X) (flash_attr) X
 
-#define TRACE_D trace_debug
-#define TRACE_I trace_information
-#define TRACE_S trace_success
-#define TRACE_W trace_warning
-#define TRACE_E trace_error
+// #define TRACE_D trace_debug
+// #define TRACE_I trace_information
+// #define TRACE_S trace_success
+// #define TRACE_W trace_warning
+// #define TRACE_E trace_error
 
-// #define TRACE_E trace_log_sev_error
-// #define TRACE_W trace_log_sev_warning
-// #define TRACE_I trace_log_sev_info
-// #define TRACE_D trace_log_sev_debug
-// #define TRACE_S trace_log_sev_trace
+#define TRACE_E trace_log_sev_error
+#define TRACE_W trace_log_sev_warning
+#define TRACE_I trace_log_sev_info
+#define TRACE_D trace_log_sev_debug
+#define TRACE_S trace_log_sev_trace
 
 
 #define dump(buffer_name, buffer, offset, count) __dump(__FILE__, __LINE__, buffer_name, buffer, offset, count)
@@ -125,6 +125,7 @@ extern "C"
     void ezlopi_util_set_log_upcalls(f_ezlopi_log_upcall_t cloud_log_upcall, f_ezlopi_log_upcall_t serial_log_upcall);
     f_ezlopi_log_upcall_t ezlopi_util_get_cloud_log_upcall();
     f_ezlopi_log_upcall_t ezlopi_util_get_serial_log_upcall();
+    void log_and_send_to_uart(TUYA_UART_NUM_E port_id, TAL_LOG_LEVEL_E log_level, const char *format, ...);
 
 #else // (1 == ENABLE_TRACE)
 

@@ -2,8 +2,9 @@
 
 #include "ezlopi_cloud_constants.h"
 #include "ezlopi_core_api.h"
-// #include "ezlopi_core_cjson_macros.h"
-// #include "ezlopi_core_ezlopi_broadcast.h"
+#include "ezlopi_core_cjson_macros.h"
+#include "ezlopi_core_ezlopi_broadcast.h"
+#include "ezlopi_core_event_group.h"
 #include "ezlopi_core_api_methods.h"
 #include "cJSON.h"
 
@@ -102,6 +103,7 @@ static cJSON* __execute_method(cJSON* cj_request, f_method_func_t method_func)
         if (ezlopi_core_elzlopi_methods_check_method_register(method_func))
         {
             method_func(cj_request, NULL);
+            ezlopi_event_group_set_event(EZLOPI_EVENT_NMA_REG);
         }
         else
         {

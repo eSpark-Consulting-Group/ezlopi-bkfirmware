@@ -3,6 +3,7 @@
 #include "ezlopi_core_buffer.h"
 #include "ezlopi_core_factory_info.h"
 #include "ezlopi_core_sntp.h"
+#include "ezlopi_core_event_group.h"
 
 #if defined(DEVICE_PROVISION_BOOT)
 #include "cert.h"
@@ -12,6 +13,7 @@ void __prov_device();
 static void ezlopi_initialize_devices_v3(void);
 void ezlopi_init()
 {
+    ezlopi_event_group_create();
     #define CONFIG_EZPI_CORE_STATIC_BUFFER_SIZE 5*1024 //FIXME_AUTO
     ezlopi_core_buffer_init(CONFIG_EZPI_CORE_STATIC_BUFFER_SIZE); // allocate 10kB
     ezlopi_factory_info_v3_init();
