@@ -4,6 +4,7 @@
 #include "ezlopi_core_factory_info.h"
 #include "ezlopi_core_sntp.h"
 #include "ezlopi_core_event_group.h"
+#include "ezlopi_core_wifi.h"
 
 #if defined(DEVICE_PROVISION_BOOT)
 #include "cert.h"
@@ -22,6 +23,9 @@ void ezlopi_init()
     __prov_device();
     #endif
     print_factory_info_v3();
+
+    ezlopi_wifi_initialize();
+
     ezlopi_device_prepare();
     ezlopi_initialize_devices_v3();
     EZPI_CORE_sntp_init();

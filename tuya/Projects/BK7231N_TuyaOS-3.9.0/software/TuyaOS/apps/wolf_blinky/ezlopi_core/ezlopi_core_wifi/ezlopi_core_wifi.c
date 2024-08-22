@@ -3,9 +3,22 @@
 #include "ezlopi_core_wifi.h"
 #include "ezlopi_util_trace.h"
 #include "ezlopi_core_factory_info.h"
+#include "ezlopi_core_event_group.h"
+// #include "base_event.h"
+
+#define EXAMPLE_ESP_MAXIMUM_RETRY 5
 
 bool is_connected = false;
 static NW_IP_S sta_info;
+
+static int sg_retry_num = 0;
+static volatile int sg_station_got_ip = 0;
+static const char* const scg_wifi_no_error_str = "NO_ERROR";
+static const char* sg_last_disconnect_reason = "NO_ERROR";
+
+/* Prototypes */
+static void __event_wifi_disconnected(void* event_data);
+
 
 STATIC VOID_T wifi_event_callback(WF_EVENT_E event, VOID_T *arg)
 {
@@ -39,16 +52,21 @@ STATIC VOID_T wifi_event_callback(WF_EVENT_E event, VOID_T *arg)
             TRACE_I("ip: %s", sta_info.ip);
             TRACE_I("mask: %s", sta_info.mask);
 #endif
+            ezlopi_event_group_set_event(EZLOPI_EVENT_WIFI_CONNECTED);
             break;
         }
 
         case WFE_CONNECT_FAILED: {
             TRACE_D("connection fail!");
+            is_connected = false;
+            __event_wifi_disconnected(arg);
             break;
         }
 
         case WFE_DISCONNECTED: {
             TRACE_D("disconnect!");
+            is_connected = false;
+            __event_wifi_disconnected(arg);
             break;        
         }
     }
@@ -78,6 +96,7 @@ STATIC VOID_T wifi_event_callback(WF_EVENT_E event, VOID_T *arg)
 
 VOID ezlopi_wifi_initialize(VOID)
 {
+    TRACE_I("WIFI INIT");
     OPERATE_RET rt = OPRT_OK;
     s_ezlopi_wifi_ap_itf_t *wifi_interface = (s_ezlopi_wifi_ap_itf_t *)malloc(sizeof(s_ezlopi_wifi_ap_itf_t));
     if(wifi_interface)
@@ -87,13 +106,18 @@ VOID ezlopi_wifi_initialize(VOID)
         // tuya_iot_wf_timeout_set(60);
         BK_CALL_ERR_LOG(tal_wifi_init(wifi_event_callback));
     }
+    ezlopi_wifi_connect_from_id_bin();
 }
 
 VOID ezlopi_wifi_connect_from_id_bin(VOID)
 {
     OPERATE_RET rt = OPRT_OK;
-    CHAR_T *wifi_ssid     = ezlopi_factory_info_v3_get_ssid();
-    CHAR_T *wifi_password = ezlopi_factory_info_v3_get_password();
+    // CHAR_T *wifi_ssid     = ezlopi_factory_info_v3_get_ssid();
+    // CHAR_T *wifi_password = ezlopi_factory_info_v3_get_password();
+
+    CHAR_T *wifi_ssid     = "Embedded";
+    CHAR_T *wifi_password = "123asd456asd";
+
     if ((NULL != wifi_ssid) && ('\0' != wifi_ssid[0]) &&
         (NULL != wifi_password) && ('\0' != wifi_password[0]))
     {
@@ -200,4 +224,51 @@ OPERATE_RET ezlopi_wifi_scan_start(CHAR_T ***ssids, CHAR_T ***rssis, UINT_T *num
 void ezlopi_wifi_scan_stop()
 {
 
+}
+
+
+static void __event_wifi_disconnected(void* event_data)
+{
+    TRACE_E("%s, Enter", __FUNCTION__);
+    ezlopi_event_group_clear_event(EZLOPI_EVENT_WIFI_CONNECTED);
+
+    // if (event_data)
+    {
+        // event_data; //
+        // WF_DISCONN_REASON_E* disconnected_reason = (WF_DISCONN_REASON_E*)event_data;
+        // TRACE_E("Disconnect reason[%d]: %s", disconnected->reason, ezlopi_wifi_err_reason_str(disconnected->reason));
+        TRACE_E("Disconnect reason[%d]: %s", 1, "Disconnect Reason");
+        // sg_last_disconnect_reason = ezlopi_wifi_err_reason_str(disconnected->reason);
+        sg_last_disconnect_reason = "Disconnect Reason";
+
+        sg_station_got_ip = 0;
+        // esp_wifi_connect();
+        ezlopi_wifi_connect_from_id_bin();
+
+        if (sg_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY)
+        {
+            sg_retry_num++;
+            TRACE_S("retry to connect to the AP");
+        }
+        else
+        {
+            ezlopi_event_group_set_event(EZLOPI_EVENT_WIFI_FAIL);
+            sg_retry_num = 0;
+        }
+
+        TRACE_W("connect to the AP fail");
+        memset(&sta_info, 0, sizeof(NW_IP_S));
+    }
+}
+
+int ezlopi_wait_for_wifi_to_connect(uint32_t wait_time_ms)
+{
+    uint32_t ret = 0;
+    while (-1 == ezlopi_event_group_wait_for_event(EZLOPI_EVENT_WIFI_CONNECTED, wait_time_ms, false))
+    {
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+
+    ret = ezlopi_event_group_wait_for_event(EZLOPI_EVENT_WIFI_CONNECTED, wait_time_ms, false);
+    return ret;
 }

@@ -27,7 +27,7 @@ typedef WF_AP_AUTH_MODE_E e_ezlopi_wifi_auth_mode_t;
 VOID ezlopi_wifi_initialize(VOID);
 VOID ezlopi_wifi_connect(const char* ssid, const char* pass);
 VOID ezlopi_wifi_connect_from_id_bin(VOID);
-// int ezlopi_wait_for_wifi_to_connect(uint32_t wait_time_ms);
+int ezlopi_wait_for_wifi_to_connect(uint32_t wait_time_ms);
 NW_IP_S* ezlopi_wifi_get_ip_infos(void);
 void ezlopi_wifi_read_mac(uint8_t* mac_addr, WF_IF_E mode);
 // esp_netif_ip_info_t* ezlopi_wifi_get_ip_infos(void);

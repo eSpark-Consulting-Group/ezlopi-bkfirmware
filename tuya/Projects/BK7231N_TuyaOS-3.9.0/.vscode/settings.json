@@ -121,7 +121,11 @@
         "ezlopi_core_log.h": "c",
         "event_groups.h": "c",
         "ezlopi_core_event_group.h": "c",
-        "ezlopi_cloud_log.h": "c"
+        "ezlopi_cloud_log.h": "c",
+        "base_event.h": "c",
+        "ezlopi_service_loop.h": "c",
+        "ble_pub.h": "c",
+        "ezlopi_core_buffer.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

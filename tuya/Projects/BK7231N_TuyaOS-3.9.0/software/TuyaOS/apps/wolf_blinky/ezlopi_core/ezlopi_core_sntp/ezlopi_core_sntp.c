@@ -42,6 +42,10 @@ void EZPI_CORE_sntp_init(void)
 {
     // int retry = 0;
     // const int retry_count = 10;
+    TRACE_I("Waiting for Wifi");
+
+    ezlopi_wait_for_wifi_to_connect(portMAX_DELAY);
+    vTaskDelay(2);
 
     TRACE_I("Initializing SNTP");
 

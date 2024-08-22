@@ -39,11 +39,6 @@ CLOUD_METHOD("hub.log.local.set", ezlopi_hub_serial_log_set, ezlopi_hub_serial_l
 
 
 
-// #ifdef CONFIG_EZPI_UTIL_TRACE_EN
-// CLOUD_METHOD("hub.log.set", ezlopi_hub_cloud_log_set, NULL)
-// CLOUD_METHOD("hub.log.local.set", ezlopi_hub_serial_log_set, ezlopi_hub_serial_log_set_updater)
-// #endif  // CONFIG_EZPI_UTIL_TRACE_EN
-
 // #if defined(CONFIG_EZPI_SERV_ENABLE_MODES)
 // CLOUD_METHOD("hub.modes.get", ezlopi_cloud_modes_get, NULL)
 // CLOUD_METHOD("hub.modes.current.get", ezlopi_cloud_modes_current_get, NULL)

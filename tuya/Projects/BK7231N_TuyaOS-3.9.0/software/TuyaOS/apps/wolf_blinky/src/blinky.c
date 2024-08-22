@@ -25,7 +25,7 @@
 #include "ezlopi_core_ezlopi.h"
 #include "ezlopi_core_factory_info.h"
 #include "ezlopi_core_log.h"
-
+#include "ezlopi_service_loop.h"
 #include "ezlopi_core_nvs.h"
 
 #include "esp_partition.h"
@@ -181,6 +181,10 @@ void test_nvs_apis() {
 }
 #endif
 
+void dummy_world()
+{
+    TRACE_W("Dummy World");
+}
 STATIC VOID user_main(VOID_T)
 {
     OPERATE_RET rt = OPRT_OK;
@@ -205,27 +209,18 @@ STATIC VOID user_main(VOID_T)
         TAL_PR_ERR("uart init failed", result);
     }
 
-    // TAL_PR_DEBUG("hello Ash-----");
+    TAL_PR_DEBUG("hello Ash-----");
     THREAD_CFG_T thread_cfg = 
     {
         .thrdname = "free_heap",
-        .stackDepth = 1024 * 3,
-        .priority = THREAD_PRIO_5,
+        .stackDepth = 2048 * 3,
+        .priority = THREAD_PRIO_0,
     };
     if (NULL == free_heap_thrd) 
     {
         tal_thread_create_and_start(&free_heap_thrd, NULL, NULL, __free_heap_task, NULL, &thread_cfg);
     }
 
-    ezlopi_wifi_initialize();
-    while (!ezlopi_wifi_is_connected()) 
-    {  
-        ezlopi_wifi_connect_from_id_bin();
-        TRACE_E("Not Connected");
-        tal_system_sleep(700);
-    }
-    TRACE_S("Wifi Connected");
-    
     ezlopi_core_set_log_upcalls();
 
     ezlopi_init();
@@ -249,13 +244,16 @@ STATIC VOID tuya_app_thread(VOID_T *arg )
 
 VOID_T tuya_app_main(VOID)
 {
-    THREAD_CFG_T thrd_param = {4096*2, 4, "tuya_app_main"};
+    THREAD_CFG_T thrd_param = {4096*4, 4, "tuya_app_main"};
     tal_thread_create_and_start(&ty_app_thread, NULL, NULL, tuya_app_thread, NULL, &thrd_param);
 }
 STATIC VOID __free_heap_task(PVOID_T args)
 {
     int free_heap = 0;
     float free_heap_kb;
+    tal_system_sleep(30000);
+
+    ezlopi_service_loop_init();
     uint32_t last_tick_count = 0;
     for (;;) {
         free_heap = tal_system_get_free_heap_size();
@@ -270,7 +268,7 @@ STATIC VOID __free_heap_task(PVOID_T args)
         uint32_t tick_count_ms = xTaskGetTickCount() / portTICK_PERIOD_MS;
         // TRACE_I("TICK COUNT = %d, TICK DIFF = %d", tick_count_ms, tick_count_ms - last_tick_count);
         last_tick_count = tick_count_ms;
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 }
 

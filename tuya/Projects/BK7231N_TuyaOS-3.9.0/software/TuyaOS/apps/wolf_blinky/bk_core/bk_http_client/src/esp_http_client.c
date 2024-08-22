@@ -186,14 +186,14 @@ error:
 
 esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
 {
-
+    esp_err_t ret = ESP_OK;
     switch (client->state)
     {
     case HTTP_STATE_INIT:
-        server_connect(client);
+        ret = server_connect(client);
         /* Falls through */
     case HTTP_STATE_CONNECTED:
-        esp_http_client_request_send(client);
+        ret = esp_http_client_request_send(client);
         /* Falls through */
     case HTTP_STATE_REQ_COMPLETE_HEADER:   
 

@@ -48,7 +48,7 @@ esp_websocket_client_handle_t ezlopi_websocket_client_init(cJSON* uri, void (*ms
 
         char websocket_url_buffer[128] = {0};
 
-        TRACE_D("Connecting to %s...", websocket_cfg.url);
+        TRACE_I("Connecting to %s...", websocket_cfg.url);
         strncpy(websocket_url_buffer, websocket_cfg.url, sizeof(websocket_url_buffer) - 1);
         websocket_cfg.url = websocket_url_buffer;
 
