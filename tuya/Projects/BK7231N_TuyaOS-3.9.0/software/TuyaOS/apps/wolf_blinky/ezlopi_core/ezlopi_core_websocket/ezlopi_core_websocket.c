@@ -2,6 +2,7 @@
 #include "FreeRTOS.h"
 #include "ezlopi_core_websocket.h"
 #include "ezlopi_core_factory_info.h"
+#include "ezlopi_core_event_group.h"
 #include "cJSON.h"
 
 // Web Socket Configurations
@@ -57,6 +58,7 @@ esp_websocket_client_handle_t ezlopi_websocket_client_init(cJSON* uri, void (*ms
         {
             esp_websocket_client_start(client);
         }
+        ezlopi_event_group_set_event(EZLOPI_EVENT_WS_CONNECT);
 
     }
 }

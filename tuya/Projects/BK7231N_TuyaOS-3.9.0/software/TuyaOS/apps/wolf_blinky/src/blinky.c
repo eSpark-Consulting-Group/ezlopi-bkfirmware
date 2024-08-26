@@ -27,6 +27,7 @@
 #include "ezlopi_core_log.h"
 #include "ezlopi_service_loop.h"
 #include "ezlopi_core_nvs.h"
+#include "ezlopi_core_event_group.h"
 
 #include "esp_partition.h"
 
@@ -251,9 +252,9 @@ STATIC VOID __free_heap_task(PVOID_T args)
 {
     int free_heap = 0;
     float free_heap_kb;
-    tal_system_sleep(30000);
+    // tal_system_sleep(30000);
 
-    ezlopi_service_loop_init();
+    // ezlopi_service_loop_init();
     uint32_t last_tick_count = 0;
     for (;;) {
         free_heap = tal_system_get_free_heap_size();
@@ -268,6 +269,11 @@ STATIC VOID __free_heap_task(PVOID_T args)
         uint32_t tick_count_ms = xTaskGetTickCount() / portTICK_PERIOD_MS;
         // TRACE_I("TICK COUNT = %d, TICK DIFF = %d", tick_count_ms, tick_count_ms - last_tick_count);
         last_tick_count = tick_count_ms;
+        if(ezlopi_event_group_wait_for_event(EZLOPI_EVENT_WS_CONNECT, 0 ,false) && !ezlopi_event_group_wait_for_event(EZLOPI_EVENT_LOOP_INIT, 0 ,false))
+        {
+            ezlopi_service_loop_init();
+            ezlopi_event_group_set_event(EZLOPI_EVENT_LOOP_INIT);
+        }
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 }

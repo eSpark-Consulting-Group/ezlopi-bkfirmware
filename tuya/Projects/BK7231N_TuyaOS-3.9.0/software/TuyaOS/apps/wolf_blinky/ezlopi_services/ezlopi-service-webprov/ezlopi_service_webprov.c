@@ -118,6 +118,7 @@ static void __connection_upcall(bool connected)
     {
         prev_status = 1;
         ezlopi_event_group_clear_event(EZLOPI_EVENT_NMA_REG);
+        ezlopi_event_group_clear_event(EZLOPI_EVENT_WS_CONNECT);
     }
 }
 
@@ -135,7 +136,7 @@ static void __fetch_wss_endpoint(void* pv)
     {
         uint32_t task_complete = 0;
         // ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-        // vTaskDelay(100 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_RATE_MS);
 
         char http_request[128];
         snprintf(http_request, sizeof(http_request), "%s?json=true", cloud_server);
@@ -214,7 +215,7 @@ static void __message_process(const char * payload, uint32_t len)
         }
         else
         {
-            TRACE_W("no response!");
+            TRACE_I("no response!");
         }
     }
 
@@ -260,7 +261,7 @@ static int __send_cjson_data_to_nma_websocket(cJSON* cj_data)
     if (cj_data)
     {
         uint32_t buffer_len = 0;
-        char* data_buffer = ezlopi_core_buffer_acquire(&buffer_len, 5000);
+        char* data_buffer = ezlopi_core_buffer_acquire(&buffer_len, 1000);
 
         if (data_buffer && buffer_len)
         {

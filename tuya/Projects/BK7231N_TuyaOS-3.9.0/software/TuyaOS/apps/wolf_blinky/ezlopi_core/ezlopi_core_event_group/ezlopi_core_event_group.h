@@ -8,6 +8,8 @@
 #define BIT2 (1 << 2)
 #define BIT3 (1 << 3)
 #define BIT4 (1 << 4)
+#define BIT5 (1 << 5)
+#define BIT6 (1 << 6)
 #define BIT31 (1U << 31)
 
 typedef enum e_ezlopi_event
@@ -17,6 +19,8 @@ typedef enum e_ezlopi_event
     EZLOPI_EVENT_WIFI_FAIL = BIT2,
     EZLOPI_EVENT_NMA_REG = BIT3,
     EZLOPI_EVENT_PING = BIT4,
+    EZLOPI_EVENT_WS_CONNECT = BIT5,
+    EZLOPI_EVENT_LOOP_INIT = BIT6,
     // can not be more than BIT31
 } e_ezlopi_event_t;
 

@@ -62,7 +62,7 @@ static int ezlopi_service_broadcast_send_to_queue(cJSON* cj_broadcast_data)
         if (xQueueIsQueueFullFromISR(__broadcast_queue))
         {
             cJSON* cj_tmp_data = NULL;
-            if (pdTRUE == xQueueReceive(__broadcast_queue, &cj_tmp_data, 10 / portTICK_PERIOD_MS))
+            if (pdTRUE == xQueueReceive(__broadcast_queue, &cj_tmp_data, 5 / portTICK_PERIOD_MS))
             {
                 if (cj_tmp_data)
                 {
@@ -76,7 +76,7 @@ static int ezlopi_service_broadcast_send_to_queue(cJSON* cj_broadcast_data)
         }
 
         cJSON* cj_data = cj_broadcast_data;
-        if (pdTRUE == xQueueSend(__broadcast_queue, &cj_data, 1000/ portTICK_PERIOD_MS))
+        if (pdTRUE == xQueueSend(__broadcast_queue, &cj_data, 500/ portTICK_PERIOD_MS))
         {
             ret = 1;
         }

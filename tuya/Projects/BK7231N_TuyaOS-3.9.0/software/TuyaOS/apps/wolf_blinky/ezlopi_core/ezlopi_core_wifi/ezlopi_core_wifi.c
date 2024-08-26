@@ -124,6 +124,7 @@ VOID ezlopi_wifi_connect_from_id_bin(VOID)
         // TBK_CALL_ERR_LOG(ezlopi_wifi_connect(wifi_ssid, wifi_password));
         ezlopi_wifi_connect(wifi_ssid, wifi_password);
     }
+    vTaskDelay(500/portTICK_PERIOD_MS);
 }
 
 VOID ezlopi_wifi_connect(const char* ssid, const char* pass)
