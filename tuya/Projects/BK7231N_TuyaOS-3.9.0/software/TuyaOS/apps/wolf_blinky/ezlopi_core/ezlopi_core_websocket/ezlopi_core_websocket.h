@@ -91,7 +91,8 @@ int ezlopi_websocket_client_send_ping(http_session_t websocket_session);
 int ezlopi_websocket_client_send_pong(http_session_t websocket_session);
 int ezlopi_websocket_client_close(http_session_t websocket_session);
 int ezlopi_websocekt_write_to_websocekt(http_session_t websocket_session, char *data, size_t data_len);
-esp_websocket_client_handle_t ezlopi_websocket_client_init(cJSON* uri, void (*msg_upcall)(const char*, uint32_t), void (*connection_upcall)(bool connected));
+void ezlopi_websocket_register_upcalls(void (*msg_upcall)(const char*, uint32_t), void (*connection_upcall)(bool connected));
+esp_websocket_client_handle_t ezlopi_websocket_client_init(cJSON* uri);
 bool ezlopi_websocket_client_is_connected();
 int ezlopi_websocket_client_send(char *data, uint32_t len);
 #endif // __EZLOPI_WEBSOCKET_CLINET_H__

@@ -126,12 +126,12 @@ void __prov_device()
     int16_t serial_number = 7777;
     int version = 101;
     int build = 3333;
-    unsigned long long device_id = 102002871;
+    unsigned long long device_id = 105200426;
     memset(tmp_str, 0,  EZLOPI_FINFO_READ_LEN_4KB);
-    memcpy(tmp_str + EZLOPI_FINFO_REL_OFFSET_SERIAL_NUMBER, &serial_number, EZLOPI_FINFO_LEN_CONFIG_VERSION);
+    // memcpy(tmp_str + EZLOPI_FINFO_REL_OFFSET_DEVICE_ID, &serial_number, EZLOPI_FINFO_LEN_CONFIG_VERSION);
+    memcpy(tmp_str + EZLOPI_FINFO_REL_OFFSET_DEVICE_ID, &device_id, EZLOPI_FINFO_LEN_DEVICE_ID);
     memcpy(tmp_str + EZLOPI_FINFO_REL_OFFSET_FMW_VERSION, &version, EZLOPI_FINFO_LEN_VERSION);
     memcpy(tmp_str + EZLOPI_FINFO_REL_OFFSET_FMW_BUILD, &build, EZLOPI_FINFO_LEN_CONFIG_VERSION);
-    memcpy(tmp_str + EZLOPI_FINFO_REL_OFFSET_DEVICE_ID, &device_id, EZLOPI_FINFO_LEN_DEVICE_ID);
     memcpy(tmp_str + EZLOPI_FINFO_REL_OFFSET_WIFI_SSID, "eSpark Wifi", EZLOPI_FINFO_LEN_WIFI_SSID);
     memcpy(tmp_str + EZLOPI_FINFO_REL_OFFSET_WIFI_PASS, "47356880", EZLOPI_FINFO_LEN_WIFI_PASS);
     memcpy(tmp_str + EZLOPI_FINFO_REL_OFFSET_DEVICE_MAC, "A8:80:55:0E:3D:9B", EZLOPI_FINFO_LEN_DEVICE_MAC);

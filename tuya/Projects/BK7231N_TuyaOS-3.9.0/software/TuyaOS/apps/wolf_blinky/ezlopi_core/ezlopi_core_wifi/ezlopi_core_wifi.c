@@ -4,6 +4,7 @@
 #include "ezlopi_util_trace.h"
 #include "ezlopi_core_factory_info.h"
 #include "ezlopi_core_event_group.h"
+#include "tkl_thread.h"
 // #include "base_event.h"
 
 #define EXAMPLE_ESP_MAXIMUM_RETRY 5
@@ -115,8 +116,11 @@ VOID ezlopi_wifi_connect_from_id_bin(VOID)
     // CHAR_T *wifi_ssid     = ezlopi_factory_info_v3_get_ssid();
     // CHAR_T *wifi_password = ezlopi_factory_info_v3_get_password();
 
-    CHAR_T *wifi_ssid     = "Embedded";
-    CHAR_T *wifi_password = "123asd456asd";
+    CHAR_T *wifi_ssid     = "eSpark_T";
+    CHAR_T *wifi_password = "espark1234";
+
+    // CHAR_T *wifi_ssid     = "Getyourownwifi";
+    // CHAR_T *wifi_password = "d24b687c";
 
     if ((NULL != wifi_ssid) && ('\0' != wifi_ssid[0]) &&
         (NULL != wifi_password) && ('\0' != wifi_password[0]))

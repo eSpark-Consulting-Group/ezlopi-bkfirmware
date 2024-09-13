@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <time.h>
 
+#include "tal_thread.h"
+
 #include "sdkconfig.h"
 
 #include "FreeRTOS.h"
@@ -83,9 +85,15 @@ void ezlopi_service_loop_remove(f_loop_t loop)
 
 void ezlopi_service_loop_init(void)
 {
-    TaskHandle_t ezlopi_service_timer_task_handle = NULL;
     // xTaskCreate(event_process, "event_process", EZLOPI_SERVICE_TIMER_TASK_DEPTH, NULL, 4, &ezlopi_service_timer_task_handle);
-    xTaskCreate(__loop, "__loop", 2*2048, NULL, 2, &ezlopi_service_timer_task_handle);
+    
+    // TaskHandle_t ezlopi_service_timer_task_handle = NULL;
+    // xTaskCreate(__loop, "__loop", 2*2048, NULL, 2, &ezlopi_service_timer_task_handle);
+    
+    THREAD_HANDLE ezlopi_service_timer_task_handle = NULL;
+    THREAD_CFG_T cfg = {2*2048, 2,"__loop"};
+    tal_thread_create_and_start(&ezlopi_service_timer_task_handle, NULL, NULL, __loop, NULL, &cfg);
+
     // ezlopi_core_process_set_process_info(34, &ezlopi_service_timer_task_handle, 4*2048);
 }
 
@@ -118,7 +126,7 @@ static void __loop(void* pv)
         // TRACE_I("loop runtime: %u", __run_time);
 
         // TRACE_I("event loop loop ");
-        vTaskDelay(1 / portTICK_RATE_MS);
+        vTaskDelay(50 / portTICK_RATE_MS);
     }
 }
 

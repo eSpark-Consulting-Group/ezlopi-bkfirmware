@@ -3,7 +3,12 @@
 #include "tal_log.h"
 #include "tal_network.h"
 #include "tal_thread.h"
+#include "tkl_wifi.h"
 #include "string.h"
+
+/* freeRTOS */
+#include "FreeRTOS.h"
+#include "task.h"
 
 /* socket includes */
 #include <sys/socket.h>
@@ -21,6 +26,9 @@
 
 THREAD_HANDLE bk_ws_rcv_thread = NULL;
 THREAD_HANDLE bk_ws_ping_thread = NULL;
+THREAD_HANDLE bk_ws_reconnect_thread = NULL;
+
+TaskHandle_t bk_ws_rcv_thread_handle = NULL;
 
 typedef enum {
     WEBSOCKET_STATE_UNINIT = 0,
@@ -31,6 +39,7 @@ typedef enum {
     WEBSOCKET_STATE_RES_COMPLETE_HEADER,
     WEBSOCKET_STATE_RES_ON_DATA_START,
     WEBSOCKET_STATE_RES_COMPLETE_DATA,
+    WEBSOCKET_STATE_RECONNECTING,
     WEBSOCKET_STATE_CLOSE
 } esp_http_state_t;
 
@@ -112,7 +121,7 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
         return NULL;
     }
 
-    if(ws_socket_initialize(config, client)!= ESP_OK)
+    if(ws_socket_initialize(client)!= ESP_OK)
     {
         TAL_PR_DEBUG("ERROR ws_socket_initialize error num = %s", ret);
         return NULL;
@@ -137,7 +146,7 @@ int esp_websocket_client_start(esp_websocket_client_handle_t client)
 
 bool esp_websocket_client_is_connected(esp_websocket_client_handle_t client)
 {
-    return (client->state != WEBSOCKET_STATE_CLOSE);
+    return (client->state == WEBSOCKET_STATE_CONNECTED);
 }
 
 void esp_ws_client_cleanup(esp_websocket_client_handle_t client)
@@ -148,26 +157,29 @@ void esp_ws_client_cleanup(esp_websocket_client_handle_t client)
     while (wolfSSL_shutdown(client->ssl) == WOLFSSL_SHUTDOWN_NOT_DONE) {
         TAL_PR_DEBUG("Shutdown not complete\n");
         ret = ESP_ERR;
-        return ret;
+        vTaskDelay(100);
     }
     wolfSSL_free(client->ssl);      /* Free the wolfSSL object                  */
     wolfSSL_CTX_free(client->ctx);  /* Free the wolfSSL context object          */
     wolfSSL_Cleanup();      /* Cleanup the wolfSSL environment              */
     
-    free(client->host);
-    free(client->path);
-    free(client);
 
     client->state = WEBSOCKET_STATE_CLOSE;
     ws_event.connection_upcall = client->connection_upcall;
     ws_event.event_id = WEBSOCKET_EVENT_DISCONNECTED;
     client->event_handler(&ws_event);
 
+    free(client->host);
+    free(client->path);
+    free(client);
+
     close(client->sockfd);    
+    TAL_PR_DEBUG("Client is now NULL");
+
     return ret;
 }
 
-int ws_socket_initialize(const esp_websocket_client_config_t *config, esp_websocket_client_handle_t client)
+int ws_socket_initialize(esp_websocket_client_handle_t client)
 {
     // int sockfd;
     struct addrinfo hints, *result;
@@ -197,14 +209,14 @@ int ws_socket_initialize(const esp_websocket_client_config_t *config, esp_websoc
     hints.ai_protocol = IPPROTO_TCP;
 
     if (getaddrinfo(client->host, NULL, &hints, &result) != 0) {
-        TAL_PR_ERR("ERROR: failed to resolve domain name\n");
+        TAL_PR_ERR("ERROR: failed to resolve domain name %s\n", client->host);
         close(client->sockfd);
         return ESP_ERR;
     }
 
     /* Print the resolved IP address */
     struct sockaddr_in *addr = (struct sockaddr_in *)result->ai_addr;
-    addr->sin_port = config->port;
+    addr->sin_port = atoi(client->port);
     char ipstr[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(addr->sin_addr), ipstr, INET_ADDRSTRLEN);
     TAL_PR_DEBUG("Resolved IP address: %s\n", ipstr);
@@ -330,10 +342,15 @@ int ws_server_connect(esp_websocket_client_handle_t client)
         client->event_handler(&ws_event);
         client->state = WEBSOCKET_STATE_CONNECTED;
         TAL_PR_DEBUG("Connect to wolfSSL on the server side SUCCESS!\n");
+
         THREAD_CFG_T thrd_param = {4096, THREAD_PRIO_0, "beken-ws-rcv"};
         tal_thread_create_and_start(&bk_ws_rcv_thread, NULL, NULL, ws_receive, client, &thrd_param);
+
+        // xTaskCreate(ws_receive, "bk-rcv-thread", 2 * 2048, client, 5, &bk_ws_rcv_thread_handle);
+
         // THREAD_CFG_T ping_thrd_param = {1024, 4, "beken-ws-ping"};
         // tal_thread_create_and_start(&bk_ws_ping_thread, NULL, NULL, ws_ping, client, &ping_thrd_param);
+        ret = ESP_OK;
     }
     else
     {
@@ -352,6 +369,7 @@ void ws_receive(esp_websocket_client_handle_t client)
     int ret;
 	TAL_PR_DEBUG( "  Started Receiving Thread\n" );
     esp_websocket_client_event_t ws_event;
+    WF_STATION_STAT_E status;
 	do
 	{
 		len = sizeof( buf ) - 1;
@@ -384,14 +402,26 @@ void ws_receive(esp_websocket_client_handle_t client)
             ws_event.msg_upcall = client->msg_upcall;
             client->event_handler(&ws_event);
         }
-        vTaskDelay(40/portTICK_PERIOD_MS);
+        // vTaskDelay(50/portTICK_PERIOD_MS);
+        // tkl_wifi_station_get_status(&status);
 	}while( 1 );
+	TAL_PR_DEBUG( "OUTSIDE %s status %d\n", __FUNCTION__, status);
+
+    // ws_event.event_id = WEBSOCKET_EVENT_DISCONNECTED;
+    // ws_event.connection_upcall = client->connection_upcall;
+    // client->event_handler(&ws_event);
+    
+
+    ws_event.event_id = WEBSOCKET_EVENT_RECONNECT;
+    client->event_handler(&ws_event);
+
     esp_ws_client_cleanup(client);
     tal_thread_delete(bk_ws_rcv_thread);
     bk_ws_rcv_thread = NULL;
 	TAL_PR_DEBUG( "  Ended Receiving WS data\n" );
 
 }
+
 
 void ws_ping(esp_websocket_client_handle_t client)
 {

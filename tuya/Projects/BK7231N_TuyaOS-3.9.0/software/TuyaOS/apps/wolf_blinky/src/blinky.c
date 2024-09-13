@@ -29,6 +29,9 @@
 #include "ezlopi_core_nvs.h"
 #include "ezlopi_core_event_group.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 #include "esp_partition.h"
 
 #define PID  "tvjs8eysp0imads8"
@@ -222,6 +225,9 @@ STATIC VOID user_main(VOID_T)
         tal_thread_create_and_start(&free_heap_thrd, NULL, NULL, __free_heap_task, NULL, &thread_cfg);
     }
 
+    // TaskHandle_t free_heap_task_handle = NULL;
+    // xTaskCreate(__free_heap_task, "freeheap-service", 2048, NULL, 2, &free_heap_task_handle);
+
     ezlopi_core_set_log_upcalls();
 
     ezlopi_init();
@@ -258,9 +264,11 @@ STATIC VOID __free_heap_task(PVOID_T args)
     uint32_t last_tick_count = 0;
     for (;;) {
         free_heap = tal_system_get_free_heap_size();
-        free_heap_kb = free_heap/1024;
+        free_heap_kb = free_heap/1024.0;
         // TAL_PR_NOTICE("free heap: %d B       %.4f KB", free_heap, free_heap_kb);
+        TRACE_I("----------------------------------------------");
         TRACE_W("free heap: %d B       %.4f KB", free_heap, free_heap_kb);
+        TRACE_I("----------------------------------------------");
         if(free_heap <= 5*1024)
         {
             tal_system_reset();
@@ -274,8 +282,9 @@ STATIC VOID __free_heap_task(PVOID_T args)
             ezlopi_service_loop_init();
             ezlopi_event_group_set_event(EZLOPI_EVENT_LOOP_INIT);
         }
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
+    tal_thread_delete(free_heap_thrd);
 }
 
 #if 0

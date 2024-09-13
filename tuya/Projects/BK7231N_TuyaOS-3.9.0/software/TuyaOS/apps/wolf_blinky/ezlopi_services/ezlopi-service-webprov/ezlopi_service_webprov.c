@@ -161,7 +161,8 @@ static void __fetch_wss_endpoint(void* pv)
 #if (1 == EZPI_CORE_WSS_USE_WSC_LIB)
                         __wsc_ssl = ezlopi_core_wsc_init(cjson_uri, __message_upcall, __connection_upcall);
 #else // EZPI_CORE_WSS_USE_WSC_LIB
-                        ezlopi_websocket_client_init(cjson_uri, __message_upcall, __connection_upcall);
+                        ezlopi_websocket_register_upcalls(__message_upcall, __connection_upcall);
+                        ezlopi_websocket_client_init(cjson_uri);
 #endif // EZPI_CORE_WSS_USE_WSC_LIB
                         task_complete = 1;
                     }

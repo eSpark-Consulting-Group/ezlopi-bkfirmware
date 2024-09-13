@@ -20,6 +20,7 @@ typedef enum {
     WEBSOCKET_EVENT_ON_FINISH,       /*!< Occurs when finish a HTTP session */
     WEBSOCKET_EVENT_DISCONNECTED,    /*!< The connection has been disconnected */
     WEBSOCKET_EVENT_REDIRECT,        /*!< Intercepting HTTP redirects to handle them manually */
+    WEBSOCKET_EVENT_RECONNECT,        /*!< Reconnect WS manually */
 } esp_websocket_client_event_id_t;
 
 

@@ -107,17 +107,17 @@ extern "C"
 
 #define F(X) (flash_attr) X
 
-// #define TRACE_D trace_debug
-// #define TRACE_I trace_information
-// #define TRACE_S trace_success
-// #define TRACE_W trace_warning
-// #define TRACE_E trace_error
+#define TRACE_D trace_debug
+#define TRACE_I trace_information
+#define TRACE_S trace_success
+#define TRACE_W trace_warning
+#define TRACE_E trace_error
 
-#define TRACE_E trace_log_sev_error
-#define TRACE_W trace_log_sev_warning
-#define TRACE_I trace_log_sev_info
-#define TRACE_D trace_log_sev_debug
-#define TRACE_S trace_log_sev_trace
+// #define TRACE_E trace_log_sev_error
+// #define TRACE_W trace_log_sev_warning
+// #define TRACE_I trace_log_sev_info
+// #define TRACE_D trace_log_sev_debug
+// #define TRACE_S trace_log_sev_trace
 
 
 #define dump(buffer_name, buffer, offset, count) __dump(__FILE__, __LINE__, buffer_name, buffer, offset, count)
