@@ -113,11 +113,11 @@ VOID ezlopi_wifi_initialize(VOID)
 VOID ezlopi_wifi_connect_from_id_bin(VOID)
 {
     OPERATE_RET rt = OPRT_OK;
-    // CHAR_T *wifi_ssid     = ezlopi_factory_info_v3_get_ssid();
-    // CHAR_T *wifi_password = ezlopi_factory_info_v3_get_password();
+    CHAR_T *wifi_ssid     = ezlopi_factory_info_v3_get_ssid();
+    CHAR_T *wifi_password = ezlopi_factory_info_v3_get_password();
 
-    CHAR_T *wifi_ssid     = "eSpark_T";
-    CHAR_T *wifi_password = "espark1234";
+    // CHAR_T *wifi_ssid     = "eSpark_T";
+    // CHAR_T *wifi_password = "espark1234";
 
     // CHAR_T *wifi_ssid     = "Getyourownwifi";
     // CHAR_T *wifi_password = "d24b687c";
