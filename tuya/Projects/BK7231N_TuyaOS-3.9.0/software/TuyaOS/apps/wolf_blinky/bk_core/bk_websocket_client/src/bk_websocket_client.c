@@ -20,6 +20,7 @@
 #include <wolfssl/options.h>
 #include <wolfssl/ssl.h>
 
+#define TAL_PR_DEBUG
 #define RX_TX_BUFFER_SIZE 256
 #define WS_UPGRADE_REQ "GET / HTTP/1.1\r\nHost: cloud.ezlo.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-Websocket-Extensions: premessage-deflate; client_max_window_bits\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Protocol: chat, superchat\r\n\r\n"
 
@@ -126,7 +127,8 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
         return NULL;
     }
 
-    ws_ssl_initialize(config, client);
+    ret = (esp_err_t)ws_ssl_initialize(config, client);
+    ret = (esp_err_t)ws_ssl_create(client);
 
     if(ret == ESP_OK)
     {
@@ -156,20 +158,13 @@ void esp_ws_client_cleanup(esp_websocket_client_handle_t client)
     if (wolfSSL_shutdown(client->ssl) == WOLFSSL_SHUTDOWN_NOT_DONE) {
         TAL_PR_DEBUG("Shutdown not complete\n");
     }
-    wolfSSL_free(client->ssl);      /* Free the wolfSSL object                  */
+    wolfSSL_free(client->ssl);      /* Free the wolfSSL object */
     client->ssl = NULL;
-    // wolfSSL_CTX_free(client->ctx);  /* Free the wolfSSL context object          */
-    // wolfSSL_Cleanup();      /* Cleanup the wolfSSL environment              */
-    
 
     client->state = WEBSOCKET_STATE_CLOSE;
     ws_event.connection_upcall = client->connection_upcall;
     ws_event.event_id = WEBSOCKET_EVENT_DISCONNECTED;
     client->event_handler(&ws_event);
-
-    // free(client->host);
-    // free(client->path);
-    // free(client);
 
     close(client->sockfd);    
     client->sockfd = -1;
@@ -180,13 +175,9 @@ void esp_ws_client_cleanup(esp_websocket_client_handle_t client)
 
 int ws_socket_initialize(esp_websocket_client_handle_t client)
 {
-    // int sockfd;
     struct addrinfo hints, *result;
     size_t len;
     int ret = ESP_OK;
-
-    // wolfSSL_Debugging_ON();
-    // wolfSSL_SetLoggingCb(tal_log_print);
 
     /* declare wolfSSL objects */
     WOLFSSL_CTX* ctx;
@@ -230,7 +221,6 @@ int ws_socket_initialize(esp_websocket_client_handle_t client)
         freeaddrinfo(result);
         return ESP_ERR;
     }
-
 
     TAL_PR_DEBUG("SOCKET CONNECT SUCCESS!\n");
     return ret;
@@ -285,6 +275,12 @@ int ws_ssl_initialize(esp_websocket_client_config_t *config, esp_websocket_clien
     
     TAL_PR_DEBUG("wolfSSL_CTX_load_verify_buffer SUCCESS!\n");
 
+    return ret;
+}
+
+int ws_ssl_create(esp_websocket_client_handle_t client)
+{
+    int ret = ESP_OK;
     /* Create a WOLFSSL object */
     if ((client->ssl = wolfSSL_new(client->ctx)) == NULL) {
         TAL_PR_DEBUG("ERROR: failed to create WOLFSSL object\n");
@@ -298,8 +294,7 @@ int ws_ssl_initialize(esp_websocket_client_config_t *config, esp_websocket_clien
         return ESP_ERR;
     }
     TAL_PR_DEBUG("attach wolfSSL to the socket SUCCESS!\n");
-    
-    return ret;
+    return ESP_OK;
 }
 
 int ws_server_connect(esp_websocket_client_handle_t client)
@@ -348,10 +343,6 @@ int ws_server_connect(esp_websocket_client_handle_t client)
         THREAD_CFG_T thrd_param = {4096, THREAD_PRIO_0, "beken-ws-rcv"};
         tal_thread_create_and_start(&bk_ws_rcv_thread, NULL, NULL, ws_receive, client, &thrd_param);
 
-        // xTaskCreate(ws_receive, "bk-rcv-thread", 2 * 2048, client, 5, &bk_ws_rcv_thread_handle);
-
-        // THREAD_CFG_T ping_thrd_param = {1024, 4, "beken-ws-ping"};
-        // tal_thread_create_and_start(&bk_ws_ping_thread, NULL, NULL, ws_ping, client, &ping_thrd_param);
         ret = ESP_OK;
     }
     else
@@ -448,99 +439,9 @@ void ws_reconnect_task(esp_websocket_client_handle_t client)
 
     ws_socket_initialize(client);
 
-    // Reinitialize WolfSSL connection
-    if (client->ssl) {
-        // If the SSL object exists, free it first
-        wolfSSL_free(client->ssl);
-        client->ssl = NULL;
-    }
+    ws_ssl_create(client);
 
-    // Create a new WolfSSL object using the existing context
-    client->ssl = wolfSSL_new(client->ctx);
-    if (client->ssl == NULL) {
-        TAL_PR_DEBUG("Failed to create new WolfSSL object");
-        return;
-    }
-    TAL_PR_DEBUG("wolfSSL_new SUCCESS!\n");
-
-    // Associate the new socket with the WolfSSL object
-    if ((wolfSSL_set_fd(client->ssl, client->sockfd)) != WOLFSSL_SUCCESS) {
-        TAL_PR_DEBUG("ERROR: Failed to set the file descriptor\n");
-        return ESP_ERR;
-    }
-    TAL_PR_DEBUG("attach wolfSSL to the socket SUCCESS!\n");
-
-    // Perform the SSL handshake
-    int retries = 0;
-    while (wolfSSL_connect(client->ssl) != SSL_SUCCESS) {
-        TAL_PR_DEBUG("Failed to reconnect WolfSSL, retrying...");
-        if(retries >= 10)
-        {
-            wolfSSL_free(client->ssl);
-            client->ssl = NULL;
-            break;
-        }
-        retries++;
-        vTaskDelay(2000/portTICK_PERIOD_MS);
-    }
-
-    if(client->ssl)
-    {
-        TAL_PR_DEBUG("WolfSSL connection reestablished successfully");
-        // Restart the WebSocket receive task
-        // THREAD_CFG_T cfg = {4 * 2048, 5, "ws-receive"};
-        // tal_thread_create_and_start(&bk_ws_rcv_thread, NULL, NULL, ws_receive, client, &cfg);
-
-        /* Sending Upgrade request */
-        TAL_PR_DEBUG("Sending Upgrade Request to Server......\n");
-        size_t bytes_rx_tx;
-        if((bytes_rx_tx = wolfSSL_write(client->ssl, WS_UPGRADE_REQ, strlen(WS_UPGRADE_REQ))) != strlen(WS_UPGRADE_REQ)) {
-            TAL_PR_DEBUG("ERROR: failed to write entire message\n");
-            TAL_PR_DEBUG("%d bytes of %d bytes were sent", bytes_rx_tx, (int) strlen(WS_UPGRADE_REQ));
-            ws_event.event_id = WEBSOCKET_EVENT_ERROR;
-            client->event_handler(&ws_event);
-            return ESP_ERR;
-        }
-
-        /* Check the response for upgrade request and then start the WS Recieve thread */
-        char upgrade_req_res[256];
-        while ((bytes_rx_tx = wolfSSL_read(client->ssl, upgrade_req_res, sizeof(upgrade_req_res)-1)) > 0) {
-            upgrade_req_res[bytes_rx_tx] = '\0';  // Null-terminate the buffer
-            if (strstr(upgrade_req_res, "\r\n\r\n") != NULL) {
-                TAL_PR_DEBUG("Upgrade Request Response : %s", upgrade_req_res);
-                break;
-            }
-        }
-        int response_code = parse_http_response_code(upgrade_req_res);
-        TAL_PR_DEBUG("Response Code : %d", response_code);
-        if(response_code == HTTP_SWITCHING_PROTOCOLS)
-        {
-            ws_event.event_id = WEBSOCKET_EVENT_ON_CONNECTED;
-            ws_event.connection_upcall = client->connection_upcall;
-            client->event_handler(&ws_event);
-            client->state = WEBSOCKET_STATE_CONNECTED;
-            TAL_PR_DEBUG("Connect to wolfSSL on the server side SUCCESS!\n");
-
-            THREAD_CFG_T thrd_param = {4096, THREAD_PRIO_0, "beken-ws-rcv"};
-            tal_thread_create_and_start(&bk_ws_rcv_thread, NULL, NULL, ws_receive, client, &thrd_param);
-
-            // xTaskCreate(ws_receive, "bk-rcv-thread", 2 * 2048, client, 5, &bk_ws_rcv_thread_handle);
-
-            // THREAD_CFG_T ping_thrd_param = {1024, 4, "beken-ws-ping"};
-            // tal_thread_create_and_start(&bk_ws_ping_thread, NULL, NULL, ws_ping, client, &ping_thrd_param);
-            ret = ESP_OK;
-        }
-        else
-        {
-            TAL_PR_ERR("Unable to upgrade connection to Websocket \nStatus code :%d\n", response_code);
-            esp_ws_client_cleanup(client);
-            ret = ESP_ERR;
-        }
-    }
-    else{
-        TAL_PR_DEBUG("WolfSSL connection Failed!");
-    }
-
+    ws_server_connect(client);
 
     TAL_PR_DEBUG("Reconnect Task Completed\n");
     tal_thread_delete(bk_ws_reconnect_thread);
