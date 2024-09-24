@@ -12,7 +12,9 @@
 #include "bal_bluetooth_def.h"
 #include "tkl_bluetooth_def.h"
 #include "tkl_bluetooth.h"
+#include "ezlo_tkl_bluetooth.h"
 #include "tal_log.h"
+#include "tuya_error_code.h"
 
 /***********************************************************************
  ********************* constant ( macro and enum ) *********************
@@ -48,7 +50,81 @@ STATIC BAL_BLE_EVT_FUNC_CB              bal_ble_event_callback;
 /***********************************************************************
  ********************* function ****************************************
  **********************************************************************/
+STATIC UCHAR_T adv_data_const[31] =
+{
+    0x02,
+    0x01,
+    0x06,
+    0x03,
+    0x02,
+    0x50, 0xFD,
+    0x17,
+    0x16,
+    0x50, 0xFD,
+    0x41, 0x00,       //Frame Control
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
 
+STATIC UCHAR_T scan_rsp_data_const[31] =
+{   
+    0x17,             // length
+    0xFF,
+    0xD0,
+    0x07,
+    0x00, //Encry Mode(8)
+    0x00,0x00, //communication way bit0-mesh bit1-wifi bit2-zigbee bit3-NB
+    0x00, //FLAG
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x05, //24
+    0x09,
+    0x4D, 0x61, 0x61, 0x7a
+};
+
+
+// Define the characteristics with their permissions and properties
+    STATIC TKL_BLE_CHAR_PARAMS_T char_params[2] = {
+        {
+            .handle = TKL_BLE_GATT_INVALID_HANDLE,                           // This will be set by the BLE stack
+            .char_uuid = {
+                    .uuid_type = TKL_BLE_UUID_TYPE_16,
+                    .uuid.uuid16 = BAL_BLE_CMD_WRITE_CHAR_UUID_V1, // Correct UUID for Heart Rate Measurement
+                },               // UUID for the first characteristic
+            .property = TKL_BLE_GATT_CHAR_PROP_WRITE | TKL_BLE_GATT_CHAR_PROP_WRITE_NO_RSP, // Example properties
+            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE, // Permissions
+            .value_len = 244,                       // Length of the characteristic value
+        },
+        {
+            .handle = TKL_BLE_GATT_INVALID_HANDLE,                           // This will be set by the BLE stack
+            .char_uuid = {
+                    .uuid_type = TKL_BLE_UUID_TYPE_16,
+                    .uuid.uuid16 = BAL_BLE_CMD_NOTIFY_CHAR_UUID_V1, // Correct UUID for Body Sensor Location
+                },               // UUID for the second characteristic
+            .property = TKL_BLE_GATT_CHAR_PROP_NOTIFY,    // Example property
+            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,   // Permissions
+            .value_len = 244,                       // Length of the characteristic value
+        }
+    };
+    STATIC TKL_BLE_SERVICE_PARAMS_T service1 = {
+        .handle = TKL_BLE_GATT_INVALID_HANDLE,                               // This will be set by the BLE stack
+        .svc_uuid = {
+                .uuid_type = TKL_BLE_UUID_TYPE_16,              // Specify the UUID type
+                .uuid.uuid16 = 0xfd50,                           // Set the 16-bit UUID value
+            },                  // UUID for the service
+        .type = TKL_BLE_UUID_SERVICE_PRIMARY,      // Service type (primary or secondary)
+        .char_num = 2, // Number of characteristics
+        .p_char = char_params                       // Pointer to the characteristics
+    };
+    STATIC TKL_BLE_GATTS_PARAMS_T gatt_service = { 
+        .svc_num = 1,
+        .p_service = &service1
+    };
+    STATIC TKL_BLE_GAP_ADV_PARAMS_T adv_params = {
+        .adv_type = TKL_BLE_GAP_ADV_TYPE_CONN_SCANNABLE_UNDIRECTED,  // Set the advertising type
+        // .direct_addr = {0},                                            // Fill in direct address if needed (e.g., set to 0 for non-directed advertising)
+        .adv_interval_min = 30,                                   // Minimum advertising interval (20 ms)
+        .adv_interval_max = 60,                                   // Maximum advertising interval (10.24 sec)
+        // .adv_channel_map = 0x07,                                     // Advertising on all three channels (37, 38, 39)
+    };
 
 
 
@@ -74,6 +150,7 @@ STATIC VOID_T tkl_ble_kernel_gap_event_callback(TKL_BLE_GAP_PARAMS_EVT_T *p_even
     BAL_BLE_EVT_PARAMS_T bal_event;
 
     if (p_event == NULL) return;
+    TAL_PR_DEBUG("tkl_ble_kernel_gap_event_callback");
 
     memset(&bal_event, 0, sizeof(BAL_BLE_EVT_PARAMS_T));
 
@@ -113,7 +190,7 @@ STATIC VOID_T tkl_ble_kernel_gap_event_callback(TKL_BLE_GAP_PARAMS_EVT_T *p_even
                     memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
                 } else {
                     bal_ble_peer.conn_handle = p_event->conn_handle;
-                    if (0) {  // Try To Discovery All Service, And Find the correct service
+                    if (ezlo_tkl_ble_gattc_all_service_discovery(p_event->conn_handle) != 0) {  // Try To Discovery All Service, And Find the correct service
                         bal_event.type = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
                         bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_SVC_DISC_FAILED;
                         memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
@@ -219,6 +296,7 @@ STATIC VOID_T tkl_ble_kernel_gatt_event_callback(TKL_BLE_GATT_PARAMS_EVT_T *p_ev
     if (p_event == NULL) return;
 
     memset(&bal_event, 0, sizeof(BAL_BLE_EVT_PARAMS_T));
+    TAL_PR_DEBUG("tkl_ble_kernal_gatt_event_callback");
 
     switch (p_event->type) {
         case TKL_BLE_GATT_EVT_MTU_REQUEST: {
@@ -233,101 +311,102 @@ STATIC VOID_T tkl_ble_kernel_gatt_event_callback(TKL_BLE_GATT_PARAMS_EVT_T *p_ev
             bal_event.ble_event.exchange_mtu.mtu                = p_event->gatt_event.exchange_mtu;
         } break;
 
-        // case TKL_BLE_GATT_EVT_PRIM_SEV_DISCOVERY: {
-        //     TAL_PR_DEBUG("EVENT : TKL_BLE_GATT_EVT_PRIM_SEV_DISCOVERY");
-        //     TKL_BLE_GATT_SVC_DISC_TYPE_T *p_svc_disc = &p_event->gatt_event.svc_disc;
-        //     INT_T svc_result = OPRT_INVALID_PARM;
+        case TKL_BLE_GATT_EVT_PRIM_SEV_DISCOVERY: {
+            TAL_PR_DEBUG("EVENT : TKL_BLE_GATT_EVT_PRIM_SEV_DISCOVERY");
+            TKL_BLE_GATT_SVC_DISC_TYPE_T *p_svc_disc = &p_event->gatt_event.svc_disc;
+            INT_T svc_result = OPRT_INVALID_PARM;
 
-        //     bal_event.type = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
-        //     if (p_event->result == OPRT_OK) {
+            bal_event.type = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
+            if (p_event->result == OPRT_OK) {
 
-        //         /**< Find the All Characteristic. */
-        //         TAL_PR_DEBUG("Find the All Characteristic");
-        //         UCHAR_T i = 0;
-        //         for (i = 0; i < p_svc_disc->svc_num; i ++) {
-        //             TAL_PR_DEBUG("Serive %d", i);
-        //             if (bal_ble_uuid16_convert(&p_svc_disc->services[i].uuid) == BAL_BLE_CMD_SERVICE_UUID_V1
-        //                     || bal_ble_uuid16_convert(&p_svc_disc->services[i].uuid) == BAL_BLE_CMD_SERVICE_UUID_V2) {
-        //                 // svc_result = tkl_ble_gattc_all_char_discovery(p_event->conn_handle, p_svc_disc->services[i].start_handle, p_svc_disc->services[i].end_handle);
-        //                 // if (svc_result == 0) {
-        //                 //     return;
-        //                 // }
-        //             }
-        //         }
-        //         memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
-        //         bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_SVC_DISC_FAILED;
-        //     } else {
-        //         /**< Return Error, Cannot Discovery Service */
-        //         memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
-        //         bal_event.ble_event.connect.result = p_event->result;
-        //     }
-        // } break;
+                /**< Find the All Characteristic. */
+                TAL_PR_DEBUG("Find the All Characteristic");
+                UCHAR_T i = 0;
+                for (i = 0; i < p_svc_disc->svc_num; i ++) {
+                    TAL_PR_DEBUG("Serive %d", i);
+                    if (bal_ble_uuid16_convert(&p_svc_disc->services[i].uuid) == BAL_BLE_CMD_SERVICE_UUID_V1
+                            || bal_ble_uuid16_convert(&p_svc_disc->services[i].uuid) == BAL_BLE_CMD_SERVICE_UUID_V2) {
+                        svc_result = ezlo_tkl_ble_gattc_all_char_discovery(p_event->conn_handle, p_svc_disc->services[i].start_handle, p_svc_disc->services[i].end_handle);
+                        if (svc_result == 0) {
+                            return;
+                        }
+                    }
+                }
+                memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
+                bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_SVC_DISC_FAILED;
+            } else {
+                /**< Return Error, Cannot Discovery Service */
+                TAL_PR_DEBUG("Return Error, Cannot Discovery Service===");
+                memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
+                bal_event.ble_event.connect.result = p_event->result;
+            }
+        } break;
 
-        // case TKL_BLE_GATT_EVT_CHAR_DISCOVERY: {
-        //     TAL_PR_DEBUG("EVENT : TKL_BLE_GATT_EVT_CHAR_DISCOVERY");
-        //     TKL_BLE_GATT_CHAR_DISC_TYPE_T *p_char_disc = &p_event->gatt_event.char_disc;
-        //     INT_T char_result = OPRT_INVALID_PARM;
+        case TKL_BLE_GATT_EVT_CHAR_DISCOVERY: {
+            TAL_PR_DEBUG("EVENT : TKL_BLE_GATT_EVT_CHAR_DISCOVERY");
+            TKL_BLE_GATT_CHAR_DISC_TYPE_T *p_char_disc = &p_event->gatt_event.char_disc;
+            INT_T char_result = OPRT_INVALID_PARM;
 
-        //     bal_event.type = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
-        //     if (p_event->result == OPRT_OK) {
-        //         UCHAR_T i = 0;
-        //         for (i = 0; i < p_char_disc->char_num; i ++) {
-        //             if (bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) == BAL_BLE_CMD_WRITE_CHAR_UUID_V1
-        //                 || bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) == BAL_BLE_CMD_WRITE_CHAR_UUID_V2) {
+            bal_event.type = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
+            if (p_event->result == OPRT_OK) {
+                UCHAR_T i = 0;
+                for (i = 0; i < p_char_disc->char_num; i ++) {
+                    if (bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) == BAL_BLE_CMD_WRITE_CHAR_UUID_V1
+                        || bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) == BAL_BLE_CMD_WRITE_CHAR_UUID_V2) {
 
-        //                 bal_ble_peer.char_handle[BAL_COMMON_WRITE_CHAR_INDEX] = p_char_disc->characteristics[i].handle;
-        //             } else if (bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) == BAL_BLE_CMD_NOTIFY_CHAR_UUID_V1
-        //                 || bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) == BAL_BLE_CMD_NOTIFY_CHAR_UUID_V2) {
+                        bal_ble_peer.char_handle[BAL_COMMON_WRITE_CHAR_INDEX] = p_char_disc->characteristics[i].handle;
+                    } else if (bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) == BAL_BLE_CMD_NOTIFY_CHAR_UUID_V1
+                        || bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) == BAL_BLE_CMD_NOTIFY_CHAR_UUID_V2) {
 
-        //                 bal_ble_peer.char_handle[BAL_COMMON_NOTIFY_CHAR_INDEX] = p_char_disc->characteristics[i].handle;
-        //             } else if (bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) == BAL_BLE_CMD_READ_CHAR_UUID_V2) {
+                        bal_ble_peer.char_handle[BAL_COMMON_NOTIFY_CHAR_INDEX] = p_char_disc->characteristics[i].handle;
+                    } else if (bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) == BAL_BLE_CMD_READ_CHAR_UUID_V2) {
 
-        //                 bal_ble_peer.char_handle[BAL_COMMON_READ_CHAR_INDEX] = p_char_disc->characteristics[i].handle;
-        //             }
-        //         }
+                        bal_ble_peer.char_handle[BAL_COMMON_READ_CHAR_INDEX] = p_char_disc->characteristics[i].handle;
+                    }
+                }
 
-        //         /**< Find Characteristic Descriptor */
-        //         if (bal_ble_peer.char_handle[BAL_COMMON_NOTIFY_CHAR_INDEX] != TKL_BLE_GATT_INVALID_HANDLE) {
-        //             // char_result = tkl_ble_gattc_char_desc_discovery(p_event->conn_handle, bal_ble_peer.char_handle[BAL_COMMON_NOTIFY_CHAR_INDEX], 0xFFFF);
-        //             // if (char_result == OPRT_OK) {
-        //             //     return;
-        //             // }
-        //             return;
-        //         }
+                /**< Find Characteristic Descriptor */
+                if (bal_ble_peer.char_handle[BAL_COMMON_NOTIFY_CHAR_INDEX] != TKL_BLE_GATT_INVALID_HANDLE) {
+                    char_result = ezlo_tkl_ble_gattc_char_desc_discovery(p_event->conn_handle, bal_ble_peer.char_handle[BAL_COMMON_NOTIFY_CHAR_INDEX], 0xFFFF);
+                    if (char_result == OPRT_OK) {
+                        return;
+                    }
+                    return;
+                }
 
-        //         memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
-        //         bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_DESC_DISC_FAILED;
-        //     } else {
-        //         /**< Return Error, Cannot Discovery Service */
-        //         memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
-        //         bal_event.ble_event.connect.result = p_event->result;
-        //     }
-        // } break;
+                memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
+                bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_DESC_DISC_FAILED;
+            } else {
+                /**< Return Error, Cannot Discovery Service */
+                memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
+                bal_event.ble_event.connect.result = p_event->result;
+            }
+        } break;
 
-        // case TKL_BLE_GATT_EVT_CHAR_DESC_DISCOVERY: {
-        //     TAL_PR_DEBUG("EVENT : TKL_BLE_GATT_EVT_CHAR_DESC_DISCOVERY");
-        //     TKL_BLE_GATT_DESC_DISC_TYPE_T *p_desc_disc = &p_event->gatt_event.desc_disc;
-        //     UCHAR_T cccd_enable[2] = {0x01, 0x00};
-        //     INT_T desc_result;
+        case TKL_BLE_GATT_EVT_CHAR_DESC_DISCOVERY: {
+            TAL_PR_DEBUG("EVENT : TKL_BLE_GATT_EVT_CHAR_DESC_DISCOVERY");
+            TKL_BLE_GATT_DESC_DISC_TYPE_T *p_desc_disc = &p_event->gatt_event.desc_disc;
+            UCHAR_T cccd_enable[2] = {0x01, 0x00};
+            INT_T desc_result;
 
-        //     bal_event.type = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
-        //     if (p_event->result == OPRT_OK) {
-        //         desc_result = tkl_ble_gattc_write_without_rsp(p_event->conn_handle, p_desc_disc->cccd_handle, cccd_enable, sizeof(cccd_enable));
-        //         if (0) {
-        //             bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_DESC_DISC_FAILED;
-        //         } else if (p_event->conn_handle != bal_ble_peer.conn_handle) {
-        //             bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_HANDLE_ERROR;
-        //             memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
-        //         } else {
-        //             bal_event.ble_event.connect.result = OPRT_OK;
-        //             memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
-        //         }
-        //     } else {
-        //         /**< Return Error, Cannot Discovery characteristic descriptor */
-        //         bal_event.ble_event.connect.result = p_event->result;
-        //         memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
-        //     }
-        // } break;
+            bal_event.type = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
+            if (p_event->result == OPRT_OK) {
+                desc_result = ezlo_tkl_ble_gattc_write_without_rsp(p_event->conn_handle, p_desc_disc->cccd_handle, cccd_enable, sizeof(cccd_enable));
+                if (0) {
+                    bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_DESC_DISC_FAILED;
+                } else if (p_event->conn_handle != bal_ble_peer.conn_handle) {
+                    bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_HANDLE_ERROR;
+                    memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
+                } else {
+                    bal_event.ble_event.connect.result = OPRT_OK;
+                    memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
+                }
+            } else {
+                /**< Return Error, Cannot Discovery characteristic descriptor */
+                bal_event.ble_event.connect.result = p_event->result;
+                memcpy(&bal_event.ble_event.connect.peer , &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
+            }
+        } break;
 
         case TKL_BLE_GATT_EVT_NOTIFY_TX: {
             bal_event.type = BAL_BLE_EVT_NOTIFY_TX;
@@ -397,15 +476,61 @@ STATIC VOID_T tkl_ble_kernel_gatt_event_callback(TKL_BLE_GATT_PARAMS_EVT_T *p_ev
 
 OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, CONST BAL_BLE_EVT_FUNC_CB ble_event)
 {
+
+    bal_ble_event_callback = ble_event;
+    tkl_ble_stack_init(TKL_BLE_ROLE_SERVER);
+    
+    // Add services
+    int result = tkl_ble_gatts_service_add(&gatt_service);
+    if (result != OPRT_OK) {
+        TAL_PR_ERR("Failed to add service, error code: %d\n", result);
+    }
+    // tkl_ble_gatts_service_add(&service2);
+
+    // Start advertising
+    TKL_BLE_DATA_T adv_data;
+    TKL_BLE_DATA_T rsp_data;
+
+    adv_data.p_data = adv_data_const;
+    adv_data.length = sizeof(adv_data_const);
+    rsp_data.p_data = scan_rsp_data_const;
+    rsp_data.length = sizeof(scan_rsp_data_const);
+
+    tkl_ble_gap_adv_rsp_data_set(&adv_data, &rsp_data);
+
+    tkl_ble_gap_adv_start(&adv_params);
+
+    // Register callbacks
+    tkl_ble_gap_callback_register(tkl_ble_kernel_gap_event_callback);
+    tkl_ble_gatt_callback_register(tkl_ble_kernel_gatt_event_callback);
+
+    // while(1)
+    {
+        // vTaskDelay(1000/portTICK_PERIOD_MS);
+        TAL_PR_DEBUG("Running!");
+        // tkl_ble_gatts_value_get(0, 0)
+    }
+}
+
+OPERATE_RET abal_ble_bt_init(BAL_BLE_ROLE_E role, CONST BAL_BLE_EVT_FUNC_CB ble_event)
+{
     UCHAR_T ble_stack_role = 0x00; //TKL_BLE_ROLE_SERVER;    // Default Value Should be zero if using in "Single" mode
 
     if (ble_event != NULL) {
         /**<  Get the BAL Event Callback. */
         bal_ble_event_callback = ble_event;
 
+
         /**< Register GAP And GATT Callback */
         tkl_ble_gap_callback_register(tkl_ble_kernel_gap_event_callback);
-        tkl_ble_gatt_callback_register(tkl_ble_kernel_gatt_event_callback);
+        if(OPRT_OK == tkl_ble_gatt_callback_register(tkl_ble_kernel_gatt_event_callback))
+        {
+            TAL_PR_DEBUG("gatt cb registered");
+        }
+        else
+        {
+            TAL_PR_DEBUG("gatt cb failed");
+        }
     }
 
     /**< Init Bluetooth Stack Role For Ble. */
@@ -416,6 +541,7 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, CONST BAL_BLE_EVT_FUNC_CB ble_e
         ble_stack_role |= TKL_BLE_ROLE_CLIENT;
     }
 
+    TAL_PR_DEBUG("tkl_ble_stack_init %d", ble_stack_role);
     if (tkl_ble_stack_init(ble_stack_role) != OPRT_OK) {
         return OPRT_OS_ADAPTER_BLE_INIT_FAILED;
     }
@@ -437,7 +563,7 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, CONST BAL_BLE_EVT_FUNC_CB ble_e
                 .uuid.uuid16 = BAL_BLE_CMD_SERVICE_UUID_V2,
             },
             .type       = TKL_BLE_UUID_SERVICE_PRIMARY,
-            .char_num   = BAL_COMMON_CHAR_MAX_NUM,
+            .char_num   = 1,
             .p_char     = tkl_ble_common_char,
         };
 
@@ -519,9 +645,19 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, CONST BAL_BLE_EVT_FUNC_CB ble_e
         };
 
 #endif
-        if (tkl_ble_gatts_service_add(p_ble_services) != 0) {
+    int ret = 0;
+    ret = tkl_ble_gatts_service_add(p_ble_services);
+        if (ret != OPRT_OK) {
+            TAL_PR_DEBUG("tkl_ble_gatts_service_add error code %d ");
             return OPRT_OS_ADAPTER_BLE_INIT_FAILED;
         }
+    // int rt = OPRT_OK;
+    // TUYA_CALL_ERR_LOG(tkl_ble_gatts_service_add(&gatt_service));
+
+        // int result = tkl_ble_gatts_service_add(&gatt_service);
+        // if (result != OPRT_OK) {
+        //     TAL_PR_ERR("Failed to add service, error code: %d\n", result);
+        // }
     }
 
     return OPRT_OK;
@@ -776,7 +912,7 @@ OPERATE_RET bal_ble_client_common_send(CONST BAL_BLE_PEER_INFO_T peer, BAL_BLE_D
     }
 
     if (peer.conn_handle != TKL_BLE_GATT_INVALID_HANDLE && peer.char_handle[BAL_COMMON_WRITE_CHAR_INDEX] != TKL_BLE_GATT_INVALID_HANDLE) {
-        return tkl_ble_gattc_write_without_rsp(peer.conn_handle, peer.char_handle[BAL_COMMON_WRITE_CHAR_INDEX], p_data->p_data, p_data->len);
+        return ezlo_tkl_ble_gattc_write_without_rsp(peer.conn_handle, peer.char_handle[BAL_COMMON_WRITE_CHAR_INDEX], p_data->p_data, p_data->len);
     }
 
     return OPRT_OS_ADAPTER_BLE_WRITE_FAILED;

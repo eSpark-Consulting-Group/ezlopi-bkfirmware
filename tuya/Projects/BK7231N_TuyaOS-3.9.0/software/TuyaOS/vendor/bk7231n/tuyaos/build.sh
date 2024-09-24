@@ -163,7 +163,7 @@ rm ${APP_BIN_NAME}_${APP_VERSION}_enc.bin
 
 echo "ug_file size:"
 ls -l ${APP_BIN_NAME}_UG_${APP_VERSION}.bin | awk '{print $5}'
-if [ `ls -l ${APP_BIN_NAME}_UG_${APP_VERSION}.bin | awk '{print $5}'` -gt 733184 ];then
+if [ `ls -l ${APP_BIN_NAME}_UG_${APP_VERSION}.bin | awk '{print $5}'` -gt 679936 ];then
 	echo "**********************${APP_BIN_NAME}_$APP_VERSION.bin***************"
 	echo "************************** too large ********************************"
 	rm ${APP_BIN_NAME}_UG_${APP_VERSION}.bin

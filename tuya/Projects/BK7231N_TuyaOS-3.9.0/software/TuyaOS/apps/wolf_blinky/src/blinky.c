@@ -398,7 +398,6 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(BAL_BLE_EVT_PARAMS_T *p_event
                 TAL_PR_DEBUG("EVENT = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY");
                 BAL_BLE_PEER_INFO_T peer_info = p_event->ble_event.data_read.peer;
                 BAL_BLE_CONN_PARAMS_T conn_param = p_event->ble_event.conn_param.conn;
-                // bal_ble_connect_and_discovery(peer_info, &conn_param);
                 bal_ble_conn_param_update(peer_info, &conn_param);
             }
             break;
@@ -661,11 +660,11 @@ STATIC VOID user_main(VOID_T)
 
 
     #ifdef TAL_BLE_EX
-    TUYA_CALL_ERR_LOG(tal_ble_bt_init(TAL_BLE_ROLE_PERIPERAL, __ble_peripheral_event_callback));
+    // TUYA_CALL_ERR_LOG(tal_ble_bt_init(TAL_BLE_ROLE_PERIPERAL, __ble_peripheral_event_callback));
     #endif 
     // setup_ble_peripheral();
 
-    // TUYA_CALL_ERR_LOG(bal_ble_bt_init(BAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback));
+    TUYA_CALL_ERR_LOG(bal_ble_bt_init(BAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback));
 
    return;
 }
