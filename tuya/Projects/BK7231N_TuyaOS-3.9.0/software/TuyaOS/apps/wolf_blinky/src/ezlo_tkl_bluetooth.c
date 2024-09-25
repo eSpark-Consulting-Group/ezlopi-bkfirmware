@@ -400,6 +400,27 @@ OPERATE_RET ezlo_tkl_ble_gattc_all_service_discovery(uint16_t conn_handle)
     return OPRT_OK;
 }
 
+typedef void ble_hs_reset_fn(int reason);
+typedef void ble_hs_sync_fn(void);
+
+struct ble_hs_cfg{
+    ble_hs_reset_fn *reset_cb;
+
+    ble_hs_sync_fn *sync_cb;
+};
+
+extern struct ble_hs_cfg tuya_ble_hs_cfg;
+
+static void tuya_ble_host_stack_reset_callback(int reason)
+{
+    TAL_PR_DEBUG("Stack Reset,  reson = %d", reason);
+}
+
+static void tuya_ble_host_stack_sync_callback(void)
+{
+    TAL_PR_DEBUG("Stack sync");
+    // stack_sync_flag = 1;
+}
 
 /**
  * @brief   Register GAP Event Callback
@@ -411,8 +432,8 @@ OPERATE_RET ezlo_tkl_ble_gap_callback_register(const TKL_BLE_GAP_EVT_FUNC_CB gap
 {
     ezlo_tkl_bluetooth_gap_callback = gap_evt;
 
-    // tuya_ble_hs_cfg.reset_cb = tuya_ble_host_stack_reset_callback;
-    // tuya_ble_hs_cfg.sync_cb = tuya_ble_host_stack_sync_callback;
+    tuya_ble_hs_cfg.reset_cb = tuya_ble_host_stack_reset_callback;
+    tuya_ble_hs_cfg.sync_cb = tuya_ble_host_stack_sync_callback;
     return OPRT_OK;
 }
 

@@ -39,7 +39,7 @@ extern "C" {
 #define BAL_BLE_SPECIFIC_SVC_UUID128                    {0x12, 0x19, 0x0D, 0x0C, 0x0B, 0x0A, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00}
 
 /* Tuya Ble Command Service UUID Second-Version */
-#define BAL_BLE_CMD_SERVICE_UUID_V2                     (0xFD50)
+#define BAL_BLE_CMD_SERVICE_UUID_V2                     (0xFD51)
 /* Tuya Ble Write Characteristic UUID Second-Version*/
 #define BAL_BLE_CMD_WRITE_CHAR_UUID_V2                  (0x0001)
 #define BAL_BLE_CMD_WRITE_CHAR_UUID128_V2               {0xD0, 0x07, 0x9B, 0x5F, 0x80, 0x00, 0x01, 0x80, 0x01, 0x10, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00}
@@ -141,13 +141,11 @@ typedef enum {
 typedef enum {
     BAL_BLE_STACK_INIT = 0x01,                          /**< Successfully init ble/bt stack */
 
-    BAL_BLE_STACK_DEINIT,                               /**< Deinit BLE stack Callback */
-
-    BAL_BLE_STACK_RESET,                                /**< Reset Event From Ble Stack */
+    BAL_BLE_STACK_DEINIT,                               /**< Successfully deinit ble/bt stack */
 
     BAL_BLE_EVT_PERIPHERAL_CONNECT,                     /**< Connected as peripheral role */
 
-    BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY,              /**< Connected as central role, include mesh gatt, And Complete the service discovery, We will report the sevice-discovery result and report the whole hanldes*/
+    BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY,              /**< Connected as central role, include mesh gatt, And Complete the service discovery  */
 
     BAL_BLE_EVT_DISCONNECT,                             /**< Disconnected */
 
@@ -173,9 +171,7 @@ typedef enum {
 
     BAL_BLE_EVT_SUBSCRIBE,                              /**< [Ble Peripheral] Event Subscribe */
 
-    BAL_BLE_EVT_READ_CHAR,                              /**< [Ble Peripheral] Read Char Event */
-
-    BAL_BLE_EVT_CONN_GATT,                              /**< [Ble Central] Report the GATT-Connect Event, Only Report Connect handle!!! */
+    BAL_BLE_EVT_READ_CHAR,                              /**< [Ble Peripheral] Read Char Event*/
 } BAL_BLE_EVT_TYPE_E;
 /***********************************************************************
  ********************* struct ******************************************

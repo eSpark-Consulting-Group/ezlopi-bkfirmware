@@ -231,6 +231,8 @@ STATIC UCHAR_T scan_rsp_data_const[31] =
     0x4D, 0x61, 0x61, 0x7a
 };
 
+STATIC char ble_rx_buffer[2 * 1024] = {0};
+
 STATIC TAL_BLE_PEER_INFO_T sg_ble_peripheral_info;
 
 /***********************************************************
@@ -390,7 +392,9 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(BAL_BLE_EVT_PARAMS_T *p_event
             TAL_PR_DEBUG("Get Device-Write Char Request");
             for ( i = 0; i < p_event->ble_event.write_report.report.len; i++) {
                 TAL_PR_DEBUG("devicr send  data[%d]: %d", i, p_event->ble_event.write_report.report.p_data[i]);
+                ble_rx_buffer[i] = (char)p_event->ble_event.write_report.report.p_data[i];
             }
+            TAL_PR_DEBUG("Recieved >>>>>>>>>> \n %s", ble_rx_buffer);
             break;
         }
         case BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY:
@@ -665,6 +669,7 @@ STATIC VOID user_main(VOID_T)
     // setup_ble_peripheral();
 
     TUYA_CALL_ERR_LOG(bal_ble_bt_init(BAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback));
+    // TUYA_CALL_ERR_LOG(bal_ble_bt_init(BAL_BLE_ROLE_PERIPERAL, __ble_peripheral_event_callback));
 
    return;
 }
