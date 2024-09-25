@@ -1,6 +1,6 @@
 /**
- * @file bal_bluetooth.h
- * @brief This is bal_bluetooth file
+ * @file tal_bluetooth_ext.h
+ * @brief This is tal_bluetooth_ext file
  * @version 1.0
  * @date 2023-09-26
  *
@@ -8,10 +8,10 @@
  *
  */
 
-#ifndef __BAL_BLUETOOTH_H__
-#define __BAL_BLUETOOTH_H__
+#ifndef __TAL_BLUETOOTH_H__
+#define __TAL_BLUETOOTH_H__
 
-#include "bal_bluetooth_def.h"
+#include "tal_bluetooth_def.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,14 +45,14 @@ extern "C" {
  * */
 
 /**
- * @brief bal_ble_bt_init
+ * @brief tal_ble_ext_bt_init
  *
  * @param[in] role: role
  * @param[in] ble_event: ble_event
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, CONST BAL_BLE_EVT_FUNC_CB ble_event);
+OPERATE_RET tal_ble_ext_bt_init(TAL_BLE_ROLE_E role, CONST TAL_BLE_EVT_FUNC_CB ble_event);
 
 /**
  * @brief   Function for deinitializing the bluetooth, or specify one role
@@ -62,13 +62,13 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, CONST BAL_BLE_EVT_FUNC_CB ble_e
  * */
 
 /**
- * @brief bal_ble_bt_deinit
+ * @brief tal_ble_ext_bt_deinit
  *
  * @param[in] role: role
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_bt_deinit(BAL_BLE_ROLE_E role);
+OPERATE_RET tal_ble_ext_bt_deinit(TAL_BLE_ROLE_E role);
 
 /**
  * @brief   Set the local Bluetooth identity address.
@@ -78,13 +78,13 @@ OPERATE_RET bal_ble_bt_deinit(BAL_BLE_ROLE_E role);
  * */
 
 /**
- * @brief bal_ble_address_set
+ * @brief tal_ble_ext_address_set
  *
  * @param[in] *p_addr: *p_addr
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_address_set(BAL_BLE_ADDR_T CONST *p_addr);
+OPERATE_RET tal_ble_ext_address_set(TAL_BLE_ADDR_T CONST *p_addr);
 
 /**
  * @brief   Get the local Bluetooth identity address.
@@ -94,13 +94,13 @@ OPERATE_RET bal_ble_address_set(BAL_BLE_ADDR_T CONST *p_addr);
  * */
 
 /**
- * @brief bal_ble_address_get
+ * @brief tal_ble_ext_address_get
  *
  * @param[in] *p_addr: *p_addr
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_address_get(BAL_BLE_ADDR_T *p_addr);
+OPERATE_RET tal_ble_ext_address_get(TAL_BLE_ADDR_T *p_addr);
 
 /**
  * @brief   Get Max Link Size
@@ -110,29 +110,29 @@ OPERATE_RET bal_ble_address_get(BAL_BLE_ADDR_T *p_addr);
  * */
 
 /**
- * @brief bal_ble_bt_link_max
+ * @brief tal_ble_ext_bt_link_max
  *
  * @param[in] *p_maxlink: *p_maxlink
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_bt_link_max(USHORT_T *p_maxlink);
+OPERATE_RET tal_ble_ext_bt_link_max(USHORT_T *p_maxlink);
 
 /**
  * @brief   Start advertising
- * @param  [in] p_adv_param : pointer to advertising parameters, see BAL_BLE_ADV_PARAMS_T for details
+ * @param  [in] p_adv_param : pointer to advertising parameters, see TAL_BLE_ADV_PARAMS_T for details
  * @return  SUCCESS             Successfully started advertising procedure.
  *          ERR_INVALID_STATE   Not in advertising state.
  * */
 
 /**
- * @brief bal_ble_advertising_start
+ * @brief tal_ble_ext_advertising_start
  *
  * @param[in] *p_adv_param: *p_adv_param
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_advertising_start(BAL_BLE_ADV_PARAMS_T CONST *p_adv_param);
+OPERATE_RET tal_ble_ext_advertising_start(TAL_BLE_ADV_PARAMS_T CONST *p_adv_param);
 
 /**
  * @brief   Setting advertising data
@@ -143,14 +143,14 @@ OPERATE_RET bal_ble_advertising_start(BAL_BLE_ADV_PARAMS_T CONST *p_adv_param);
  * */
 
 /**
- * @brief bal_ble_advertising_data_set
+ * @brief tal_ble_ext_advertising_data_set
  *
  * @param[in] *p_adv: *p_adv
  * @param[in] *p_scan_rsp: *p_scan_rsp
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_advertising_data_set(BAL_BLE_DATA_T *p_adv, BAL_BLE_DATA_T *p_scan_rsp);
+OPERATE_RET tal_ble_ext_advertising_data_set(TAL_BLE_DATA_T *p_adv, TAL_BLE_DATA_T *p_scan_rsp);
 
 /**
  * @brief   Stop advertising
@@ -160,13 +160,13 @@ OPERATE_RET bal_ble_advertising_data_set(BAL_BLE_DATA_T *p_adv, BAL_BLE_DATA_T *
  * */
 
 /**
- * @brief bal_ble_advertising_stop
+ * @brief tal_ble_ext_advertising_stop
  *
  * @param[in] param: none
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_advertising_stop(VOID_T);
+OPERATE_RET tal_ble_ext_advertising_stop(VOID_T);
 
 /**
  * @brief   Updating advertising data
@@ -179,14 +179,14 @@ OPERATE_RET bal_ble_advertising_stop(VOID_T);
  * */
 
 /**
- * @brief bal_ble_advertising_data_update
+ * @brief tal_ble_ext_advertising_data_update
  *
  * @param[in] *p_adv: *p_adv
  * @param[in] *p_scan_rsp: *p_scan_rsp
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_advertising_data_update(BAL_BLE_DATA_T *p_adv, BAL_BLE_DATA_T *p_scan_rsp);
+OPERATE_RET tal_ble_ext_advertising_data_update(TAL_BLE_DATA_T *p_adv, TAL_BLE_DATA_T *p_scan_rsp);
 
 /**
  * @brief   Start scanning
@@ -197,9 +197,9 @@ OPERATE_RET bal_ble_advertising_data_update(BAL_BLE_DATA_T *p_adv, BAL_BLE_DATA_
  *
  * @note    Other default scanning parameters : public address, no
  * whitelist.
- *          The scan response and adv data are given through BAL_BLE_EVT_ADV_REPORT event !!!!!!
+ *          The scan response and adv data are given through TAL_BLE_EVT_ADV_REPORT event !!!!!!
  */
-OPERATE_RET bal_ble_scan_start(BAL_BLE_SCAN_PARAMS_T CONST *p_scan_param);
+OPERATE_RET tal_ble_ext_scan_start(TAL_BLE_SCAN_PARAMS_T CONST *p_scan_param);
 
 /**
  * @brief   Stop scanning
@@ -209,30 +209,30 @@ OPERATE_RET bal_ble_scan_start(BAL_BLE_SCAN_PARAMS_T CONST *p_scan_param);
  * */
 
 /**
- * @brief bal_ble_scan_stop
+ * @brief tal_ble_ext_scan_stop
  *
  * @param[in] param: none
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_scan_stop(VOID_T);
+OPERATE_RET tal_ble_ext_scan_stop(VOID_T);
 
 /**
  * @brief   Get the received signal strength for the last connection event.
  * @param   [in]peer:       conn_handle Connection handle.
  * @return  SUCCESS         Successfully read the RSSI.
  *          ERROR           No sample is available.
- *          The rssi reading is given through BAL_BLE_EVT_LINK_RSSI event !!!!!!
+ *          The rssi reading is given through TAL_BLE_EVT_LINK_RSSI event !!!!!!
  * */
 
 /**
- * @brief bal_ble_rssi_get
+ * @brief tal_ble_ext_rssi_get
  *
  * @param[in] peer: peer
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_rssi_get(CONST BAL_BLE_PEER_INFO_T peer);
+OPERATE_RET tal_ble_ext_rssi_get(CONST TAL_BLE_PEER_INFO_T peer);
 
 /**
  * @brief   Update connection parameters.
@@ -243,9 +243,9 @@ OPERATE_RET bal_ble_rssi_get(CONST BAL_BLE_PEER_INFO_T peer);
  *          [in] conn_param: connect parameters including interval, peer info
  * @return  SUCCESS         Successfully initiated connecting procedure.
  *
- *          The connection parameters updating is given through BAL_BLE_EVT_CONN_PARAM_UPDATE event !!!!!!
+ *          The connection parameters updating is given through TAL_BLE_EVT_CONN_PARAM_UPDATE event !!!!!!
  */
-OPERATE_RET bal_ble_conn_param_update(CONST BAL_BLE_PEER_INFO_T peer, BAL_BLE_CONN_PARAMS_T CONST *p_conn_params);
+OPERATE_RET tal_ble_ext_conn_param_update(CONST TAL_BLE_PEER_INFO_T peer, TAL_BLE_CONN_PARAMS_T CONST *p_conn_params);
 
 /**
  * @brief   Start connecting one peer
@@ -253,9 +253,9 @@ OPERATE_RET bal_ble_conn_param_update(CONST BAL_BLE_PEER_INFO_T peer, BAL_BLE_CO
  *          [in] conn_param:    connect parameters including interval, peer info \
  * @return  SUCCESS             Successfully initiated connecting procedure.
  *
- *          The connection event is given through BAL_BLE_EVT_CENTRAL_CONNECT event !!!!!!
+ *          The connection event is given through TAL_BLE_EVT_CENTRAL_CONNECT event !!!!!!
  */
-OPERATE_RET bal_ble_connect_and_discovery(CONST BAL_BLE_PEER_INFO_T peer, BAL_BLE_CONN_PARAMS_T CONST *p_conn_params);
+OPERATE_RET tal_ble_ext_connect_and_discovery(CONST TAL_BLE_PEER_INFO_T peer, TAL_BLE_CONN_PARAMS_T CONST *p_conn_params);
 
 /**
  * @brief   Disconnect from peer
@@ -269,96 +269,96 @@ OPERATE_RET bal_ble_connect_and_discovery(CONST BAL_BLE_PEER_INFO_T peer, BAL_BL
  * */
 
 /**
- * @brief bal_ble_disconnect
+ * @brief tal_ble_ext_disconnect
  *
  * @param[in] peer: peer
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_disconnect(CONST BAL_BLE_PEER_INFO_T peer);
+OPERATE_RET tal_ble_ext_disconnect(CONST TAL_BLE_PEER_INFO_T peer);
 
 /**
  * @brief   [Ble Peripheral] Notify Command characteristic value
- * @param   [in] p_data: pointer to data, refer to BAL_BLE_DATA_T
+ * @param   [in] p_data: pointer to data, refer to TAL_BLE_DATA_T
  * @return  SUCCESS
  *          ERROR Refer to platform error code
  * */
 
 /**
- * @brief bal_ble_server_common_send
+ * @brief tal_ble_ext_server_common_send
  *
  * @param[in] *p_data: *p_data
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_server_common_send(BAL_BLE_DATA_T *p_data);
+OPERATE_RET tal_ble_ext_server_common_send(TAL_BLE_DATA_T *p_data);
 
 /**
  * @brief   [Ble Peripheral] Set Read Command characteristic value
- * @param   [in] p_data: pointer to data, refer to BAL_BLE_DATA_T
+ * @param   [in] p_data: pointer to data, refer to TAL_BLE_DATA_T
  * @return  SUCCESS
  *          ERROR Refer to platform error code
  * */
 
 /**
- * @brief bal_ble_server_common_read_update
+ * @brief tal_ble_ext_server_common_read_update
  *
  * @param[in] *p_data: *p_data
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_server_common_read_update(BAL_BLE_DATA_T *p_data);
+OPERATE_RET tal_ble_ext_server_common_read_update(TAL_BLE_DATA_T *p_data);
 
 /**
  * @brief   [Ble Central] write data to peer within command channel
- * @param   [in] p_data: pointer to data, refer to BAL_BLE_DATA_T
+ * @param   [in] p_data: pointer to data, refer to TAL_BLE_DATA_T
  * @return  SUCCESS
  *          ERROR Refer to platform error code
  * */
 
 /**
- * @brief bal_ble_client_common_send
+ * @brief tal_ble_ext_client_common_send
  *
  * @param[in] peer: peer
  * @param[in] *p_data: *p_data
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_client_common_send(CONST BAL_BLE_PEER_INFO_T peer, BAL_BLE_DATA_T *p_data);
+OPERATE_RET tal_ble_ext_client_common_send(CONST TAL_BLE_PEER_INFO_T peer, TAL_BLE_DATA_T *p_data);
 
 /**
  * @brief   [Ble Central] read data from peer within command channel
- * @param   [in] p_data: pointer to data, refer to BAL_BLE_DATA_T
+ * @param   [in] p_data: pointer to data, refer to TAL_BLE_DATA_T
  * @return  SUCCESS
  *          ERROR Refer to platform error code
  * */
 
 /**
- * @brief bal_ble_client_common_read
+ * @brief tal_ble_ext_client_common_read
  *
  * @param[in] peer: peer
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_client_common_read(CONST BAL_BLE_PEER_INFO_T peer);
+OPERATE_RET tal_ble_ext_client_common_read(CONST TAL_BLE_PEER_INFO_T peer);
 
 /**
  * @brief   [Ble Peripheral] Reply to an ATT_MTU exchange request by sending an Exchange MTU Response to the client.
  * @param   [in] att_mtu: mtu size
  * @return  SUCCESS
  *          ERROR Refer to platform error code
- *          The MTU negotiation is given through BAL_BLE_EVT_MTU_REQUEST event !!!!!!
+ *          The MTU negotiation is given through TAL_BLE_EVT_MTU_REQUEST event !!!!!!
  * */
 
 /**
- * @brief bal_ble_server_exchange_mtu_reply
+ * @brief tal_ble_ext_server_exchange_mtu_reply
  *
  * @param[in] peer: peer
  * @param[in] server_mtu: server_mtu
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_server_exchange_mtu_reply(CONST BAL_BLE_PEER_INFO_T peer, USHORT_T server_mtu);
+OPERATE_RET tal_ble_ext_server_exchange_mtu_reply(CONST TAL_BLE_PEER_INFO_T peer, USHORT_T server_mtu);
 
 /**
  * @brief   [Ble Central] Start an ATT_MTU exchange by sending an Exchange MTU Request to the server.
@@ -370,21 +370,21 @@ OPERATE_RET bal_ble_server_exchange_mtu_reply(CONST BAL_BLE_PEER_INFO_T peer, US
  * */
 
 /**
- * @brief bal_ble_client_exchange_mtu_request
+ * @brief tal_ble_ext_client_exchange_mtu_request
  *
  * @param[in] peer: peer
  * @param[in] client_mtu: client_mtu
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_client_exchange_mtu_request(CONST BAL_BLE_PEER_INFO_T peer, USHORT_T client_mtu);
+OPERATE_RET tal_ble_ext_client_exchange_mtu_request(CONST TAL_BLE_PEER_INFO_T peer, USHORT_T client_mtu);
 
 /**
  * @brief   [Special Command Control] Base on Bluetooth, We can do some special commands for exchanging some informations.
  * @param   [in] opcode         Operations Opcode.
  *          [in] user_data      Post Some Special Commands Data.
  *          [in] data_len       User's Data Length.
- * @note    For Operations Codes, we can do anythings after exchange from BAL Application
+ * @note    For Operations Codes, we can do anythings after exchange from TAL Application
  *          And We define some Opcodes as below for reference.
  *          For Bluetooth NCP Module: Mask=0x01, Code ID: 0x00~0xff. Opcode = ((0x01 << 8) & Code ID)
  *          eg:     0x0100: Special Vendor Module Init
@@ -404,7 +404,7 @@ OPERATE_RET bal_ble_client_exchange_mtu_request(CONST BAL_BLE_PEER_INFO_T peer, 
  * */
 
 /**
- * @brief bal_ble_vendor_command_control
+ * @brief tal_ble_ext_vendor_command_control
  *
  * @param[in] opcode: opcode
  * @param[in] *user_data: *user_data
@@ -412,30 +412,30 @@ OPERATE_RET bal_ble_client_exchange_mtu_request(CONST BAL_BLE_PEER_INFO_T peer, 
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_vendor_command_control(USHORT_T opcode, VOID_T *user_data, USHORT_T data_len);
+OPERATE_RET tal_ble_ext_vendor_command_control(USHORT_T opcode, VOID_T *user_data, USHORT_T data_len);
 
 /**
  * @brief   [Tuya Internal] Base on Bluetooth Gateway, We define this function for reporting bluetooth log string.
- * @param   [in] BAL_BLE_LOG_SEQ_FUNC   the function of log-seq interface.
- *          [out] BAL_BLE_PUBLISH_CB    the function of publish callback.
+ * @param   [in] TAL_BLE_LOG_SEQ_FUNC   the function of log-seq interface.
+ *          [out] TAL_BLE_PUBLISH_CB    the function of publish callback.
  *
  *  * @return  SUCCESS
  *          ERROR
  * */
 
 /**
- * @brief bal_ble_cloud_func_register
+ * @brief tal_ble_ext_cloud_func_register
  *
  * @param[in] log_seq_func: log_seq_func
  * @param[in] *publish_func: *publish_func
  *
  * @return OPRT_OK on success. Others on error, please refer to tuya_error_code.h
  */
-OPERATE_RET bal_ble_cloud_func_register(BAL_BLE_LOG_SEQ_FUNC log_seq_func, BAL_BLE_PUBLISH_CB *publish_func);
+OPERATE_RET tal_ble_ext_cloud_func_register(TAL_BLE_LOG_SEQ_FUNC log_seq_func, TAL_BLE_PUBLISH_CB *publish_func);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __BAL_BLUETOOTH_H__ */
+#endif /* __TAL_BLUETOOTH_H__ */

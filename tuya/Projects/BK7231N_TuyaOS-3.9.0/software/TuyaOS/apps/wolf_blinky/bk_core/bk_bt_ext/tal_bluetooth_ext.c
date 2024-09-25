@@ -1,5 +1,5 @@
 /**
- * @file bal_bluetooth.c
+ * @file tal_bluetooth_ext.c
  * @brief This file contains the Bluetooth Low Energy (BLE) utility functions
  * and event callbacks for handling BLE operations in the Tuya Application
  * Layer. It includes functions for UUID conversion, GAP (Generic Access
@@ -17,25 +17,26 @@
  */
 
 #include <string.h>
-#include "bal_bluetooth_def.h"
+#include "tal_bluetooth_ext.h"
+#include "tal_bluetooth_def.h"
 #include "tkl_bluetooth_def.h"
 #include "tkl_bluetooth.h"
 #include "tal_api.h"
 
-#define BAL_COMMON_SERVICE_INDEX (0)
+#define TAL_COMMON_SERVICE_INDEX (0)
 
-#define BAL_COMMON_CHAR_MAX_NUM (3)
+#define TAL_COMMON_CHAR_MAX_NUM (3)
 
 #if (defined(ENABLE_MATTER_TUYA_BLE_CHAR) && (ENABLE_MATTER_TUYA_BLE_CHAR == 1))
-#define BAL_COMMON_SERVICE_MAX_NUM    (2)
-#define BAL_MATTER_TUYA_SERVICE_INDEX (1)
-#define BAL_MATTER_TUYA_CHAR_MAX_NUM  (3)
+#define TAL_COMMON_SERVICE_MAX_NUM    (2)
+#define TAL_MATTER_TUYA_SERVICE_INDEX (1)
+#define TAL_MATTER_TUYA_CHAR_MAX_NUM  (3)
 #else
-#define BAL_COMMON_SERVICE_MAX_NUM (1)
+#define TAL_COMMON_SERVICE_MAX_NUM (1)
 #endif
 
-#ifndef BAL_BLE_SERVICE_VERSION
-#define BAL_BLE_SERVICE_VERSION (2) // Default Service is version 2: Follow the latest service.
+#ifndef TAL_BLE_SERVICE_VERSION
+#define TAL_BLE_SERVICE_VERSION (2) // Default Service is version 2: Follow the latest service.
 #endif
 
 /**< Use TKL Definitions */
@@ -45,14 +46,14 @@ static TKL_BLE_CHAR_PARAMS_T *ptkl_ble_service_char = NULL;
 
 static uint16_t tkl_ble_common_connect_handle = TKL_BLE_GATT_INVALID_HANDLE;
 
-/**< Use BAL Definitions, BAL Only Support One GATT Link at one time, follow
+/**< Use TAL Definitions, TAL Only Support One GATT Link at one time, follow
  * Bluetooth Spec. */
-static BAL_BLE_EVT_FUNC_CB bal_ble_event_callback;
+static TAL_BLE_EVT_FUNC_CB tal_ble_ext_event_callback;
 #if (TY_HS_BLE_ROLE_CENTRAL)
-static BAL_BLE_PEER_INFO_T bal_ble_peer = {0};
+static TAL_BLE_PEER_INFO_T tal_ble_ext_peer = {0};
 #endif
 
-static uint16_t bal_ble_uuid16_convert(TKL_BLE_UUID_T *p_uuid)
+static uint16_t tal_ble_ext_uuid16_convert(TKL_BLE_UUID_T *p_uuid)
 {
     uint16_t uuid16 = 0xFFFF;
 
@@ -71,61 +72,61 @@ static uint16_t bal_ble_uuid16_convert(TKL_BLE_UUID_T *p_uuid)
 
 static void tkl_ble_kernel_gap_event_callback(TKL_BLE_GAP_PARAMS_EVT_T *p_event)
 {
-    BAL_BLE_EVT_PARAMS_T bal_event;
+    TAL_BLE_EVT_PARAMS_T tal_event;
 
     if (p_event == NULL) {
         return;
     }
 
-    memset(&bal_event, 0, sizeof(BAL_BLE_EVT_PARAMS_T));
+    memset(&tal_event, 0, sizeof(TAL_BLE_EVT_PARAMS_T));
 
     switch (p_event->type) {
     case TKL_BLE_EVT_STACK_INIT: {
-        bal_event.type = BAL_BLE_STACK_INIT;
-        bal_event.ble_event.init = p_event->result;
+        tal_event.type = TAL_BLE_STACK_INIT;
+        tal_event.ble_event.init = p_event->result;
     } break;
 
     case TKL_BLE_EVT_STACK_DEINIT: {
-        bal_event.type = BAL_BLE_STACK_DEINIT;
-        bal_event.ble_event.init = p_event->result;
+        tal_event.type = TAL_BLE_STACK_DEINIT;
+        tal_event.ble_event.init = p_event->result;
     } break;
 
     case TKL_BLE_GAP_EVT_CONNECT: {
-        bal_event.ble_event.connect.result = p_event->result;
+        tal_event.ble_event.connect.result = p_event->result;
         if (p_event->gap_event.connect.role == TKL_BLE_ROLE_SERVER) {
-            bal_event.type = BAL_BLE_EVT_PERIPHERAL_CONNECT;
+            tal_event.type = TAL_BLE_EVT_PERIPHERAL_CONNECT;
 
             tkl_ble_common_connect_handle = p_event->conn_handle;
-            bal_event.ble_event.connect.peer.conn_handle = p_event->conn_handle;
-            bal_event.ble_event.connect.peer.peer_addr.type = p_event->gap_event.connect.peer_addr.type;
-            memcpy(bal_event.ble_event.connect.peer.peer_addr.addr, p_event->gap_event.connect.peer_addr.addr, 6);
+            tal_event.ble_event.connect.peer.conn_handle = p_event->conn_handle;
+            tal_event.ble_event.connect.peer.peer_addr.type = p_event->gap_event.connect.peer_addr.type;
+            memcpy(tal_event.ble_event.connect.peer.peer_addr.addr, p_event->gap_event.connect.peer_addr.addr, 6);
 
-            bal_event.ble_event.connect.peer.char_handle[BAL_COMMON_WRITE_CHAR_INDEX] =
-                ptkl_ble_service_char[BAL_COMMON_WRITE_CHAR_INDEX].handle;
-            bal_event.ble_event.connect.peer.char_handle[BAL_COMMON_NOTIFY_CHAR_INDEX] =
-                ptkl_ble_service_char[BAL_COMMON_NOTIFY_CHAR_INDEX].handle;
-            bal_event.ble_event.connect.peer.char_handle[BAL_COMMON_READ_CHAR_INDEX] =
-                ptkl_ble_service_char[BAL_COMMON_READ_CHAR_INDEX].handle;
+            tal_event.ble_event.connect.peer.char_handle[TAL_COMMON_WRITE_CHAR_INDEX] =
+                ptkl_ble_service_char[TAL_COMMON_WRITE_CHAR_INDEX].handle;
+            tal_event.ble_event.connect.peer.char_handle[TAL_COMMON_NOTIFY_CHAR_INDEX] =
+                ptkl_ble_service_char[TAL_COMMON_NOTIFY_CHAR_INDEX].handle;
+            tal_event.ble_event.connect.peer.char_handle[TAL_COMMON_READ_CHAR_INDEX] =
+                ptkl_ble_service_char[TAL_COMMON_READ_CHAR_INDEX].handle;
 #if (defined(ENABLE_MATTER_TUYA_BLE_CHAR) && (ENABLE_MATTER_TUYA_BLE_CHAR == 1))
-            bal_event.ble_event.connect.peer.char_handle[BAL_MATTER_TUYA_T1_CHAR_INDEX] =
-                ptkl_ble_service_char[BAL_MATTER_TUYA_T1_CHAR_INDEX].handle;
-            bal_event.ble_event.connect.peer.char_handle[BAL_MATTER_TUYA_T2_CHAR_INDEX] =
-                ptkl_ble_service_char[BAL_MATTER_TUYA_T2_CHAR_INDEX].handle;
-            bal_event.ble_event.connect.peer.char_handle[BAL_MATTER_TUYA_T3_CHAR_INDEX] =
-                ptkl_ble_service_char[BAL_MATTER_TUYA_T3_CHAR_INDEX].handle;
+            tal_event.ble_event.connect.peer.char_handle[TAL_MATTER_TUYA_T1_CHAR_INDEX] =
+                ptkl_ble_service_char[TAL_MATTER_TUYA_T1_CHAR_INDEX].handle;
+            tal_event.ble_event.connect.peer.char_handle[TAL_MATTER_TUYA_T2_CHAR_INDEX] =
+                ptkl_ble_service_char[TAL_MATTER_TUYA_T2_CHAR_INDEX].handle;
+            tal_event.ble_event.connect.peer.char_handle[TAL_MATTER_TUYA_T3_CHAR_INDEX] =
+                ptkl_ble_service_char[TAL_MATTER_TUYA_T3_CHAR_INDEX].handle;
 #endif
 
         } else {
 #if (TY_HS_BLE_ROLE_CENTRAL)
-            bal_ble_peer.conn_handle = p_event->conn_handle;
+            tal_ble_ext_peer.conn_handle = p_event->conn_handle;
             if (tkl_ble_gattc_all_service_discovery(p_event->conn_handle) != 0) { // Try To Discovery All Service, And
                                                                                   // Find the correct service
-                bal_event.type = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
-                bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_SVC_DISC_FAILED;
-                memcpy(&bal_event.ble_event.connect.peer, &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
+                tal_event.type = TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
+                tal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_SVC_DISC_FAILED;
+                memcpy(&tal_event.ble_event.connect.peer, &tal_ble_ext_peer, sizeof(TAL_BLE_PEER_INFO_T));
             } else {
                 /* We will still be in service finding procedure. Should not
-                 * report any states into BAL Application */
+                 * report any states into TAL Application */
                 return;
             }
 #endif
@@ -138,30 +139,30 @@ static void tkl_ble_kernel_gap_event_callback(TKL_BLE_GAP_PARAMS_EVT_T *p_event)
             tkl_ble_common_connect_handle = TKL_BLE_GATT_INVALID_HANDLE;
         }
 
-        bal_event.type = BAL_BLE_EVT_DISCONNECT;
-        bal_event.ble_event.disconnect.peer.conn_handle = p_event->conn_handle;
-        bal_event.ble_event.disconnect.reason = p_event->gap_event.disconnect.reason;
+        tal_event.type = TAL_BLE_EVT_DISCONNECT;
+        tal_event.ble_event.disconnect.peer.conn_handle = p_event->conn_handle;
+        tal_event.ble_event.disconnect.reason = p_event->gap_event.disconnect.reason;
     } break;
 
     case TKL_BLE_GAP_EVT_ADV_REPORT: {
-        bal_event.type = BAL_BLE_EVT_ADV_REPORT;
-        bal_event.ble_event.adv_report.rssi = p_event->gap_event.adv_report.rssi;
-        bal_event.ble_event.adv_report.data_len = (uint8_t)p_event->gap_event.adv_report.data.length;
-        bal_event.ble_event.adv_report.p_data = p_event->gap_event.adv_report.data.p_data;
-        memcpy(bal_event.ble_event.adv_report.peer_addr.addr, p_event->gap_event.adv_report.peer_addr.addr, 6);
+        tal_event.type = TAL_BLE_EVT_ADV_REPORT;
+        tal_event.ble_event.adv_report.rssi = p_event->gap_event.adv_report.rssi;
+        tal_event.ble_event.adv_report.data_len = (uint8_t)p_event->gap_event.adv_report.data.length;
+        tal_event.ble_event.adv_report.p_data = p_event->gap_event.adv_report.data.p_data;
+        memcpy(tal_event.ble_event.adv_report.peer_addr.addr, p_event->gap_event.adv_report.peer_addr.addr, 6);
 
         if (p_event->gap_event.adv_report.adv_type == TKL_BLE_ADV_DATA) {
-            bal_event.ble_event.adv_report.adv_type = BAL_BLE_ADV_DATA;
+            tal_event.ble_event.adv_report.adv_type = TAL_BLE_ADV_DATA;
         } else if (p_event->gap_event.adv_report.adv_type == TKL_BLE_RSP_DATA) {
-            bal_event.ble_event.adv_report.adv_type = BAL_BLE_RSP_DATA;
+            tal_event.ble_event.adv_report.adv_type = TAL_BLE_RSP_DATA;
         } else if (p_event->gap_event.adv_report.adv_type == TKL_BLE_ADV_RSP_DATA) {
-            bal_event.ble_event.adv_report.adv_type = BAL_BLE_ADV_RSP_DATA;
+            tal_event.ble_event.adv_report.adv_type = TAL_BLE_ADV_RSP_DATA;
         }
 
         if (p_event->gap_event.adv_report.peer_addr.type == TKL_BLE_GAP_ADDR_TYPE_PUBLIC) {
-            bal_event.ble_event.adv_report.peer_addr.type = BAL_BLE_ADDR_TYPE_PUBLIC;
+            tal_event.ble_event.adv_report.peer_addr.type = TAL_BLE_ADDR_TYPE_PUBLIC;
         } else if (p_event->gap_event.adv_report.peer_addr.type == TKL_BLE_GAP_ADDR_TYPE_RANDOM) {
-            bal_event.ble_event.adv_report.peer_addr.type = BAL_BLE_ADDR_TYPE_RANDOM;
+            tal_event.ble_event.adv_report.peer_addr.type = TAL_BLE_ADDR_TYPE_RANDOM;
         } else {
             /**< Currently, we not support other types. And Tuya Bluetooth
              * Device will not use other types. */
@@ -170,25 +171,25 @@ static void tkl_ble_kernel_gap_event_callback(TKL_BLE_GAP_PARAMS_EVT_T *p_event)
     } break;
 
     case TKL_BLE_GAP_EVT_CONN_PARAM_REQ: {
-        bal_event.type = BAL_BLE_EVT_CONN_PARAM_REQ;
-        bal_event.ble_event.conn_param.conn_handle = p_event->conn_handle;
+        tal_event.type = TAL_BLE_EVT_CONN_PARAM_REQ;
+        tal_event.ble_event.conn_param.conn_handle = p_event->conn_handle;
     } break;
 
     case TKL_BLE_GAP_EVT_CONN_PARAM_UPDATE: {
-        bal_event.type = BAL_BLE_EVT_CONN_PARAM_UPDATE;
-        bal_event.ble_event.conn_param.conn_handle = p_event->conn_handle;
+        tal_event.type = TAL_BLE_EVT_CONN_PARAM_UPDATE;
+        tal_event.ble_event.conn_param.conn_handle = p_event->conn_handle;
 
-        bal_event.ble_event.conn_param.conn.conn_sup_timeout = p_event->gap_event.conn_param.conn_sup_timeout;
-        bal_event.ble_event.conn_param.conn.max_conn_interval = p_event->gap_event.conn_param.conn_interval_max;
-        bal_event.ble_event.conn_param.conn.min_conn_interval = p_event->gap_event.conn_param.conn_interval_min;
-        bal_event.ble_event.conn_param.conn.latency = p_event->gap_event.conn_param.conn_latency;
+        tal_event.ble_event.conn_param.conn.conn_sup_timeout = p_event->gap_event.conn_param.conn_sup_timeout;
+        tal_event.ble_event.conn_param.conn.max_conn_interval = p_event->gap_event.conn_param.conn_interval_max;
+        tal_event.ble_event.conn_param.conn.min_conn_interval = p_event->gap_event.conn_param.conn_interval_min;
+        tal_event.ble_event.conn_param.conn.latency = p_event->gap_event.conn_param.conn_latency;
     } break;
 
     case TKL_BLE_GAP_EVT_CONN_RSSI: {
-        bal_event.type = BAL_BLE_EVT_CONN_RSSI;
-        bal_event.ble_event.link_rssi.conn_handle = p_event->conn_handle;
+        tal_event.type = TAL_BLE_EVT_CONN_RSSI;
+        tal_event.ble_event.link_rssi.conn_handle = p_event->conn_handle;
 
-        bal_event.ble_event.link_rssi.rssi = p_event->gap_event.link_rssi;
+        tal_event.ble_event.link_rssi.rssi = p_event->gap_event.link_rssi;
     } break;
 
     default: {
@@ -196,46 +197,46 @@ static void tkl_ble_kernel_gap_event_callback(TKL_BLE_GAP_PARAMS_EVT_T *p_event)
         return;
     }
 
-    if (bal_ble_event_callback) {
-        bal_ble_event_callback(&bal_event);
+    if (tal_ble_ext_event_callback) {
+        tal_ble_ext_event_callback(&tal_event);
     }
 }
 
 static void tkl_ble_kernel_gatt_event_callback(TKL_BLE_GATT_PARAMS_EVT_T *p_event)
 {
-    BAL_BLE_EVT_PARAMS_T bal_event;
+    TAL_BLE_EVT_PARAMS_T tal_event;
 
     if (p_event == NULL) {
         return;
     }
 
-    memset(&bal_event, 0, sizeof(BAL_BLE_EVT_PARAMS_T));
+    memset(&tal_event, 0, sizeof(TAL_BLE_EVT_PARAMS_T));
 
     switch (p_event->type) {
     case TKL_BLE_GATT_EVT_MTU_REQUEST: {
-        bal_event.type = BAL_BLE_EVT_MTU_REQUEST;
-        bal_event.ble_event.exchange_mtu.conn_handle = p_event->conn_handle;
-        bal_event.ble_event.exchange_mtu.mtu = p_event->gatt_event.exchange_mtu;
+        tal_event.type = TAL_BLE_EVT_MTU_REQUEST;
+        tal_event.ble_event.exchange_mtu.conn_handle = p_event->conn_handle;
+        tal_event.ble_event.exchange_mtu.mtu = p_event->gatt_event.exchange_mtu;
     } break;
 #if (TY_HS_BLE_ROLE_CENTRAL)
     case TKL_BLE_GATT_EVT_MTU_RSP: {
-        bal_event.type = BAL_BLE_EVT_MTU_RSP;
-        bal_event.ble_event.exchange_mtu.conn_handle = p_event->conn_handle;
-        bal_event.ble_event.exchange_mtu.mtu = p_event->gatt_event.exchange_mtu;
+        tal_event.type = TAL_BLE_EVT_MTU_RSP;
+        tal_event.ble_event.exchange_mtu.conn_handle = p_event->conn_handle;
+        tal_event.ble_event.exchange_mtu.mtu = p_event->gatt_event.exchange_mtu;
     } break;
 
     case TKL_BLE_GATT_EVT_PRIM_SEV_DISCOVERY: {
         TKL_BLE_GATT_SVC_DISC_TYPE_T *p_svc_disc = &p_event->gatt_event.svc_disc;
         int svc_result = OPRT_INVALID_PARM;
 
-        bal_event.type = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
+        tal_event.type = TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
         if (p_event->result == OPRT_OK) {
 
             /**< Find the All Characteristic. */
             uint8_t i = 0;
             for (i = 0; i < p_svc_disc->svc_num; i++) {
-                if (bal_ble_uuid16_convert(&p_svc_disc->services[i].uuid) == BAL_BLE_CMD_SERVICE_UUID_V1 ||
-                    bal_ble_uuid16_convert(&p_svc_disc->services[i].uuid) == BAL_BLE_CMD_SERVICE_UUID_V2) {
+                if (tal_ble_ext_uuid16_convert(&p_svc_disc->services[i].uuid) == TAL_BLE_CMD_SERVICE_UUID_V1 ||
+                    tal_ble_ext_uuid16_convert(&p_svc_disc->services[i].uuid) == TAL_BLE_CMD_SERVICE_UUID_V2) {
                     svc_result = tkl_ble_gattc_all_char_discovery(
                         p_event->conn_handle, p_svc_disc->services[i].start_handle, p_svc_disc->services[i].end_handle);
                     if (svc_result == 0) {
@@ -243,12 +244,12 @@ static void tkl_ble_kernel_gatt_event_callback(TKL_BLE_GATT_PARAMS_EVT_T *p_even
                     }
                 }
             }
-            memcpy(&bal_event.ble_event.connect.peer, &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
-            bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_SVC_DISC_FAILED;
+            memcpy(&tal_event.ble_event.connect.peer, &tal_ble_ext_peer, sizeof(TAL_BLE_PEER_INFO_T));
+            tal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_SVC_DISC_FAILED;
         } else {
             /**< Return Error, Cannot Discovery Service */
-            memcpy(&bal_event.ble_event.connect.peer, &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
-            bal_event.ble_event.connect.result = p_event->result;
+            memcpy(&tal_event.ble_event.connect.peer, &tal_ble_ext_peer, sizeof(TAL_BLE_PEER_INFO_T));
+            tal_event.ble_event.connect.result = p_event->result;
         }
     } break;
 
@@ -257,42 +258,42 @@ static void tkl_ble_kernel_gatt_event_callback(TKL_BLE_GATT_PARAMS_EVT_T *p_even
         TKL_BLE_GATT_CHAR_DISC_TYPE_T *p_char_disc = &p_event->gatt_event.char_disc;
         int char_result = OPRT_INVALID_PARM;
 
-        bal_event.type = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
+        tal_event.type = TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
         if (p_event->result == OPRT_OK) {
             uint8_t i = 0;
             for (i = 0; i < p_char_disc->char_num; i++) {
-                if (bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) == BAL_BLE_CMD_WRITE_CHAR_UUID_V1 ||
-                    bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) == BAL_BLE_CMD_WRITE_CHAR_UUID_V2) {
+                if (tal_ble_ext_uuid16_convert(&p_char_disc->characteristics[i].uuid) == TAL_BLE_CMD_WRITE_CHAR_UUID_V1 ||
+                    tal_ble_ext_uuid16_convert(&p_char_disc->characteristics[i].uuid) == TAL_BLE_CMD_WRITE_CHAR_UUID_V2) {
 
-                    bal_ble_peer.char_handle[BAL_COMMON_WRITE_CHAR_INDEX] = p_char_disc->characteristics[i].handle;
-                } else if (bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) ==
-                               BAL_BLE_CMD_NOTIFY_CHAR_UUID_V1 ||
-                           bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) ==
-                               BAL_BLE_CMD_NOTIFY_CHAR_UUID_V2) {
+                    tal_ble_ext_peer.char_handle[TAL_COMMON_WRITE_CHAR_INDEX] = p_char_disc->characteristics[i].handle;
+                } else if (tal_ble_ext_uuid16_convert(&p_char_disc->characteristics[i].uuid) ==
+                               TAL_BLE_CMD_NOTIFY_CHAR_UUID_V1 ||
+                           tal_ble_ext_uuid16_convert(&p_char_disc->characteristics[i].uuid) ==
+                               TAL_BLE_CMD_NOTIFY_CHAR_UUID_V2) {
 
-                    bal_ble_peer.char_handle[BAL_COMMON_NOTIFY_CHAR_INDEX] = p_char_disc->characteristics[i].handle;
-                } else if (bal_ble_uuid16_convert(&p_char_disc->characteristics[i].uuid) ==
-                           BAL_BLE_CMD_READ_CHAR_UUID_V2) {
+                    tal_ble_ext_peer.char_handle[TAL_COMMON_NOTIFY_CHAR_INDEX] = p_char_disc->characteristics[i].handle;
+                } else if (tal_ble_ext_uuid16_convert(&p_char_disc->characteristics[i].uuid) ==
+                           TAL_BLE_CMD_READ_CHAR_UUID_V2) {
 
-                    bal_ble_peer.char_handle[BAL_COMMON_READ_CHAR_INDEX] = p_char_disc->characteristics[i].handle;
+                    tal_ble_ext_peer.char_handle[TAL_COMMON_READ_CHAR_INDEX] = p_char_disc->characteristics[i].handle;
                 }
             }
 
             /**< Find Characteristic Descriptor */
-            if (bal_ble_peer.char_handle[BAL_COMMON_NOTIFY_CHAR_INDEX] != TKL_BLE_GATT_INVALID_HANDLE) {
+            if (tal_ble_ext_peer.char_handle[TAL_COMMON_NOTIFY_CHAR_INDEX] != TKL_BLE_GATT_INVALID_HANDLE) {
                 char_result = tkl_ble_gattc_char_desc_discovery(
-                    p_event->conn_handle, bal_ble_peer.char_handle[BAL_COMMON_NOTIFY_CHAR_INDEX], 0xFFFF);
+                    p_event->conn_handle, tal_ble_ext_peer.char_handle[TAL_COMMON_NOTIFY_CHAR_INDEX], 0xFFFF);
                 if (char_result == OPRT_OK) {
                     return;
                 }
             }
 
-            memcpy(&bal_event.ble_event.connect.peer, &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
-            bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_DESC_DISC_FAILED;
+            memcpy(&tal_event.ble_event.connect.peer, &tal_ble_ext_peer, sizeof(TAL_BLE_PEER_INFO_T));
+            tal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_DESC_DISC_FAILED;
         } else {
             /**< Return Error, Cannot Discovery Service */
-            memcpy(&bal_event.ble_event.connect.peer, &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
-            bal_event.ble_event.connect.result = p_event->result;
+            memcpy(&tal_event.ble_event.connect.peer, &tal_ble_ext_peer, sizeof(TAL_BLE_PEER_INFO_T));
+            tal_event.ble_event.connect.result = p_event->result;
         }
 
     } break;
@@ -302,76 +303,76 @@ static void tkl_ble_kernel_gatt_event_callback(TKL_BLE_GATT_PARAMS_EVT_T *p_even
         uint8_t cccd_enable[2] = {0x01, 0x00};
         int desc_result;
 
-        bal_event.type = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
+        tal_event.type = TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY;
         if (p_event->result == OPRT_OK) {
             desc_result = tkl_ble_gattc_write_without_rsp(p_event->conn_handle, p_desc_disc->cccd_handle, cccd_enable,
                                                           sizeof(cccd_enable));
             if (desc_result != 0) {
-                bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_DESC_DISC_FAILED;
-            } else if (p_event->conn_handle != bal_ble_peer.conn_handle) {
-                bal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_HANDLE_ERROR;
-                memcpy(&bal_event.ble_event.connect.peer, &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
+                tal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_DESC_DISC_FAILED;
+            } else if (p_event->conn_handle != tal_ble_ext_peer.conn_handle) {
+                tal_event.ble_event.connect.result = OPRT_OS_ADAPTER_BLE_HANDLE_ERROR;
+                memcpy(&tal_event.ble_event.connect.peer, &tal_ble_ext_peer, sizeof(TAL_BLE_PEER_INFO_T));
             } else {
-                bal_event.ble_event.connect.result = OPRT_OK;
-                memcpy(&bal_event.ble_event.connect.peer, &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
+                tal_event.ble_event.connect.result = OPRT_OK;
+                memcpy(&tal_event.ble_event.connect.peer, &tal_ble_ext_peer, sizeof(TAL_BLE_PEER_INFO_T));
             }
         } else {
             /**< Return Error, Cannot Discovery characteristic descriptor */
-            bal_event.ble_event.connect.result = p_event->result;
-            memcpy(&bal_event.ble_event.connect.peer, &bal_ble_peer, sizeof(BAL_BLE_PEER_INFO_T));
+            tal_event.ble_event.connect.result = p_event->result;
+            memcpy(&tal_event.ble_event.connect.peer, &tal_ble_ext_peer, sizeof(TAL_BLE_PEER_INFO_T));
         }
     } break;
 #endif
     case TKL_BLE_GATT_EVT_NOTIFY_TX: {
-        bal_event.type = BAL_BLE_EVT_NOTIFY_TX;
-        bal_event.ble_event.notify_result.conn_handle = p_event->conn_handle;
+        tal_event.type = TAL_BLE_EVT_NOTIFY_TX;
+        tal_event.ble_event.notify_result.conn_handle = p_event->conn_handle;
 
-        bal_event.ble_event.notify_result.char_handle = p_event->gatt_event.notify_result.char_handle;
-        bal_event.ble_event.notify_result.result = p_event->gatt_event.notify_result.result;
+        tal_event.ble_event.notify_result.char_handle = p_event->gatt_event.notify_result.char_handle;
+        tal_event.ble_event.notify_result.result = p_event->gatt_event.notify_result.result;
     } break;
 
     case TKL_BLE_GATT_EVT_WRITE_REQ: {
-        bal_event.type = BAL_BLE_EVT_WRITE_REQ;
-        bal_event.ble_event.write_report.peer.conn_handle = p_event->conn_handle;
-        bal_event.ble_event.write_report.peer.char_handle[0] = p_event->gatt_event.write_report.char_handle;
-        bal_event.ble_event.write_report.report.len = p_event->gatt_event.write_report.report.length;
-        bal_event.ble_event.write_report.report.p_data = p_event->gatt_event.write_report.report.p_data;
+        tal_event.type = TAL_BLE_EVT_WRITE_REQ;
+        tal_event.ble_event.write_report.peer.conn_handle = p_event->conn_handle;
+        tal_event.ble_event.write_report.peer.char_handle[0] = p_event->gatt_event.write_report.char_handle;
+        tal_event.ble_event.write_report.report.len = p_event->gatt_event.write_report.report.length;
+        tal_event.ble_event.write_report.report.p_data = p_event->gatt_event.write_report.report.p_data;
     } break;
 
     case TKL_BLE_GATT_EVT_NOTIFY_INDICATE_RX: {
-        bal_event.type = BAL_BLE_EVT_NOTIFY_RX;
-        bal_event.ble_event.data_report.peer.conn_handle = p_event->conn_handle;
-        bal_event.ble_event.data_report.peer.char_handle[0] = p_event->gatt_event.data_report.char_handle;
-        bal_event.ble_event.data_report.report.len = p_event->gatt_event.data_report.report.length;
-        bal_event.ble_event.data_report.report.p_data = p_event->gatt_event.data_report.report.p_data;
+        tal_event.type = TAL_BLE_EVT_NOTIFY_RX;
+        tal_event.ble_event.data_report.peer.conn_handle = p_event->conn_handle;
+        tal_event.ble_event.data_report.peer.char_handle[0] = p_event->gatt_event.data_report.char_handle;
+        tal_event.ble_event.data_report.report.len = p_event->gatt_event.data_report.report.length;
+        tal_event.ble_event.data_report.report.p_data = p_event->gatt_event.data_report.report.p_data;
     } break;
 #if (TY_HS_BLE_ROLE_CENTRAL)
     case TKL_BLE_GATT_EVT_READ_RX: {
-        bal_event.type = BAL_BLE_EVT_READ_RX;
-        bal_event.ble_event.data_read.peer.conn_handle = p_event->conn_handle;
-        bal_event.ble_event.data_read.peer.char_handle[0] = p_event->gatt_event.data_read.char_handle;
-        bal_event.ble_event.data_read.report.len = p_event->gatt_event.data_read.report.length;
-        bal_event.ble_event.data_read.report.p_data = p_event->gatt_event.data_read.report.p_data;
+        tal_event.type = TAL_BLE_EVT_READ_RX;
+        tal_event.ble_event.data_read.peer.conn_handle = p_event->conn_handle;
+        tal_event.ble_event.data_read.peer.char_handle[0] = p_event->gatt_event.data_read.char_handle;
+        tal_event.ble_event.data_read.report.len = p_event->gatt_event.data_read.report.length;
+        tal_event.ble_event.data_read.report.p_data = p_event->gatt_event.data_read.report.p_data;
     } break;
 #endif
     case TKL_BLE_GATT_EVT_SUBSCRIBE: {
         if (p_event->result == OPRT_OK) {
-            bal_event.type = BAL_BLE_EVT_SUBSCRIBE;
-            bal_event.ble_event.subscribe.conn_handle = p_event->conn_handle;
-            bal_event.ble_event.subscribe.char_handle = p_event->gatt_event.subscribe.char_handle;
-            bal_event.ble_event.subscribe.reason = p_event->gatt_event.subscribe.reason;
-            bal_event.ble_event.subscribe.prev_notify = p_event->gatt_event.subscribe.prev_notify;
-            bal_event.ble_event.subscribe.cur_notify = p_event->gatt_event.subscribe.cur_notify;
-            bal_event.ble_event.subscribe.prev_indicate = p_event->gatt_event.subscribe.prev_indicate;
-            bal_event.ble_event.subscribe.cur_indicate = p_event->gatt_event.subscribe.cur_indicate;
+            tal_event.type = TAL_BLE_EVT_SUBSCRIBE;
+            tal_event.ble_event.subscribe.conn_handle = p_event->conn_handle;
+            tal_event.ble_event.subscribe.char_handle = p_event->gatt_event.subscribe.char_handle;
+            tal_event.ble_event.subscribe.reason = p_event->gatt_event.subscribe.reason;
+            tal_event.ble_event.subscribe.prev_notify = p_event->gatt_event.subscribe.prev_notify;
+            tal_event.ble_event.subscribe.cur_notify = p_event->gatt_event.subscribe.cur_notify;
+            tal_event.ble_event.subscribe.prev_indicate = p_event->gatt_event.subscribe.prev_indicate;
+            tal_event.ble_event.subscribe.cur_indicate = p_event->gatt_event.subscribe.cur_indicate;
         }
     } break;
 
     case TKL_BLE_GATT_EVT_READ_CHAR_VALUE: {
-        bal_event.type = BAL_BLE_EVT_READ_CHAR;
-        bal_event.ble_event.char_read.conn_handle = p_event->conn_handle;
-        bal_event.ble_event.char_read.char_handle = p_event->gatt_event.char_read.char_handle;
-        bal_event.ble_event.char_read.offset = p_event->gatt_event.char_read.offset;
+        tal_event.type = TAL_BLE_EVT_READ_CHAR;
+        tal_event.ble_event.char_read.conn_handle = p_event->conn_handle;
+        tal_event.ble_event.char_read.char_handle = p_event->gatt_event.char_read.char_handle;
+        tal_event.ble_event.char_read.offset = p_event->gatt_event.char_read.offset;
     } break;
 
     default: {
@@ -380,8 +381,8 @@ static void tkl_ble_kernel_gatt_event_callback(TKL_BLE_GATT_PARAMS_EVT_T *p_even
         return;
     }
 
-    if (bal_ble_event_callback) {
-        bal_ble_event_callback(&bal_event);
+    if (tal_ble_ext_event_callback) {
+        tal_ble_ext_event_callback(&tal_event);
     }
 }
 
@@ -392,13 +393,13 @@ static void tkl_ble_kernel_gatt_event_callback(TKL_BLE_GATT_PARAMS_EVT_T *p_even
  * @return  SUCCESS         Initialized successfully.
  *          ERROR
  * */
-OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, const BAL_BLE_EVT_FUNC_CB ble_event)
+OPERATE_RET tal_ble_ext_bt_init(TAL_BLE_ROLE_E role, const TAL_BLE_EVT_FUNC_CB ble_event)
 {
     uint8_t ble_stack_role = 0; // TKL_BLE_ROLE_SERVER;
 
     if (ble_event != NULL) {
-        /**<  Get the BAL Event Callback. */
-        bal_ble_event_callback = ble_event;
+        /**<  Get the TAL Event Callback. */
+        tal_ble_ext_event_callback = ble_event;
 
         /**< Register GAP And GATT Callback */
         tkl_ble_gap_callback_register(tkl_ble_kernel_gap_event_callback);
@@ -406,11 +407,11 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, const BAL_BLE_EVT_FUNC_CB ble_e
     }
 
     /**< Init Bluetooth Stack Role For Ble. */
-    if ((role & BAL_BLE_ROLE_PERIPERAL) == BAL_BLE_ROLE_PERIPERAL ||
-        (role & BAL_BLE_ROLE_BEACON) == BAL_BLE_ROLE_BEACON) {
+    if ((role & TAL_BLE_ROLE_PERIPERAL) == TAL_BLE_ROLE_PERIPERAL ||
+        (role & TAL_BLE_ROLE_BEACON) == TAL_BLE_ROLE_BEACON) {
         ble_stack_role |= TKL_BLE_ROLE_SERVER;
     }
-    if ((role & BAL_BLE_ROLE_CENTRAL) == BAL_BLE_ROLE_CENTRAL) {
+    if ((role & TAL_BLE_ROLE_CENTRAL) == TAL_BLE_ROLE_CENTRAL) {
         ble_stack_role |= TKL_BLE_ROLE_CLIENT;
     }
 
@@ -421,28 +422,28 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, const BAL_BLE_EVT_FUNC_CB ble_e
         ptkl_ble_service_char = tal_malloc(sizeof(TKL_BLE_CHAR_PARAMS_T) * TKL_BLE_GATT_CHAR_MAX_NUM);
     }
 
-    if ((role & BAL_BLE_ROLE_PERIPERAL) == BAL_BLE_ROLE_PERIPERAL) {
+    if ((role & TAL_BLE_ROLE_PERIPERAL) == TAL_BLE_ROLE_PERIPERAL) {
         TKL_BLE_GATTS_PARAMS_T *p_ble_services = &tkl_ble_gatt_service;
         *p_ble_services = (TKL_BLE_GATTS_PARAMS_T){
             .svc_num = 2,
             .p_service = ptkl_ble_service,
         };
 
-#if (defined(BAL_BLE_SERVICE_VERSION) && (BAL_BLE_SERVICE_VERSION == 2))
+#if (defined(TAL_BLE_SERVICE_VERSION) && (TAL_BLE_SERVICE_VERSION == 2))
         /**< Add Tuya Common Service */
-        *(ptkl_ble_service + BAL_COMMON_SERVICE_INDEX) = (TKL_BLE_SERVICE_PARAMS_T){
+        *(ptkl_ble_service + TAL_COMMON_SERVICE_INDEX) = (TKL_BLE_SERVICE_PARAMS_T){
             .handle = TKL_BLE_GATT_INVALID_HANDLE,
             .svc_uuid =
                 {
                     .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = BAL_BLE_CMD_SERVICE_UUID_V2,
+                    .uuid.uuid16 = TAL_BLE_CMD_SERVICE_UUID_V2,
                 },
             .type = TKL_BLE_UUID_SERVICE_PRIMARY,
-            .char_num = BAL_COMMON_CHAR_MAX_NUM,
+            .char_num = TAL_COMMON_CHAR_MAX_NUM,
             .p_char = ptkl_ble_service_char,
         };
 
-        *(ptkl_ble_service + BAL_COMMON_SERVICE_INDEX + 1) = (TKL_BLE_SERVICE_PARAMS_T){
+        *(ptkl_ble_service + TAL_COMMON_SERVICE_INDEX + 1) = (TKL_BLE_SERVICE_PARAMS_T){
             .handle = TKL_BLE_GATT_INVALID_HANDLE,
             .svc_uuid =
                 {
@@ -450,17 +451,17 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, const BAL_BLE_EVT_FUNC_CB ble_e
                     .uuid.uuid16 = 0xFD50,
                 },
             .type = TKL_BLE_UUID_SERVICE_PRIMARY,
-            .char_num = BAL_COMMON_CHAR_MAX_NUM,
+            .char_num = TAL_COMMON_CHAR_MAX_NUM,
             .p_char = ptkl_ble_service_char,
         };
 
         /**< Add Write Characteristic */
-        *(ptkl_ble_service_char + BAL_COMMON_WRITE_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
+        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
             .handle = TKL_BLE_GATT_INVALID_HANDLE,
             .char_uuid =
                 {
                     .uuid_type = TKL_BLE_UUID_TYPE_128,
-                    .uuid.uuid128 = BAL_BLE_CMD_WRITE_CHAR_UUID128_V2,
+                    .uuid.uuid128 = TAL_BLE_CMD_WRITE_CHAR_UUID128_V2,
                 },
             .property = TKL_BLE_GATT_CHAR_PROP_WRITE | TKL_BLE_GATT_CHAR_PROP_WRITE_NO_RSP,
             .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
@@ -468,12 +469,12 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, const BAL_BLE_EVT_FUNC_CB ble_e
         };
 
         /**< Add Notify Characteristic */
-        *(ptkl_ble_service_char + BAL_COMMON_NOTIFY_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
+        *(ptkl_ble_service_char + TAL_COMMON_NOTIFY_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
             .handle = TKL_BLE_GATT_INVALID_HANDLE,
             .char_uuid =
                 {
                     .uuid_type = TKL_BLE_UUID_TYPE_128,
-                    .uuid.uuid128 = BAL_BLE_CMD_NOTIFY_CHAR_UUID128_V2,
+                    .uuid.uuid128 = TAL_BLE_CMD_NOTIFY_CHAR_UUID128_V2,
                 },
             .property = TKL_BLE_GATT_CHAR_PROP_NOTIFY,
             .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
@@ -481,12 +482,12 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, const BAL_BLE_EVT_FUNC_CB ble_e
         };
 
         /**< Add Read Characteristic */
-        *(ptkl_ble_service_char + BAL_COMMON_READ_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
+        *(ptkl_ble_service_char + TAL_COMMON_READ_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
             .handle = TKL_BLE_GATT_INVALID_HANDLE,
             .char_uuid =
                 {
                     .uuid_type = TKL_BLE_UUID_TYPE_128,
-                    .uuid.uuid128 = BAL_BLE_CMD_READ_CHAR_UUID128_V2,
+                    .uuid.uuid128 = TAL_BLE_CMD_READ_CHAR_UUID128_V2,
                 },
             .property = TKL_BLE_GATT_CHAR_PROP_READ,
             .permission = TKL_BLE_GATT_PERM_READ,
@@ -494,12 +495,12 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, const BAL_BLE_EVT_FUNC_CB ble_e
         };
 #else
         /**< Add Tuya Common Service */
-        *(ptkl_ble_service + BAL_COMMON_SERVICE_INDEX) = (TKL_BLE_SERVICE_PARAMS_T){
+        *(ptkl_ble_service + TAL_COMMON_SERVICE_INDEX) = (TKL_BLE_SERVICE_PARAMS_T){
             .handle = TKL_BLE_GATT_INVALID_HANDLE,
             .svc_uuid =
                 {
                     .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = BAL_BLE_CMD_SERVICE_UUID_V1,
+                    .uuid.uuid16 = TAL_BLE_CMD_SERVICE_UUID_V1,
                 },
             .type = TKL_BLE_UUID_SERVICE_PRIMARY,
             .char_num = 2,
@@ -508,12 +509,12 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, const BAL_BLE_EVT_FUNC_CB ble_e
 
         /**< Add Write Characteristic */
 
-        *(ptkl_ble_service_char + BAL_COMMON_WRITE_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
+        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
             .handle = TKL_BLE_GATT_INVALID_HANDLE,
             .char_uuid =
                 {
                     .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = BAL_BLE_CMD_WRITE_CHAR_UUID_V1,
+                    .uuid.uuid16 = TAL_BLE_CMD_WRITE_CHAR_UUID_V1,
                 },
             .property = TKL_BLE_GATT_CHAR_PROP_WRITE | TKL_BLE_GATT_CHAR_PROP_WRITE_NO_RSP,
             .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
@@ -521,12 +522,12 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, const BAL_BLE_EVT_FUNC_CB ble_e
         };
 
         /**< Add Notify Characteristic */
-        *(ptkl_ble_service_char + BAL_COMMON_NOTIFY_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
+        *(ptkl_ble_service_char + TAL_COMMON_NOTIFY_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
             .handle = TKL_BLE_GATT_INVALID_HANDLE,
             .char_uuid =
                 {
                     .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = BAL_BLE_CMD_NOTIFY_CHAR_UUID_V1,
+                    .uuid.uuid16 = TAL_BLE_CMD_NOTIFY_CHAR_UUID_V1,
                 },
             .property = TKL_BLE_GATT_CHAR_PROP_NOTIFY,
             .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
@@ -551,13 +552,13 @@ OPERATE_RET bal_ble_bt_init(BAL_BLE_ROLE_E role, const BAL_BLE_EVT_FUNC_CB ble_e
  * @return  SUCCESS         Deinitialized successfully.
  *          ERROR
  * */
-OPERATE_RET bal_ble_bt_deinit(BAL_BLE_ROLE_E role)
+OPERATE_RET tal_ble_ext_bt_deinit(TAL_BLE_ROLE_E role)
 {
     if (ptkl_ble_service_char) {
-        bal_free(ptkl_ble_service_char);
+        tal_free(ptkl_ble_service_char);
     }
     if (ptkl_ble_service) {
-        bal_free(ptkl_ble_service);
+        tal_free(ptkl_ble_service);
     }
 
     return tkl_ble_stack_deinit(role);
@@ -569,7 +570,7 @@ OPERATE_RET bal_ble_bt_deinit(BAL_BLE_ROLE_E role)
  * @return  SUCCESS         Set Address successfully.
  *          ERROR
  * */
-OPERATE_RET bal_ble_address_set(BAL_BLE_ADDR_T const *p_addr)
+OPERATE_RET tal_ble_ext_address_set(TAL_BLE_ADDR_T const *p_addr)
 {
     TKL_BLE_GAP_ADDR_T ble_addr = {0};
 
@@ -588,18 +589,18 @@ OPERATE_RET bal_ble_address_set(BAL_BLE_ADDR_T const *p_addr)
  * @return  SUCCESS         Set Address successfully.
  *          ERROR
  * */
-OPERATE_RET bal_ble_address_get(BAL_BLE_ADDR_T *p_addr)
+OPERATE_RET tal_ble_ext_address_get(TAL_BLE_ADDR_T *p_addr)
 {
-    TKL_BLE_GAP_ADDR_T bal_addr = {0};
+    TKL_BLE_GAP_ADDR_T tal_addr = {0};
 
     if (p_addr == NULL) {
         return OPRT_INVALID_PARM;
     }
 
-    tkl_ble_gap_address_get(&bal_addr);
+    tkl_ble_gap_address_get(&tal_addr);
 
-    p_addr->type = bal_addr.type;
-    memcpy(p_addr->addr, bal_addr.addr, 6);
+    p_addr->type = tal_addr.type;
+    memcpy(p_addr->addr, tal_addr.addr, 6);
 
     return OPRT_OK;
 }
@@ -610,7 +611,7 @@ OPERATE_RET bal_ble_address_get(BAL_BLE_ADDR_T *p_addr)
  * @return  SUCCESS
  *          ERROR
  * */
-OPERATE_RET bal_ble_bt_link_max(uint16_t *p_maxlink)
+OPERATE_RET tal_ble_ext_bt_link_max(uint16_t *p_maxlink)
 {
     if (p_maxlink == NULL) {
         return OPRT_INVALID_PARM;
@@ -624,27 +625,27 @@ OPERATE_RET bal_ble_bt_link_max(uint16_t *p_maxlink)
 /**
  * @brief   Start advertising
  * @param  [in] p_adv_param : pointer to advertising parameters, see
- * BAL_BLE_ADV_PARAMS_T for details
+ * TAL_BLE_ADV_PARAMS_T for details
  * @return  SUCCESS             Successfully started advertising procedure.
  *          ERR_INVALID_STATE   Not in advertising state.
  * */
-OPERATE_RET bal_ble_advertising_start(BAL_BLE_ADV_PARAMS_T const *p_adv_param)
+OPERATE_RET tal_ble_ext_advertising_start(TAL_BLE_ADV_PARAMS_T const *p_adv_param)
 {
-    TKL_BLE_GAP_ADV_PARAMS_T bal_adv_params = {0};
+    TKL_BLE_GAP_ADV_PARAMS_T tal_adv_params = {0};
 
     if (p_adv_param == NULL) {
         return OPRT_INVALID_PARM;
     }
 
-    bal_adv_params.adv_type = p_adv_param->adv_type;
-    bal_adv_params.direct_addr.type = p_adv_param->direct_addr.type;
-    bal_adv_params.adv_interval_min = p_adv_param->adv_interval_min;
-    bal_adv_params.adv_interval_max = p_adv_param->adv_interval_max;
-    bal_adv_params.adv_channel_map = 0x01 | 0x02 | 0x04;
+    tal_adv_params.adv_type = p_adv_param->adv_type;
+    tal_adv_params.direct_addr.type = p_adv_param->direct_addr.type;
+    tal_adv_params.adv_interval_min = p_adv_param->adv_interval_min;
+    tal_adv_params.adv_interval_max = p_adv_param->adv_interval_max;
+    tal_adv_params.adv_channel_map = 0x01 | 0x02 | 0x04;
 
-    memcpy(bal_adv_params.direct_addr.addr, p_adv_param->direct_addr.addr, 6);
+    memcpy(tal_adv_params.direct_addr.addr, p_adv_param->direct_addr.addr, 6);
 
-    return tkl_ble_gap_adv_start(&bal_adv_params);
+    return tkl_ble_gap_adv_start(&tal_adv_params);
 }
 
 /**
@@ -654,7 +655,7 @@ OPERATE_RET bal_ble_advertising_start(BAL_BLE_ADV_PARAMS_T const *p_adv_param)
  * @return  SUCCESS             Successfully set advertising data.
  *          ERR_INVALID_param   Invalid parameter(s) supplied.
  * */
-OPERATE_RET bal_ble_advertising_data_set(BAL_BLE_DATA_T *p_adv, BAL_BLE_DATA_T *p_scan_rsp)
+OPERATE_RET tal_ble_ext_advertising_data_set(TAL_BLE_DATA_T *p_adv, TAL_BLE_DATA_T *p_scan_rsp)
 {
     TKL_BLE_DATA_T adv_data = {0};
     TKL_BLE_DATA_T scan_rsp_data = {0};
@@ -684,7 +685,7 @@ OPERATE_RET bal_ble_advertising_data_set(BAL_BLE_DATA_T *p_adv, BAL_BLE_DATA_T *
  * @return  SUCCESS             Successfully stopped advertising procedure.
  *          ERR_INVALID_STATE   Not in advertising state.
  * */
-OPERATE_RET bal_ble_advertising_stop(void)
+OPERATE_RET tal_ble_ext_advertising_stop(void)
 {
     return tkl_ble_gap_adv_stop();
 }
@@ -698,7 +699,7 @@ OPERATE_RET bal_ble_advertising_stop(void)
  * @Note:   If being in advertising, we will do update adv+rsp data.
  *          If not being in advertising, we will only do set adv+rsp data.
  * */
-OPERATE_RET bal_ble_advertising_data_update(BAL_BLE_DATA_T *p_adv, BAL_BLE_DATA_T *p_scan_rsp)
+OPERATE_RET tal_ble_ext_advertising_data_update(TAL_BLE_DATA_T *p_adv, TAL_BLE_DATA_T *p_scan_rsp)
 {
     TKL_BLE_DATA_T adv_data = {0};
     TKL_BLE_DATA_T scan_rsp_data = {0};
@@ -732,21 +733,21 @@ OPERATE_RET bal_ble_advertising_data_update(BAL_BLE_DATA_T *p_adv, BAL_BLE_DATA_
  * @note    Other default scanning parameters : public address, no
  * whitelist.
  *          The scan response and adv data are given through
- * BAL_BLE_EVT_ADV_REPORT event !!!!!!
+ * TAL_BLE_EVT_ADV_REPORT event !!!!!!
  */
-OPERATE_RET bal_ble_scan_start(BAL_BLE_SCAN_PARAMS_T const *p_scan_param)
+OPERATE_RET tal_ble_ext_scan_start(TAL_BLE_SCAN_PARAMS_T const *p_scan_param)
 {
-    TKL_BLE_GAP_SCAN_PARAMS_T bal_scan_params = {0};
+    TKL_BLE_GAP_SCAN_PARAMS_T tal_scan_params = {0};
 
-    bal_scan_params.extended = 0;
-    bal_scan_params.active = ((p_scan_param->type == BAL_BLE_SCAN_TYPE_ACTIVE) ? 1 : 0);
-    bal_scan_params.scan_phys = TKL_BLE_GAP_PHY_1MBPS;
-    bal_scan_params.interval = p_scan_param->scan_interval;
-    bal_scan_params.window = p_scan_param->scan_window;
-    bal_scan_params.timeout = p_scan_param->timeout;
-    bal_scan_params.scan_channel_map = 0x01 | 0x02 | 0x04;
+    tal_scan_params.extended = 0;
+    tal_scan_params.active = ((p_scan_param->type == TAL_BLE_SCAN_TYPE_ACTIVE) ? 1 : 0);
+    tal_scan_params.scan_phys = TKL_BLE_GAP_PHY_1MBPS;
+    tal_scan_params.interval = p_scan_param->scan_interval;
+    tal_scan_params.window = p_scan_param->scan_window;
+    tal_scan_params.timeout = p_scan_param->timeout;
+    tal_scan_params.scan_channel_map = 0x01 | 0x02 | 0x04;
 
-    return tkl_ble_gap_scan_start(&bal_scan_params);
+    return tkl_ble_gap_scan_start(&tal_scan_params);
 }
 
 /**
@@ -755,7 +756,7 @@ OPERATE_RET bal_ble_scan_start(BAL_BLE_SCAN_PARAMS_T const *p_scan_param)
  * @return  SUCCESS         Successfully stopped scanning procedure.
  *          ERROR           Not in scanning state.
  * */
-OPERATE_RET bal_ble_scan_stop(void)
+OPERATE_RET tal_ble_ext_scan_stop(void)
 {
     return tkl_ble_gap_scan_stop();
 }
@@ -765,9 +766,9 @@ OPERATE_RET bal_ble_scan_stop(void)
  * @param   [in]peer:       conn_handle Connection handle.
  * @return  SUCCESS         Successfully read the RSSI.
  *          ERROR           No sample is available.
- *          The rssi reading is given through BAL_BLE_EVT_LINK_RSSI event !!!!!!
+ *          The rssi reading is given through TAL_BLE_EVT_LINK_RSSI event !!!!!!
  * */
-OPERATE_RET bal_ble_rssi_get(const BAL_BLE_PEER_INFO_T peer)
+OPERATE_RET tal_ble_ext_rssi_get(const TAL_BLE_PEER_INFO_T peer)
 {
     uint16_t conn_handle = peer.conn_handle;
 
@@ -785,10 +786,10 @@ OPERATE_RET bal_ble_rssi_get(const BAL_BLE_PEER_INFO_T peer)
  * @return  SUCCESS         Successfully initiated connecting procedure.
  *
  *          The connection parameters updating is given through
- * BAL_BLE_EVT_CONN_PARAM_UPDATE event !!!!!!
+ * TAL_BLE_EVT_CONN_PARAM_UPDATE event !!!!!!
  */
 OPERATE_RET
-bal_ble_conn_param_update(const BAL_BLE_PEER_INFO_T peer, BAL_BLE_CONN_PARAMS_T const *p_conn_params)
+tal_ble_ext_conn_param_update(const TAL_BLE_PEER_INFO_T peer, TAL_BLE_CONN_PARAMS_T const *p_conn_params)
 {
     uint16_t conn_handle = peer.conn_handle;
     TKL_BLE_GAP_CONN_PARAMS_T param = {0};
@@ -813,51 +814,51 @@ bal_ble_conn_param_update(const BAL_BLE_PEER_INFO_T peer, BAL_BLE_CONN_PARAMS_T 
  * \
  * @return  SUCCESS             Successfully initiated connecting procedure.
  *
- *          The connection event is given through BAL_BLE_EVT_CENTRAL_CONNECT
+ *          The connection event is given through TAL_BLE_EVT_CENTRAL_CONNECT
  * event !!!!!!
  */
 #if (TY_HS_BLE_ROLE_CENTRAL)
 OPERATE_RET
-bal_ble_connect_and_discovery(const BAL_BLE_PEER_INFO_T peer, BAL_BLE_CONN_PARAMS_T const *p_conn_params)
+tal_ble_ext_connect_and_discovery(const TAL_BLE_PEER_INFO_T peer, TAL_BLE_CONN_PARAMS_T const *p_conn_params)
 {
-    TKL_BLE_GAP_ADDR_T bal_conn_addr = {0};
-    TKL_BLE_GAP_SCAN_PARAMS_T bal_scan_params = {0};
-    TKL_BLE_GAP_CONN_PARAMS_T bal_conn_params = {0};
+    TKL_BLE_GAP_ADDR_T tal_conn_addr = {0};
+    TKL_BLE_GAP_SCAN_PARAMS_T tal_scan_params = {0};
+    TKL_BLE_GAP_CONN_PARAMS_T tal_conn_params = {0};
 
     if (p_conn_params == NULL) {
-        bal_conn_params.conn_interval_max = 0x12;
-        bal_conn_params.conn_interval_min = 0x12;
-        bal_conn_params.conn_latency = 0;
-        bal_conn_params.conn_sup_timeout = 0x100;
+        tal_conn_params.conn_interval_max = 0x12;
+        tal_conn_params.conn_interval_min = 0x12;
+        tal_conn_params.conn_latency = 0;
+        tal_conn_params.conn_sup_timeout = 0x100;
     } else {
-        bal_conn_params.conn_interval_max = p_conn_params->max_conn_interval;
-        bal_conn_params.conn_interval_min = p_conn_params->min_conn_interval;
-        bal_conn_params.conn_latency = p_conn_params->latency;
-        bal_conn_params.conn_sup_timeout = p_conn_params->conn_sup_timeout;
+        tal_conn_params.conn_interval_max = p_conn_params->max_conn_interval;
+        tal_conn_params.conn_interval_min = p_conn_params->min_conn_interval;
+        tal_conn_params.conn_latency = p_conn_params->latency;
+        tal_conn_params.conn_sup_timeout = p_conn_params->conn_sup_timeout;
     }
 
-    bal_scan_params.interval = 0x0010;
-    bal_scan_params.window = 0x0010;
+    tal_scan_params.interval = 0x0010;
+    tal_scan_params.window = 0x0010;
 
-    if (peer.peer_addr.type == BAL_BLE_ADDR_TYPE_RANDOM) {
-        bal_conn_addr.type = TKL_BLE_GAP_ADDR_TYPE_RANDOM;
+    if (peer.peer_addr.type == TAL_BLE_ADDR_TYPE_RANDOM) {
+        tal_conn_addr.type = TKL_BLE_GAP_ADDR_TYPE_RANDOM;
     } else {
-        bal_conn_addr.type = TKL_BLE_GAP_ADDR_TYPE_PUBLIC;
+        tal_conn_addr.type = TKL_BLE_GAP_ADDR_TYPE_PUBLIC;
     }
-    memcpy(bal_conn_addr.addr, peer.peer_addr.addr, 6);
+    memcpy(tal_conn_addr.addr, peer.peer_addr.addr, 6);
 
-    memset(&bal_ble_peer, 0, sizeof(BAL_BLE_PEER_INFO_T));
+    memset(&tal_ble_ext_peer, 0, sizeof(TAL_BLE_PEER_INFO_T));
 
-    bal_ble_peer.char_handle[BAL_COMMON_WRITE_CHAR_INDEX] = TKL_BLE_GATT_INVALID_HANDLE;
-    bal_ble_peer.char_handle[BAL_COMMON_NOTIFY_CHAR_INDEX] = TKL_BLE_GATT_INVALID_HANDLE;
-    bal_ble_peer.char_handle[BAL_COMMON_READ_CHAR_INDEX] = TKL_BLE_GATT_INVALID_HANDLE;
+    tal_ble_ext_peer.char_handle[TAL_COMMON_WRITE_CHAR_INDEX] = TKL_BLE_GATT_INVALID_HANDLE;
+    tal_ble_ext_peer.char_handle[TAL_COMMON_NOTIFY_CHAR_INDEX] = TKL_BLE_GATT_INVALID_HANDLE;
+    tal_ble_ext_peer.char_handle[TAL_COMMON_READ_CHAR_INDEX] = TKL_BLE_GATT_INVALID_HANDLE;
 
-    /**Assign Peer Info Into BAL Peer Info*/
-    memcpy(&bal_ble_peer, &peer, sizeof(BAL_BLE_PEER_INFO_T));
+    /**Assign Peer Info Into TAL Peer Info*/
+    memcpy(&tal_ble_ext_peer, &peer, sizeof(TAL_BLE_PEER_INFO_T));
 
     /**< After do connecting one device, we will discovery all service and char.
      */
-    return tkl_ble_gap_connect(&bal_conn_addr, &bal_scan_params, &bal_conn_params);
+    return tkl_ble_gap_connect(&tal_conn_addr, &tal_scan_params, &tal_conn_params);
 }
 #endif
 /**
@@ -870,7 +871,7 @@ bal_ble_connect_and_discovery(const BAL_BLE_PEER_INFO_T peer, BAL_BLE_CONN_PARAM
  *              For ble peripheral, we only need to fill connect handle.
  *               For ble central, we need to fill connect handle and peer addr.
  * */
-OPERATE_RET bal_ble_disconnect(const BAL_BLE_PEER_INFO_T peer)
+OPERATE_RET tal_ble_ext_disconnect(const TAL_BLE_PEER_INFO_T peer)
 {
     uint16_t conn_handle = peer.conn_handle;
     return tkl_ble_gap_disconnect(conn_handle, TKL_BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
@@ -879,11 +880,11 @@ OPERATE_RET bal_ble_disconnect(const BAL_BLE_PEER_INFO_T peer)
 /**
  * @brief   [Ble Peripheral] Notify Command characteristic value by
  * characteristic handle
- * @param   [in] p_data: pointer to data, refer to BAL_BLE_DATA_T
+ * @param   [in] p_data: pointer to data, refer to TAL_BLE_DATA_T
  * @return  SUCCESS
  *          ERROR Refer to platform error code
  * */
-OPERATE_RET bal_ble_server_common_notify(uint16_t index, BAL_BLE_DATA_T *p_data)
+OPERATE_RET tal_ble_ext_server_common_notify(uint16_t index, TAL_BLE_DATA_T *p_data)
 {
     if (p_data == NULL) {
         return OPRT_INVALID_PARM;
@@ -900,21 +901,21 @@ OPERATE_RET bal_ble_server_common_notify(uint16_t index, BAL_BLE_DATA_T *p_data)
 
 /**
  * @brief   [Ble Peripheral] Notify Command characteristic value
- * @param   [in] p_data: pointer to data, refer to BAL_BLE_DATA_T
+ * @param   [in] p_data: pointer to data, refer to TAL_BLE_DATA_T
  * @return  SUCCESS
  *          ERROR Refer to platform error code
  * */
-OPERATE_RET bal_ble_server_common_send(BAL_BLE_DATA_T *p_data)
+OPERATE_RET tal_ble_ext_server_common_send(TAL_BLE_DATA_T *p_data)
 {
     if (p_data == NULL) {
         return OPRT_INVALID_PARM;
     }
 
     if (tkl_ble_common_connect_handle != TKL_BLE_GATT_INVALID_HANDLE &&
-        ptkl_ble_service_char[BAL_COMMON_NOTIFY_CHAR_INDEX].handle != TKL_BLE_GATT_INVALID_HANDLE) {
+        ptkl_ble_service_char[TAL_COMMON_NOTIFY_CHAR_INDEX].handle != TKL_BLE_GATT_INVALID_HANDLE) {
 
         return tkl_ble_gatts_value_notify(tkl_ble_common_connect_handle,
-                                          ptkl_ble_service_char[BAL_COMMON_NOTIFY_CHAR_INDEX].handle, p_data->p_data,
+                                          ptkl_ble_service_char[TAL_COMMON_NOTIFY_CHAR_INDEX].handle, p_data->p_data,
                                           p_data->len);
     }
 
@@ -925,11 +926,11 @@ OPERATE_RET bal_ble_server_common_send(BAL_BLE_DATA_T *p_data)
  * @brief   [Ble Peripheral] Set Read Command characteristic value by
  * characteristic handle
  * @param   [in] index: char index
- * @param   [in] p_data: pointer to data, refer to BAL_BLE_DATA_T
+ * @param   [in] p_data: pointer to data, refer to TAL_BLE_DATA_T
  * @return  SUCCESS
  *          ERROR Refer to platform error code
  * */
-OPERATE_RET bal_ble_server_common_read_update_ext(uint16_t index, BAL_BLE_DATA_T *p_data)
+OPERATE_RET tal_ble_ext_server_common_read_update_ext(uint16_t index, TAL_BLE_DATA_T *p_data)
 {
     if (p_data == NULL) {
         return OPRT_INVALID_PARM;
@@ -947,21 +948,21 @@ OPERATE_RET bal_ble_server_common_read_update_ext(uint16_t index, BAL_BLE_DATA_T
 
 /**
  * @brief   [Ble Peripheral] Set Read Command characteristic value
- * @param   [in] p_data: pointer to data, refer to BAL_BLE_DATA_T
+ * @param   [in] p_data: pointer to data, refer to TAL_BLE_DATA_T
  * @return  SUCCESS
  *          ERROR Refer to platform error code
  * */
-OPERATE_RET bal_ble_server_common_read_update(BAL_BLE_DATA_T *p_data)
+OPERATE_RET tal_ble_ext_server_common_read_update(TAL_BLE_DATA_T *p_data)
 {
     if (p_data == NULL) {
         return OPRT_INVALID_PARM;
     }
 
     if (tkl_ble_common_connect_handle != TKL_BLE_GATT_INVALID_HANDLE &&
-        ptkl_ble_service_char[BAL_COMMON_READ_CHAR_INDEX].handle != TKL_BLE_GATT_INVALID_HANDLE) {
+        ptkl_ble_service_char[TAL_COMMON_READ_CHAR_INDEX].handle != TKL_BLE_GATT_INVALID_HANDLE) {
 
         return tkl_ble_gatts_value_set(tkl_ble_common_connect_handle,
-                                       ptkl_ble_service_char[BAL_COMMON_READ_CHAR_INDEX].handle, p_data->p_data,
+                                       ptkl_ble_service_char[TAL_COMMON_READ_CHAR_INDEX].handle, p_data->p_data,
                                        p_data->len);
     }
 
@@ -970,19 +971,19 @@ OPERATE_RET bal_ble_server_common_read_update(BAL_BLE_DATA_T *p_data)
 #if (TY_HS_BLE_ROLE_CENTRAL)
 /**
  * @brief   [Ble Central] write data to peer within command channel
- * @param   [in] p_data: pointer to data, refer to BAL_BLE_DATA_T
+ * @param   [in] p_data: pointer to data, refer to TAL_BLE_DATA_T
  * @return  SUCCESS
  *          ERROR Refer to platform error code
  * */
-OPERATE_RET bal_ble_client_common_send(const BAL_BLE_PEER_INFO_T peer, BAL_BLE_DATA_T *p_data)
+OPERATE_RET tal_ble_ext_client_common_send(const TAL_BLE_PEER_INFO_T peer, TAL_BLE_DATA_T *p_data)
 {
     if (p_data == NULL) {
         return OPRT_INVALID_PARM;
     }
 
     if (peer.conn_handle != TKL_BLE_GATT_INVALID_HANDLE &&
-        peer.char_handle[BAL_COMMON_WRITE_CHAR_INDEX] != TKL_BLE_GATT_INVALID_HANDLE) {
-        return tkl_ble_gattc_write_without_rsp(peer.conn_handle, peer.char_handle[BAL_COMMON_WRITE_CHAR_INDEX],
+        peer.char_handle[TAL_COMMON_WRITE_CHAR_INDEX] != TKL_BLE_GATT_INVALID_HANDLE) {
+        return tkl_ble_gattc_write_without_rsp(peer.conn_handle, peer.char_handle[TAL_COMMON_WRITE_CHAR_INDEX],
                                                p_data->p_data, p_data->len);
     }
 
@@ -991,15 +992,15 @@ OPERATE_RET bal_ble_client_common_send(const BAL_BLE_PEER_INFO_T peer, BAL_BLE_D
 
 /**
  * @brief   [Ble Central] read data from peer within command channel
- * @param   [in] p_data: pointer to data, refer to BAL_BLE_DATA_T
+ * @param   [in] p_data: pointer to data, refer to TAL_BLE_DATA_T
  * @return  SUCCESS
  *          ERROR Refer to platform error code
  * */
-OPERATE_RET bal_ble_client_common_read(const BAL_BLE_PEER_INFO_T peer)
+OPERATE_RET tal_ble_ext_client_common_read(const TAL_BLE_PEER_INFO_T peer)
 {
     if (peer.conn_handle != TKL_BLE_GATT_INVALID_HANDLE &&
-        peer.char_handle[BAL_COMMON_READ_CHAR_INDEX] != TKL_BLE_GATT_INVALID_HANDLE) {
-        return tkl_ble_gattc_read(peer.conn_handle, peer.char_handle[BAL_COMMON_READ_CHAR_INDEX]);
+        peer.char_handle[TAL_COMMON_READ_CHAR_INDEX] != TKL_BLE_GATT_INVALID_HANDLE) {
+        return tkl_ble_gattc_read(peer.conn_handle, peer.char_handle[TAL_COMMON_READ_CHAR_INDEX]);
     }
 
     return OPRT_OS_ADAPTER_BLE_READ_FAILED;
@@ -1011,10 +1012,10 @@ OPERATE_RET bal_ble_client_common_read(const BAL_BLE_PEER_INFO_T peer)
  * @param   [in] att_mtu: mtu size
  * @return  SUCCESS
  *          ERROR Refer to platform error code
- *          The MTU negotiation is given through BAL_BLE_EVT_MTU_REQUEST event
+ *          The MTU negotiation is given through TAL_BLE_EVT_MTU_REQUEST event
  * !!!!!!
  * */
-OPERATE_RET bal_ble_server_exchange_mtu_reply(const BAL_BLE_PEER_INFO_T peer, uint16_t server_mtu)
+OPERATE_RET tal_ble_ext_server_exchange_mtu_reply(const TAL_BLE_PEER_INFO_T peer, uint16_t server_mtu)
 {
     uint16_t conn_handle = peer.conn_handle;
 
@@ -1036,7 +1037,7 @@ OPERATE_RET bal_ble_server_exchange_mtu_reply(const BAL_BLE_PEER_INFO_T peer, ui
  *          ERROR_INVALID_STATE Invalid connection state or an ATT_MTU exchange
  * was already requested once.
  * */
-OPERATE_RET bal_ble_client_exchange_mtu_request(const BAL_BLE_PEER_INFO_T peer, uint16_t client_mtu)
+OPERATE_RET tal_ble_ext_client_exchange_mtu_request(const TAL_BLE_PEER_INFO_T peer, uint16_t client_mtu)
 {
     uint16_t conn_handle = peer.conn_handle;
 

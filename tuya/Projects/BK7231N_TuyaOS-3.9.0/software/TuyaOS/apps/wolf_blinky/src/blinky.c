@@ -12,8 +12,8 @@
 
 #include "tkl_bluetooth.h"
 #include "tkl_bluetooth_def.h"
-#include "bal_bluetooth_def.h"
-#include "bal_bluetooth.h"
+#include "tal_bluetooth_def.h"
+#include "tal_bluetooth_ext.h"
 
 
 #ifdef ENABLE_WIFI_SERVICE
@@ -325,16 +325,16 @@ STATIC VOID_T __ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event)
 }
 
 
-STATIC VOID_T ___bal_ble_peripheral_event_callback(BAL_BLE_EVT_PARAMS_T *p_event)
+STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event)
 {
     TAL_PR_DEBUG("----------ble_peripheral event callback-------");
     TAL_PR_DEBUG("ble_peripheral event is : %d", p_event->type);
     switch(p_event->type) {
-        case BAL_BLE_STACK_INIT: {
+        case TAL_BLE_STACK_INIT: {
             TAL_PR_DEBUG("init Ble/Bt stack and start advertising.");
             if(p_event->ble_event.init == 0) {
-                BAL_BLE_DATA_T adv_data;
-                BAL_BLE_DATA_T rsp_data;
+                TAL_BLE_DATA_T adv_data;
+                TAL_BLE_DATA_T rsp_data;
 
                 adv_data.p_data = adv_data_const;
                 adv_data.len = sizeof(adv_data_const);
@@ -347,13 +347,13 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(BAL_BLE_EVT_PARAMS_T *p_event
             }
             break;
         }
-        case BAL_BLE_EVT_PERIPHERAL_CONNECT: {
+        case TAL_BLE_EVT_PERIPHERAL_CONNECT: {
             TAL_PR_DEBUG("ble_peripheral starts to connect...");
             if(p_event->ble_event.connect.result == 0) {
-                BAL_BLE_DATA_T read_data;
+                TAL_BLE_DATA_T read_data;
                 UCHAR_T read_buffer[512];
 
-                memcpy(&sg_ble_peripheral_info, &p_event->ble_event.connect.peer, sizeof(BAL_BLE_PEER_INFO_T));
+                memcpy(&sg_ble_peripheral_info, &p_event->ble_event.connect.peer, sizeof(TAL_BLE_PEER_INFO_T));
                 memcpy(read_buffer, adv_data_const, sizeof(adv_data_const));
                 memcpy(&read_buffer[sizeof(adv_data_const)], scan_rsp_data_const, sizeof(scan_rsp_data_const));
 
@@ -363,16 +363,16 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(BAL_BLE_EVT_PARAMS_T *p_event
                 // Verify Read Char
                 bal_ble_server_common_read_update(&read_data);
             } else {
-                memset(&sg_ble_peripheral_info, 0, sizeof(BAL_BLE_PEER_INFO_T));
+                memset(&sg_ble_peripheral_info, 0, sizeof(TAL_BLE_PEER_INFO_T));
             }
             break;
         }
-        case BAL_BLE_EVT_DISCONNECT: {
+        case TAL_BLE_EVT_DISCONNECT: {
             TAL_PR_DEBUG("ble_peripheral disconnect.");
             bal_ble_advertising_start(TUYAOS_BLE_DEFAULT_ADV_PARAM);
             break;
         }
-        case BAL_BLE_EVT_CONN_PARAM_UPDATE: {
+        case TAL_BLE_EVT_CONN_PARAM_UPDATE: {
             TAL_PR_DEBUG("Parameter update successfully!");
             // Show Connect Parameters Info
             TAL_PR_DEBUG("Conn Param Update: Min = %f ms, Max = %f ms, Latency = %d, Sup = %d ms", 
@@ -382,12 +382,12 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(BAL_BLE_EVT_PARAMS_T *p_event
                 p_event->ble_event.conn_param.conn.conn_sup_timeout * 10);
             break;  
         } 
-        case BAL_BLE_EVT_MTU_REQUEST: {
+        case TAL_BLE_EVT_MTU_REQUEST: {
             TAL_PR_DEBUG("MTU exchange request event.");
             TAL_PR_DEBUG("Get Response MTU Size = %d", p_event->ble_event.exchange_mtu.mtu);
             break;
         }
-        case BAL_BLE_EVT_WRITE_REQ: {
+        case TAL_BLE_EVT_WRITE_REQ: {
             INT_T i = 0;
             TAL_PR_DEBUG("Get Device-Write Char Request");
             for ( i = 0; i < p_event->ble_event.write_report.report.len; i++) {
@@ -397,11 +397,11 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(BAL_BLE_EVT_PARAMS_T *p_event
             TAL_PR_DEBUG("Recieved >>>>>>>>>> \n %s", ble_rx_buffer);
             break;
         }
-        case BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY:
+        case TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY:
             {
-                TAL_PR_DEBUG("EVENT = BAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY");
-                BAL_BLE_PEER_INFO_T peer_info = p_event->ble_event.data_read.peer;
-                BAL_BLE_CONN_PARAMS_T conn_param = p_event->ble_event.conn_param.conn;
+                TAL_PR_DEBUG("EVENT = TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY");
+                TAL_BLE_PEER_INFO_T peer_info = p_event->ble_event.data_read.peer;
+                TAL_BLE_CONN_PARAMS_T conn_param = p_event->ble_event.conn_param.conn;
                 bal_ble_conn_param_update(peer_info, &conn_param);
             }
             break;
@@ -668,8 +668,8 @@ STATIC VOID user_main(VOID_T)
     #endif 
     // setup_ble_peripheral();
 
-    TUYA_CALL_ERR_LOG(bal_ble_bt_init(BAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback));
-    // TUYA_CALL_ERR_LOG(bal_ble_bt_init(BAL_BLE_ROLE_PERIPERAL, __ble_peripheral_event_callback));
+    TUYA_CALL_ERR_LOG(tal_ble_ext_bt_init(TAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback));
+    // TUYA_CALL_ERR_LOG(bal_ble_bt_init(TAL_BLE_ROLE_PERIPERAL, __ble_peripheral_event_callback));
 
    return;
 }

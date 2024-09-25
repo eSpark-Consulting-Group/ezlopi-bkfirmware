@@ -1,0 +1,6 @@
+{
+    "C_Cpp.errorSquiggles": "disabled",
+    "files.associations": {
+        "tal_bluetooth_ext.h": "c"
+    }
+}

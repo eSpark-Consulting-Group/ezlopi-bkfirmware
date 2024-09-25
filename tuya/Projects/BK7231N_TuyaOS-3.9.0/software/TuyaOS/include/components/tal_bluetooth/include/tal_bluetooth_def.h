@@ -1,9 +1,26 @@
+/**
+ * @file tal_bluetooth_def.h
+ * @brief This is tal_bluetooth_def file
+ * @version 1.0
+ * @date 2023-09-26
+ *
+ * @copyright Copyright 2021-2023 Tuya Inc. All Rights Reserved.
+ *
+ */
+
 #ifndef __TAL_BLUETOOTH_DEF_H__
 #define __TAL_BLUETOOTH_DEF_H__
 
 #include "tuya_cloud_types.h"
 #include "tuya_error_code.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/***********************************************************************
+ ********************* constant ( macro and enum ) *********************
+ **********************************************************************/
 /**< Tuya Needed Definitions And Macro */
 /* Tuya Ble Command Service UUID First-Version */
 #define TAL_BLE_CMD_SERVICE_UUID_V1                     (0x1910)
@@ -89,6 +106,17 @@ typedef enum {
     TAL_BLE_ADV_TYPE_NCNS_UNDIR             = 0x05,     /**< Non-connectable non-scannable undirected advertising events. */
 } TAL_BLE_ADV_TYPE_E;
 
+typedef enum {
+    TAL_BLE_SVC_UUID_V1         = 0x01,
+    TAL_BLE_SVC_UUID_V2         = 0x02,
+    TAL_BLE_SVC_UUID_MESH_OTA   = 0x04,
+    TAL_BLE_SVC_UUID_MESH_VER   = 0x08,
+    TAL_BLE_SVC_UUID_MESH_PROXY = 0x10,
+} TAL_BLE_SVC_UUID_TYPE_E;
+
+/***********************************************************************
+ ********************* struct ******************************************
+ **********************************************************************/
 typedef struct {
     TAL_BLE_ADDR_TYPE_E     type;                       /**< Mac Address Type, Refer to @ TAL_BLE_ADDR_TYPE_E */
     UCHAR_T                 addr[6];                    /**< GAP Address, Address size, 6 bytes */
@@ -130,7 +158,13 @@ typedef struct {
     UCHAR_T                 filter_dup;                 /**< Duplicate filtering ENABLE or DISABLE) */
 } TAL_BLE_SCAN_PARAMS_T;
 
- /**< Define these parameters for connecting */
+typedef struct {
+    USHORT_T                uuid16;
+    USHORT_T                start_handle;
+    USHORT_T                end_handle;
+} TAL_BLE_UUID_ARRAY_T;
+
+/**< Define these parameters for connecting */
 typedef struct {
     USHORT_T                conn_handle;
     USHORT_T                char_handle[6];             /**< Tuya Char Handle, It can reflect any characteristic, Max Characteristic refer to @TKL_BLE_GATT_CHAR_MAX_NUM*/
@@ -275,5 +309,24 @@ typedef struct {
 /**< Define Gap Event Callback for ble peripheral and central */
 typedef VOID(*TAL_BLE_EVT_FUNC_CB)(TAL_BLE_EVT_PARAMS_T *p_event);
 
+/**< Define Tuya Internal Log Sequence Function */
+typedef VOID(*TAL_BLE_LOG_SEQ_FUNC)(UCHAR_T log_id, VOID_T* data);
+
+/**< Define Tuya Internal Log Sequence Function */
+typedef VOID(*TAL_BLE_PUBLISH_CB)(UCHAR_T publish_id, VOID_T* data);
+
+/***********************************************************************
+ ********************* variable ****************************************
+ **********************************************************************/
+
+
+/***********************************************************************
+ ********************* function ****************************************
+ **********************************************************************/
+
+
+#ifdef __cplusplus
+}
 #endif
 
+#endif /* __TAL_BLUETOOTH_DEF_H__ */
