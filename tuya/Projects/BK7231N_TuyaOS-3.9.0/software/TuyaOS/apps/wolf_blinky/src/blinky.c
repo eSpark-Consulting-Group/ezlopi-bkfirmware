@@ -1,16 +1,16 @@
 #include <stdlib.h>
 #include "tal_log.h"
-#include "uni_log.h"
-#include "tkl_gpio.h"
+// #include "uni_log.h"
+// #include "tkl_gpio.h"
 #include "tal_uart.h"
-#include "tal_wifi.h"
+// #include "tal_wifi.h"
 #include "tkl_output.h"
 #include "tal_thread.h"
 #include "tal_system.h"
-#include "tal_memory.h"
-#include "tal_bluetooth.h"
+// #include "tal_memory.h"
+// #include "tal_bluetooth.h"
 
-#include "tkl_bluetooth.h"
+// #include "tkl_bluetooth.h"
 #include "tkl_bluetooth_def.h"
 #include "tal_bluetooth_def.h"
 #include "tal_bluetooth_ext.h"
@@ -39,12 +39,11 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include "esp_partition.h"
+// #include "esp_partition.h"
 
-#define PID  "tvjs8eysp0imads8"
-#define LED_PIN TUYA_GPIO_NUM_26
+// #define PID  "tvjs8eysp0imads8"
+// #define LED_PIN TUYA_GPIO_NUM_26
 
-               err == ESP_OK ? "OPRT_OK" : "FAIL");
 STATIC UCHAR_T adv_data_const[31] =
 {
     0x02,
