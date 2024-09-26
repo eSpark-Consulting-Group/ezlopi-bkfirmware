@@ -7,6 +7,8 @@
 #include "tkl_wifi.h"
 #include "esp_err.h"
 #include "bk_websocket_client.h"
+#include "bk_core_config.h"
+#include "tal_system.h"
 
 /* Socket includes */
 #include <sys/socket.h>
@@ -18,7 +20,10 @@
 #include <wolfssl/options.h>
 #include <wolfssl/ssl.h>
 
+#ifndef CONFIG_BK_WEBSOCKET_CLIENT_DEBUG
 #define TAL_PR_DEBUG
+#endif // !CONFIG_BK_WEBSOCKET_CLIENT_DEBUG
+
 #define RX_TX_BUFFER_SIZE 256
 #define UPGRADE_BUFF_LEN 512
 
@@ -28,11 +33,14 @@
 static THREAD_HANDLE bk_ws_rcv_thread = NULL;
 static THREAD_HANDLE bk_ws_ping_thread = NULL;
 static THREAD_HANDLE bk_ws_reconnect_thread = NULL;
+WF_STATION_STAT_E status = 0;
+
 
 typedef enum {
     WEBSOCKET_STATE_UNINIT = 0,
     WEBSOCKET_STATE_INIT,
     WEBSOCKET_STATE_CONNECTED,
+    WEBSOCKET_STATE_SSL_CREATED,
     WEBSOCKET_STATE_REQ_COMPLETE_HEADER,
     WEBSOCKET_STATE_REQ_COMPLETE_DATA,
     WEBSOCKET_STATE_RES_COMPLETE_HEADER,
@@ -216,12 +224,16 @@ static int ws_socket_initialize(esp_websocket_client_handle_t client)
     }
 
     TAL_PR_DEBUG("Socket connect success");
+    client->state = WEBSOCKET_STATE_INIT;
     freeaddrinfo(result);
     return ret;
 }
 
 static int ws_ssl_initialize(const esp_websocket_client_config_t *config, esp_websocket_client_handle_t client)
 {
+    wolfSSL_Debugging_ON();
+    wolfSSL_SetLoggingCb(tal_log_print);
+
     if (wolfSSL_Init() != WOLFSSL_SUCCESS) {
         TAL_PR_DEBUG("Error: Failed to initialize the WolfSSL library");
         return ESP_ERR;
@@ -263,20 +275,30 @@ static int ws_ssl_initialize(const esp_websocket_client_config_t *config, esp_we
 static int ws_ssl_create(esp_websocket_client_handle_t client)
 {
     client->ssl = wolfSSL_new(client->ctx);
+    int ret = WOLFSSL_FAILURE;
+
     if (client->ssl == NULL) {
         TAL_PR_ERR("Error: Failed to create SSL object");
         return ESP_ERR;
     }
 
-    wolfSSL_set_fd(client->ssl, client->sockfd);
+    ret = wolfSSL_set_fd(client->ssl, client->sockfd);
+    if(ret !=  WOLFSSL_SUCCESS)
+    {
+        TAL_PR_ERR("Error : SSL set fd failed with error code %d,", ret);
+        wolfSSL_free(client->ssl);
+        return ESP_ERR;
+    }
 
-    if (wolfSSL_connect(client->ssl) != WOLFSSL_SUCCESS) {
-        TAL_PR_ERR("Error: SSL connect failed");
+    ret = wolfSSL_connect(client->ssl);
+    if ( ret != WOLFSSL_SUCCESS) {
+        TAL_PR_ERR("Error: SSL connect failed with error code %d,", ret);
         wolfSSL_free(client->ssl);
         return ESP_ERR;
     }
 
     TAL_PR_DEBUG("SSL connection success");
+    client->state = WEBSOCKET_STATE_SSL_CREATED;
     return ESP_OK;
 }
 
@@ -320,7 +342,9 @@ static int ws_server_connect(esp_websocket_client_handle_t client)
     memset(recv_buf, 0, sizeof(recv_buf));
     memset(upgrade_buf, 0, sizeof(upgrade_buf));
 
-    char* random_key = _generate_base64_encoded_key();
+    // char* random_key = _generate_base64_encoded_key();
+    char* random_key = (char*)malloc(sizeof(char)*24);
+    random_key = "dGhlIHNhbXBsZSBub25jZQ==";
 
     snprintf(upgrade_buf, UPGRADE_BUFF_LEN, WS_UPGRADE_REQ, client->host, random_key);
     TAL_PR_DEBUG("%s", upgrade_buf); 
@@ -372,12 +396,12 @@ static void ws_receive(esp_websocket_client_handle_t client)
     int ret;
 	TAL_PR_DEBUG( "  Started Receiving Thread\n" );
     esp_websocket_client_event_t ws_event;
-    WF_STATION_STAT_E status = -1;
 	do
 	{
 		len = sizeof( buf ) - 1;
 		memset( buf, 0, sizeof( buf ) );
-
+        
+        status = 0;
         tal_wifi_station_get_status(&status);
         TAL_PR_DEBUG("WIFI_STATUS = %d", (int)status);
 
@@ -440,11 +464,11 @@ static void ws_reconnect_task(esp_websocket_client_handle_t client)
     TAL_PR_DEBUG("  Started Reconnect Task\n");
     int ret = ESP_FAIL;
     esp_websocket_client_event_t ws_event;
-
-    WF_STATION_STAT_E status = -1;
+    int reconnect_retries = 0;
 
     // Wait until Wi-Fi is reconnected
     do {
+        status = 0;
         tal_wifi_station_get_status(&status);
         TAL_PR_DEBUG("Waiting for Wi-Fi to reconnect, current status: %d", (int)status);
 
@@ -456,13 +480,52 @@ static void ws_reconnect_task(esp_websocket_client_handle_t client)
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     } while (1);
 
-    TAL_PR_DEBUG("Wi-Fi reconnected, reinitializing WolfSSL connection");
+    TAL_PR_DEBUG("Wi-Fi reconnected, reinitializing WolfSSL connection, Client State = %d", client->state);
 
-    ws_socket_initialize(client);
+    while (client->state != WEBSOCKET_STATE_CONNECTED)
+    {
+        if(reconnect_retries >= 10)
+        {
+            tal_system_reset();  //FIXME: Need to fix the reconnect routine, works fine without bluetooth, probably due to insufficient heap
+        }
 
-    ws_ssl_create(client);
+        vTaskDelay(pdMS_TO_TICKS(200));
+        switch (client->state)
+        {
+        case WEBSOCKET_STATE_CLOSE:
+            if ((ret = ws_socket_initialize(client)) != OPRT_OK)
+            {
+                TAL_PR_ERR("Socket initialization failed");
+                reconnect_retries++;
+                break;
+            }
+            reconnect_retries = 0;
+            break;
+        case WEBSOCKET_STATE_INIT:
+            if ((ret = ws_ssl_create(client)) != OPRT_OK)
+            {
+                TAL_PR_ERR("SSL creation failed with error");
+                reconnect_retries++;
+                break;
+            }
+            reconnect_retries = 0;
+            break;
+        case WEBSOCKET_STATE_SSL_CREATED:
+            if ((ret = ws_server_connect(client)) != OPRT_OK)
+            {
+                TAL_PR_ERR("Server connection failed");
+                reconnect_retries++;
+                break;
+            }
+            reconnect_retries = 0;
+            break;       
+        
+        default:
+            break;
+        }
 
-    ws_server_connect(client);
+    }
+
 
     TAL_PR_DEBUG("Reconnect Task Completed\n");
     tal_thread_delete(bk_ws_reconnect_thread);

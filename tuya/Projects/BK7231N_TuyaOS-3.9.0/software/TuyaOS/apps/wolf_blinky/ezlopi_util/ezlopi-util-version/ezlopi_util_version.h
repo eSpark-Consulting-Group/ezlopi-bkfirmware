@@ -5,16 +5,16 @@
 extern "C" {
 #endif
 
-#define BUILD_DATE 1727266336
+#define BUILD_DATE 1727362641
 #define MAJOR 4
 #define MINOR 1
 #define BATCH 4
 #define BUILD 194
 #define VERSION_STR "4.1.4"
 #define DEVELOPER "maaz@esparkconsultants.com"
-#define COMPILE_TIME "بدھ ستمبر 25 ش 05:12:16 PKT 2024"
-#define CURRENT_BRANCH "ble_integration"
-#define COMMIT_HASH "feadeff0f094b77071420a19310f3ba651bf18b7"
+#define COMPILE_TIME "جمعرات ستمبر 26 ش 07:57:21 PKT 2024"
+#define CURRENT_BRANCH "ezlopi_event_loop"
+#define COMMIT_HASH "6d909f65af671de871cb55bf279726c6dfcae835"
 
 #ifdef __cplusplus
 }

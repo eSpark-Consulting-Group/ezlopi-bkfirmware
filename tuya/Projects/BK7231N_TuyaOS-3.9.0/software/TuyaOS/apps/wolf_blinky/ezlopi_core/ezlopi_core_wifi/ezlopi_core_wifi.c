@@ -113,14 +113,14 @@ VOID ezlopi_wifi_initialize(VOID)
 VOID ezlopi_wifi_connect_from_id_bin(VOID)
 {
     OPERATE_RET rt = OPRT_OK;
-    // CHAR_T *wifi_ssid     = ezlopi_factory_info_v3_get_ssid();
-    // CHAR_T *wifi_password = ezlopi_factory_info_v3_get_password();
+    CHAR_T *wifi_ssid     = ezlopi_factory_info_v3_get_ssid();
+    CHAR_T *wifi_password = ezlopi_factory_info_v3_get_password();
 
     // CHAR_T *wifi_ssid     = "eSpark_T";
     // CHAR_T *wifi_password = "espark1234";
 
-    CHAR_T *wifi_ssid     = "StormFiber-2.4G";
-    CHAR_T *wifi_password = "47779884";
+    // CHAR_T *wifi_ssid     = "StormFiber-2.4G";
+    // CHAR_T *wifi_password = "47779884";
 
     if ((NULL != wifi_ssid) && ('\0' != wifi_ssid[0]) &&
         (NULL != wifi_password) && ('\0' != wifi_password[0]))

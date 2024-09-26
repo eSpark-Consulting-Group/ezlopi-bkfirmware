@@ -1,16 +1,10 @@
 #include <stdlib.h>
 #include "tal_log.h"
-// #include "uni_log.h"
-// #include "tkl_gpio.h"
 #include "tal_uart.h"
-// #include "tal_wifi.h"
 #include "tkl_output.h"
 #include "tal_thread.h"
 #include "tal_system.h"
-// #include "tal_memory.h"
-// #include "tal_bluetooth.h"
 
-// #include "tkl_bluetooth.h"
 #include "tkl_bluetooth_def.h"
 #include "tal_bluetooth_def.h"
 #include "tal_bluetooth_ext.h"
@@ -38,11 +32,6 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
-
-// #include "esp_partition.h"
-
-// #define PID  "tvjs8eysp0imads8"
-// #define LED_PIN TUYA_GPIO_NUM_26
 
 STATIC UCHAR_T adv_data_const[31] =
 {
@@ -85,6 +74,7 @@ STATIC THREAD_HANDLE bk_rcv_thread = NULL;
 STATIC THREAD_HANDLE free_heap_thrd = NULL;
 STATIC char ble_rx_buffer[2 * 1024] = {0};
 STATIC TAL_BLE_PEER_INFO_T sg_ble_peripheral_info;
+
 
 STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event)
 {
@@ -155,7 +145,7 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 TAL_PR_DEBUG("devicr send  data[%d]: %d", i, p_event->ble_event.write_report.report.p_data[i]);
                 ble_rx_buffer[i] = (char)p_event->ble_event.write_report.report.p_data[i];
             }
-            TAL_PR_DEBUG("Recieved >>>>>>>>>> \n %s", ble_rx_buffer);
+            TAL_PR_INFO("Recieved >>>>>>>>>> \n %s", ble_rx_buffer);
             break;
         }
         case TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY:
@@ -174,6 +164,7 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
 STATIC VOID user_main(VOID_T)
 {
     OPERATE_RET rt = OPRT_OK;
+
 
     /* LwIP Initialization */
 #if defined(ENABLE_LWIP) && (ENABLE_LWIP == 1)
@@ -195,6 +186,8 @@ STATIC VOID user_main(VOID_T)
         TAL_PR_ERR("uart init failed", result);
     }
 
+    // TUYA_CALL_ERR_LOG(tal_ble_ext_bt_init(TAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback));
+
     TAL_PR_DEBUG("hello Ash-----");
     THREAD_CFG_T thread_cfg = 
     {
@@ -207,21 +200,11 @@ STATIC VOID user_main(VOID_T)
         tal_thread_create_and_start(&free_heap_thrd, NULL, NULL, __free_heap_task, NULL, &thread_cfg);
     }
 
-    // TaskHandle_t free_heap_task_handle = NULL;
-    // xTaskCreate(__free_heap_task, "freeheap-service", 2048, NULL, 2, &free_heap_task_handle);
-
     ezlopi_core_set_log_upcalls();
-
-    // ezlopi_init();
-
-    // ezlopi_service_broadcast_init();
-
-    // ezlopi_service_web_provisioning_init();
-
-    // ezlopi_nvs_set_boot_count(ezlopi_system_info_get_boot_count() + 1);
-
-    
-    TUYA_CALL_ERR_LOG(tal_ble_ext_bt_init(TAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback));
+    ezlopi_init();
+    ezlopi_service_broadcast_init();
+    ezlopi_service_web_provisioning_init();
+    ezlopi_nvs_set_boot_count(ezlopi_system_info_get_boot_count() + 1);
 
    return;
 }
@@ -244,9 +227,7 @@ STATIC VOID __free_heap_task(PVOID_T args)
 {
     int free_heap = 0;
     float free_heap_kb;
-    // tal_system_sleep(30000);
 
-    // ezlopi_service_loop_init();
     uint32_t last_tick_count = 0;
     for (;;) {
         free_heap = tal_system_get_free_heap_size();

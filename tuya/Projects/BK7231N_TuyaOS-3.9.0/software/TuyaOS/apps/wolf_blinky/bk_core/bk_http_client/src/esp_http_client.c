@@ -2,6 +2,7 @@
 #include "tal_log.h"
 #include "tal_network.h"
 #include "esp_http_client.h"
+#include "bk_core_config.h"
 
 /* socket includes */
 #include <sys/socket.h>
@@ -14,7 +15,9 @@
 #include <wolfssl/ssl.h>
 
 /* turn off logs */
+#ifndef CONFIG_ESP_HTTP_CLIENT_DEBUG
 #define TAL_PR_DEBUG
+#endif
 
 #define RX_TX_BUFFER_SIZE 256
 

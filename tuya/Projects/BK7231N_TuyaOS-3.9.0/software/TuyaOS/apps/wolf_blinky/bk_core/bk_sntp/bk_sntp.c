@@ -1,5 +1,5 @@
 #include "bk_sntp.h"
-
+#include "bk_core_config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,7 +17,9 @@
 // #define TIMEZONE_OFFSET (5*3600) // Adjust for your timezone
 #define TIMEZONE_OFFSET (0) // Adjust for your timezone
 
+#ifndef CONFIG_BK_SNTP_DEBUG
 #define TAL_PR_DEBUG
+#endif
 
 uint8_t packetBuffer[NTP_PACKET_SIZE];
 
