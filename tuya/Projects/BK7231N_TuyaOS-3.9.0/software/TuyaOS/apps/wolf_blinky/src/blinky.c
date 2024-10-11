@@ -5,10 +5,7 @@
 #include "tal_thread.h"
 #include "tal_system.h"
 
-#include "tkl_bluetooth_def.h"
-#include "tal_bluetooth_def.h"
-#include "tal_bluetooth_ext.h"
-
+#include "tal_ext_bluetooth.h"
 
 #ifdef ENABLE_WIFI_SERVICE
 #include "tuya_iot_wifi_api.h"
@@ -93,8 +90,8 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 rsp_data.len = sizeof(scan_rsp_data_const);
                 
                 tal_system_sleep(1000);
-                bal_ble_advertising_data_set(&adv_data, &rsp_data);
-                bal_ble_advertising_start(TUYAOS_BLE_DEFAULT_ADV_PARAM);
+                tal_ext_ble_advertising_data_set(&adv_data, &rsp_data);
+                tal_ext_ble_advertising_start(TUYAOS_BLE_DEFAULT_ADV_PARAM);
             }
             break;
         }
@@ -112,7 +109,7 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 read_data.len = sizeof(adv_data_const) + sizeof(scan_rsp_data_const);
 
                 // Verify Read Char
-                bal_ble_server_common_read_update(&read_data);
+                tal_ext_ble_server_common_read_update(&read_data);
             } else {
                 memset(&sg_ble_peripheral_info, 0, sizeof(TAL_BLE_PEER_INFO_T));
             }
@@ -120,7 +117,7 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
         }
         case TAL_BLE_EVT_DISCONNECT: {
             TAL_PR_DEBUG("ble_peripheral disconnect.");
-            bal_ble_advertising_start(TUYAOS_BLE_DEFAULT_ADV_PARAM);
+            tal_ext_ble_advertising_start(TUYAOS_BLE_DEFAULT_ADV_PARAM);
             break;
         }
         case TAL_BLE_EVT_CONN_PARAM_UPDATE: {
@@ -145,7 +142,7 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 TAL_PR_DEBUG("devicr send  data[%d]: %d", i, p_event->ble_event.write_report.report.p_data[i]);
                 ble_rx_buffer[i] = (char)p_event->ble_event.write_report.report.p_data[i];
             }
-            TAL_PR_INFO("Recieved >>>>>>>>>> \n %s", ble_rx_buffer);
+            TAL_PR_DEBUG("Recieved >>>>>>>>>> \n %s", ble_rx_buffer);
             break;
         }
         case TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY:
@@ -153,7 +150,20 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 TAL_PR_DEBUG("EVENT = TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY");
                 TAL_BLE_PEER_INFO_T peer_info = p_event->ble_event.data_read.peer;
                 TAL_BLE_CONN_PARAMS_T conn_param = p_event->ble_event.conn_param.conn;
-                bal_ble_conn_param_update(peer_info, &conn_param);
+                tal_ext_ble_conn_param_update(peer_info, &conn_param);
+            }
+            break;
+
+        case TAL_BLE_EVT_READ_CHAR:
+            {
+                TAL_PR_DEBUG("EVENT = TAL_BLE_EVT_READ_CHAR");
+                TAL_BLE_PEER_INFO_T peer_info = p_event->ble_event.data_report.peer;
+                TAL_BLE_DATA_T data_report = p_event->ble_event.data_report.report;
+                char data[] = "hello world";
+                data_report.p_data = data;
+                data_report.len = strlen(data);
+                TAL_PR_DEBUG("data = %s, len = %d", data_report.p_data, data_report.len);
+                tal_ext_ble_server_common_read_update_ext(3, &data_report);
             }
             break;
 
@@ -186,7 +196,7 @@ STATIC VOID user_main(VOID_T)
         TAL_PR_ERR("uart init failed", result);
     }
 
-    // TUYA_CALL_ERR_LOG(tal_ble_ext_bt_init(TAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback));
+    TUYA_CALL_ERR_LOG(tal_ext_ble_bt_init(TAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback));
 
     TAL_PR_DEBUG("hello Ash-----");
     THREAD_CFG_T thread_cfg = 
@@ -201,10 +211,10 @@ STATIC VOID user_main(VOID_T)
     }
 
     ezlopi_core_set_log_upcalls();
-    ezlopi_init();
-    ezlopi_service_broadcast_init();
-    ezlopi_service_web_provisioning_init();
-    ezlopi_nvs_set_boot_count(ezlopi_system_info_get_boot_count() + 1);
+    // ezlopi_init();
+    // ezlopi_service_broadcast_init();
+    // ezlopi_service_web_provisioning_init();
+    // ezlopi_nvs_set_boot_count(ezlopi_system_info_get_boot_count() + 1);
 
    return;
 }

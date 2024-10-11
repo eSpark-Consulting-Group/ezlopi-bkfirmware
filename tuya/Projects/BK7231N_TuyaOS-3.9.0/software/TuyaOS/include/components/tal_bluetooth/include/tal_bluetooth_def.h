@@ -36,6 +36,8 @@ extern "C" {
 /* Tuya Ble Notify Characteristic UUID First-Version*/
 #define TAL_BLE_BULK_NOTIFY_CHAR_UUID_V1                (0x2B24)
 
+#define BAL_BLE_SPECIFIC_SVC_UUID128                    {0x12, 0x19, 0x0D, 0x0C, 0x0B, 0x0A, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00}
+
 /* Tuya Ble Command Service UUID Second-Version */
 #define TAL_BLE_CMD_SERVICE_UUID_V2                     (0xFD50)
 /* Tuya Ble Write Characteristic UUID Second-Version*/
@@ -57,6 +59,10 @@ extern "C" {
 #define TAL_COMMON_WRITE_CHAR_INDEX                     (0)
 #define TAL_COMMON_NOTIFY_CHAR_INDEX                    (1)
 #define TAL_COMMON_READ_CHAR_INDEX                      (2)
+#define BAL_COMMON_RESERVED_INDEX                       (3)     // For Reserved Handle Index
+#define BAL_MESH_OTA_WRITE_CHAR_INDEX                   (4)
+#define BAL_MESH_PROXY_WRITE_CHAR_INDEX                 (5)
+#define BAL_MESH_FW_READ_CHAR_INDEX                     (6)
 
 #define DEFAULT_ADV_PARAMS(min, max)                \
     {                                               \
