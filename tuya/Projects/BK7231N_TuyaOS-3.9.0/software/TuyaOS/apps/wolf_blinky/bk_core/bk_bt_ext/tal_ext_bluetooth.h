@@ -434,6 +434,8 @@ OPERATE_RET tal_ext_ble_vendor_command_control(USHORT_T opcode, VOID_T *user_dat
 OPERATE_RET tal_ext_ble_cloud_func_register(TAL_BLE_LOG_SEQ_FUNC log_seq_func, TAL_BLE_PUBLISH_CB *publish_func);
 
 
+void tal_ext_set_service_char_ptr(void *svc_ptr, void *chr_ptr);
+
 #ifdef __cplusplus
 }
 #endif

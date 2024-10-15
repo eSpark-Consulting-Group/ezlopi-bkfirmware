@@ -20,6 +20,7 @@
 #include "tal_bluetooth_def.h"
 #include "tkl_bluetooth_def.h"
 #include "tkl_bluetooth.h"
+#include "tal_ext_bluetooth.h"
 #include "tal_api.h"
 
 #define TAL_COMMON_SERVICE_INDEX (0)
@@ -414,230 +415,19 @@ OPERATE_RET tal_ext_ble_bt_init(TAL_BLE_ROLE_E role, const TAL_BLE_EVT_FUNC_CB b
         ble_stack_role |= TKL_BLE_ROLE_CLIENT;
     }
 
-    if (!ptkl_ble_service) {
-        ptkl_ble_service = tal_malloc(sizeof(TKL_BLE_SERVICE_PARAMS_T) * TKL_BLE_GATT_SERVICE_MAX_NUM);
-    }
-    if (!ptkl_ble_service_char) {
-        ptkl_ble_service_char = tal_malloc(sizeof(TKL_BLE_CHAR_PARAMS_T) * TKL_BLE_GATT_CHAR_MAX_NUM);
-    }
-
-    if ((role & TAL_BLE_ROLE_PERIPERAL) == TAL_BLE_ROLE_PERIPERAL) {
-        TKL_BLE_GATTS_PARAMS_T *p_ble_services = &tkl_ble_gatt_service;
-        *p_ble_services = (TKL_BLE_GATTS_PARAMS_T){
-            .svc_num = 2,
-            .p_service = ptkl_ble_service,
-        };
-
-#if (defined(TAL_BLE_SERVICE_VERSION) && (TAL_BLE_SERVICE_VERSION == 2))
-        /**< Add Tuya Common Service */
-        *(ptkl_ble_service + TAL_COMMON_SERVICE_INDEX) = (TKL_BLE_SERVICE_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .svc_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0x00E3,
-                },
-            .type = TKL_BLE_UUID_SERVICE_PRIMARY,
-            .char_num = 3,
-            .p_char = ptkl_ble_service_char,
-        };
-
-        *(ptkl_ble_service + TAL_COMMON_SERVICE_INDEX + 1) = (TKL_BLE_SERVICE_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .svc_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0x00E4,
-                },
-            .type = TKL_BLE_UUID_SERVICE_PRIMARY,
-            .char_num = 1,
-            .p_char = (ptkl_ble_service_char + 3),
-        };
-
-        // *(ptkl_ble_service + TAL_COMMON_SERVICE_INDEX + 2) = (TKL_BLE_SERVICE_PARAMS_T){
-        //     .handle = TKL_BLE_GATT_INVALID_HANDLE,
-        //     .svc_uuid =
-        //         {
-        //             .uuid_type = TKL_BLE_UUID_TYPE_16,
-        //             .uuid.uuid16 = 0x00E5,
-        //         },
-        //     .type = TKL_BLE_UUID_SERVICE_PRIMARY,
-        //     .char_num = 1,
-        //     .p_char = (ptkl_ble_service_char + 4),
-        // };
-
-        // *(ptkl_ble_service + TAL_COMMON_SERVICE_INDEX + 2) = (TKL_BLE_SERVICE_PARAMS_T){
-        //     .handle = TKL_BLE_GATT_INVALID_HANDLE,
-        //     .svc_uuid =
-        //         {
-        //             .uuid_type = TKL_BLE_UUID_TYPE_16,
-        //             .uuid.uuid16 = 0xEE03,
-        //         },
-        //     .type = TKL_BLE_UUID_SERVICE_PRIMARY,
-        //     .char_num = TAL_COMMON_CHAR_MAX_NUM,
-        //     .p_char = ptkl_ble_service_char,
-        // };        
-
-        /**< Add Write Characteristic */
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE301,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
-
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 1) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE302,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
-
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 2) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE303,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
-
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 3) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE401,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_READ,
-            .permission = TKL_BLE_GATT_PERM_READ,
-            .value_len = 244,
-        };
-
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 4) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE402,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
-
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 5) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE403,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
-
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 6) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE404,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
-
-        /**< Add Notify Characteristic */
-        // *(ptkl_ble_service_char + TAL_COMMON_NOTIFY_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
-        //     .handle = TKL_BLE_GATT_INVALID_HANDLE,
-        //     .char_uuid =
-        //         {
-        //             .uuid_type = TKL_BLE_UUID_TYPE_16,
-        //             .uuid.uuid128 = 0xE101,
-        //         },
-        //     .property = TKL_BLE_GATT_CHAR_PROP_NOTIFY,
-        //     .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-        //     .value_len = 244,
-        // };
-
-        // /**< Add Read Characteristic */
-        // *(ptkl_ble_service_char + TAL_COMMON_READ_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
-        //     .handle = TKL_BLE_GATT_INVALID_HANDLE,
-        //     .char_uuid =
-        //         {
-        //             .uuid_type = TKL_BLE_UUID_TYPE_128,
-        //             .uuid.uuid128 = TAL_BLE_CMD_READ_CHAR_UUID128_V2,
-        //         },
-        //     .property = TKL_BLE_GATT_CHAR_PROP_READ,
-        //     .permission = TKL_BLE_GATT_PERM_READ,
-        //     .value_len = 244,
-        // };
-#else
-        /**< Add Tuya Common Service */
-        *(ptkl_ble_service + TAL_COMMON_SERVICE_INDEX) = (TKL_BLE_SERVICE_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .svc_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = TAL_BLE_CMD_SERVICE_UUID_V1,
-                },
-            .type = TKL_BLE_UUID_SERVICE_PRIMARY,
-            .char_num = 2,
-            .p_char = ptkl_ble_service_char,
-        };
-
-        /**< Add Write Characteristic */
-
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = TAL_BLE_CMD_WRITE_CHAR_UUID_V1,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE | TKL_BLE_GATT_CHAR_PROP_WRITE_NO_RSP,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
-
-        /**< Add Notify Characteristic */
-        *(ptkl_ble_service_char + TAL_COMMON_NOTIFY_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = TAL_BLE_CMD_NOTIFY_CHAR_UUID_V1,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_NOTIFY,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
-
-#endif
-        if (tkl_ble_gatts_service_add(p_ble_services) != 0) {
+        if (tkl_ble_gatts_service_add(&tkl_ble_gatt_service) != 0) {
+            TAL_PR_DEBUG("ERROR gatt service add");
             return OPRT_OS_ADAPTER_BLE_INIT_FAILED;
         }
-    }
 
     if (tkl_ble_stack_init(ble_stack_role) != OPRT_OK) {
+        TAL_PR_DEBUG("ERROR tkl ble stack init");
         return OPRT_OS_ADAPTER_BLE_INIT_FAILED;
     }
+
+    uint16_t mtu_size = 0;
+    tal_ext_ble_bt_link_max(&mtu_size);
+    TAL_PR_DEBUG("GOT MTU SIZE = %d", mtu_size);
     return OPRT_OK;
 }
 
@@ -1143,4 +933,18 @@ OPERATE_RET tal_ext_ble_client_exchange_mtu_request(const TAL_BLE_PEER_INFO_T pe
     return tkl_ble_gattc_exchange_mtu_request(conn_handle, client_mtu);
 }
 
+
+
 #endif
+
+void tal_ext_set_service_char_ptr(void *svc_ptr, void *chr_ptr)
+{
+    ptkl_ble_service = (TKL_BLE_SERVICE_PARAMS_T*)svc_ptr;
+    ptkl_ble_service_char = (TKL_BLE_CHAR_PARAMS_T*)chr_ptr;
+
+    TKL_BLE_GATTS_PARAMS_T *p_ble_services = &tkl_ble_gatt_service;
+    *p_ble_services = (TKL_BLE_GATTS_PARAMS_T){
+        .svc_num = 2,
+        .p_service = ptkl_ble_service,
+    };
+}

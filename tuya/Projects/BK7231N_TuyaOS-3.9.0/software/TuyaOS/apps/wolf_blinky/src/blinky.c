@@ -5,8 +5,6 @@
 #include "tal_thread.h"
 #include "tal_system.h"
 
-#include "tal_ext_bluetooth.h"
-
 #ifdef ENABLE_WIFI_SERVICE
 #include "tuya_iot_wifi_api.h"
 #else
@@ -30,36 +28,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-STATIC UCHAR_T adv_data_const[31] =
-{
-    0x02,
-    0x01,
-    0x06,
-    0x03,
-    0x02,
-    0x50, 0xFD,
-    0x17,
-    0x16,
-    0x50, 0xFD,
-    0x41, 0x00,       //Frame Control
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-
-STATIC UCHAR_T scan_rsp_data_const[31] =
-{   
-    0x17,             // length
-    0xFF,
-    0xD0,
-    0x07,
-    0x00, //Encry Mode(8)
-    0x00,0x00, //communication way bit0-mesh bit1-wifi bit2-zigbee bit3-NB
-    0x00, //FLAG
-    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x05, //24
-    0x09,
-    0x4D, 0x61, 0x61, 0x7a
-};
-
 /* Function Prototypes */
 
 STATIC VOID __free_heap_task(PVOID_T args);
@@ -69,107 +37,7 @@ STATIC VOID __free_heap_task(PVOID_T args);
 STATIC THREAD_HANDLE ty_app_thread = NULL;
 STATIC THREAD_HANDLE bk_rcv_thread = NULL;
 STATIC THREAD_HANDLE free_heap_thrd = NULL;
-STATIC char ble_rx_buffer[2 * 1024] = {0};
-STATIC TAL_BLE_PEER_INFO_T sg_ble_peripheral_info;
 
-
-STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event)
-{
-    TAL_PR_DEBUG("----------ble_peripheral event callback-------");
-    TAL_PR_DEBUG("ble_peripheral event is : %d", p_event->type);
-    switch(p_event->type) {
-        case TAL_BLE_STACK_INIT: {
-            TAL_PR_DEBUG("init Ble/Bt stack and start advertising.");
-            if(p_event->ble_event.init == 0) {
-                TAL_BLE_DATA_T adv_data;
-                TAL_BLE_DATA_T rsp_data;
-
-                adv_data.p_data = adv_data_const;
-                adv_data.len = sizeof(adv_data_const);
-                rsp_data.p_data = scan_rsp_data_const;
-                rsp_data.len = sizeof(scan_rsp_data_const);
-                
-                tal_system_sleep(1000);
-                tal_ext_ble_advertising_data_set(&adv_data, &rsp_data);
-                tal_ext_ble_advertising_start(TUYAOS_BLE_DEFAULT_ADV_PARAM);
-            }
-            break;
-        }
-        case TAL_BLE_EVT_PERIPHERAL_CONNECT: {
-            TAL_PR_DEBUG("ble_peripheral starts to connect...");
-            if(p_event->ble_event.connect.result == 0) {
-                TAL_BLE_DATA_T read_data;
-                UCHAR_T read_buffer[512];
-
-                memcpy(&sg_ble_peripheral_info, &p_event->ble_event.connect.peer, sizeof(TAL_BLE_PEER_INFO_T));
-                memcpy(read_buffer, adv_data_const, sizeof(adv_data_const));
-                memcpy(&read_buffer[sizeof(adv_data_const)], scan_rsp_data_const, sizeof(scan_rsp_data_const));
-
-                read_data.p_data = read_buffer;
-                read_data.len = sizeof(adv_data_const) + sizeof(scan_rsp_data_const);
-
-                // Verify Read Char
-                tal_ext_ble_server_common_read_update(&read_data);
-            } else {
-                memset(&sg_ble_peripheral_info, 0, sizeof(TAL_BLE_PEER_INFO_T));
-            }
-            break;
-        }
-        case TAL_BLE_EVT_DISCONNECT: {
-            TAL_PR_DEBUG("ble_peripheral disconnect.");
-            tal_ext_ble_advertising_start(TUYAOS_BLE_DEFAULT_ADV_PARAM);
-            break;
-        }
-        case TAL_BLE_EVT_CONN_PARAM_UPDATE: {
-            TAL_PR_DEBUG("Parameter update successfully!");
-            // Show Connect Parameters Info
-            TAL_PR_DEBUG("Conn Param Update: Min = %f ms, Max = %f ms, Latency = %d, Sup = %d ms", 
-                p_event->ble_event.conn_param.conn.min_conn_interval * 1.25, \
-                p_event->ble_event.conn_param.conn.max_conn_interval * 1.25,\
-                p_event->ble_event.conn_param.conn.latency, \
-                p_event->ble_event.conn_param.conn.conn_sup_timeout * 10);
-            break;  
-        } 
-        case TAL_BLE_EVT_MTU_REQUEST: {
-            TAL_PR_DEBUG("MTU exchange request event.");
-            TAL_PR_DEBUG("Get Response MTU Size = %d", p_event->ble_event.exchange_mtu.mtu);
-            break;
-        }
-        case TAL_BLE_EVT_WRITE_REQ: {
-            INT_T i = 0;
-            TAL_PR_DEBUG("Get Device-Write Char Request");
-            for ( i = 0; i < p_event->ble_event.write_report.report.len; i++) {
-                TAL_PR_DEBUG("devicr send  data[%d]: %d", i, p_event->ble_event.write_report.report.p_data[i]);
-                ble_rx_buffer[i] = (char)p_event->ble_event.write_report.report.p_data[i];
-            }
-            TAL_PR_DEBUG("Recieved >>>>>>>>>> \n %s", ble_rx_buffer);
-            break;
-        }
-        case TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY:
-            {
-                TAL_PR_DEBUG("EVENT = TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY");
-                TAL_BLE_PEER_INFO_T peer_info = p_event->ble_event.data_read.peer;
-                TAL_BLE_CONN_PARAMS_T conn_param = p_event->ble_event.conn_param.conn;
-                tal_ext_ble_conn_param_update(peer_info, &conn_param);
-            }
-            break;
-
-        case TAL_BLE_EVT_READ_CHAR:
-            {
-                TAL_PR_DEBUG("EVENT = TAL_BLE_EVT_READ_CHAR");
-                TAL_BLE_PEER_INFO_T peer_info = p_event->ble_event.data_report.peer;
-                TAL_BLE_DATA_T data_report = p_event->ble_event.data_report.report;
-                char data[] = "hello world";
-                data_report.p_data = data;
-                data_report.len = strlen(data);
-                TAL_PR_DEBUG("data = %s, len = %d", data_report.p_data, data_report.len);
-                tal_ext_ble_server_common_read_update_ext(3, &data_report);
-            }
-            break;
-
-        default: break;
-    }
-}
 
 STATIC VOID user_main(VOID_T)
 {
@@ -196,8 +64,6 @@ STATIC VOID user_main(VOID_T)
         TAL_PR_ERR("uart init failed", result);
     }
 
-    TUYA_CALL_ERR_LOG(tal_ext_ble_bt_init(TAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback));
-
     TAL_PR_DEBUG("hello Ash-----");
     THREAD_CFG_T thread_cfg = 
     {
@@ -211,10 +77,11 @@ STATIC VOID user_main(VOID_T)
     }
 
     ezlopi_core_set_log_upcalls();
-    // ezlopi_init();
-    // ezlopi_service_broadcast_init();
-    // ezlopi_service_web_provisioning_init();
-    // ezlopi_nvs_set_boot_count(ezlopi_system_info_get_boot_count() + 1);
+    ezlopi_init();
+    ezlopi_ble_service_init();
+    ezlopi_service_broadcast_init();
+    ezlopi_service_web_provisioning_init();
+    ezlopi_nvs_set_boot_count(ezlopi_system_info_get_boot_count() + 1);
 
    return;
 }
