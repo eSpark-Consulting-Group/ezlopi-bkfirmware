@@ -62,35 +62,19 @@ void ezlopi_core_ble_gatt_add_characteristic(TKL_BLE_CHAR_PARAMS_T *charactersti
     return;
 }
 
-
-STATIC UCHAR_T adv_data_const[31] =
+//these packet is heavily modified check tuya ble example for original packet
+STATIC UCHAR_T adv_data_const[21] =
 {
     0x02,
     0x01,
     0x06,
-    0x03,
-    0x02,
-    0x50, 0xFD,
-    0x17,
-    0x16,
-    0x50, 0xFD,
-    0x41, 0x00,       //Frame Control
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 STATIC UCHAR_T scan_rsp_data_const[31] =
 {   
-    0x17,             // length
-    0xFF,
-    0xD0,
-    0x07,
-    0x00, //Encry Mode(8)
-    0x00,0x00, //communication way bit0-mesh bit1-wifi bit2-zigbee bit3-NB
-    0x00, //FLAG
-    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x05, //24
-    0x09,
-    0x4D, 0x61, 0x61, 0x7a
+	0x11, // this is the length of the next packet
+    0x09,  //this tells what this packet is about, this the the device name shown as ble device
+    0x00, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 //and this is the name information
 };
 
 STATIC char ble_rx_buffer[2 * 1024] = {0};
@@ -230,6 +214,16 @@ void ezlopi_core_ble_config_init()
         TRACE_E("BLE FAILED TO INIT with return %d", ret);
     }
 }
+
+void ezlopi_core_ble_set_device_name(char* ble_device_name)
+{
+    TRACE_D("BLE DEVICE NAME : %s", ble_device_name);
+    scan_rsp_data_const[0] = 0x19;
+    scan_rsp_data_const[1] = 0x09;
+
+    memcpy(&scan_rsp_data_const[2], ble_device_name, 0x18);
+}
+
 
 TKL_BLE_SERVICE_PARAMS_T* ezlopi_core_ble_get_svc_ptr()
 {

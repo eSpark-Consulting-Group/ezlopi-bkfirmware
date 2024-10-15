@@ -433,7 +433,7 @@ static void ws_receive(esp_websocket_client_handle_t client)
             ws_event.msg_upcall = client->msg_upcall;
             client->event_handler(&ws_event);
         }
-        vTaskDelay(500/portTICK_PERIOD_MS);
+        // vTaskDelay(500/portTICK_PERIOD_MS);
 	}while((status == WSS_IDLE) || (status == WSS_CONN_SUCCESS) || (status == WSS_GOT_IP) );
 	TAL_PR_DEBUG( "OUTSIDE %s status %d\n", __FUNCTION__, status);
 

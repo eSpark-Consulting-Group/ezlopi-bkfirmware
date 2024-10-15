@@ -73,10 +73,12 @@ static void ezlopi_ble_basic_init(void)
         // esp_read_mac(mac, ESP_MAC_BT);
         snprintf(ble_device_name, sizeof(ble_device_name), "ezlopi_%02x%02x%02x%02x%02x%02x",
             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        
     }
 
     // dump("ble_device_name", ble_device_name, 0, sizeof(ble_device_name));
 
+    ezlopi_core_ble_set_device_name(ble_device_name);
     ezlopi_core_ble_config_init();
 }
 
