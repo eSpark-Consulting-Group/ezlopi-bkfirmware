@@ -77,8 +77,13 @@ STATIC UCHAR_T scan_rsp_data_const[31] =
     0x00, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 //and this is the name information
 };
 
+write_upcall_t provisioning_write_upcall = NULL;
+write_upcall_t wifi_write_upcall = NULL;
+write_upcall_t reset_write_upcall = NULL;
+
 STATIC char ble_rx_buffer[2 * 1024] = {0};
 STATIC TAL_BLE_PEER_INFO_T sg_ble_peripheral_info;
+
 STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event)
 {
     TAL_PR_DEBUG("----------ble_peripheral event callback-------");
@@ -145,11 +150,29 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
         case TAL_BLE_EVT_WRITE_REQ: {
             INT_T i = 0;
             TAL_PR_DEBUG("Get Device-Write Char Request");
+            UINT16_T char_handle = p_event->ble_event.write_report.peer.char_handle[BLE_WIFI_PROV_SERVICE_INDEX];
+
+
+
             for ( i = 0; i < p_event->ble_event.write_report.report.len; i++) {
-                TAL_PR_DEBUG("devicr send  data[%d]: %d", i, p_event->ble_event.write_report.report.p_data[i]);
+                // TAL_PR_DEBUG("devicr send  data[%d]: %d", i, p_event->ble_event.write_report.report.p_data[i]);
                 ble_rx_buffer[i] = (char)p_event->ble_event.write_report.report.p_data[i];
             }
-            TAL_PR_DEBUG("Recieved >>>>>>>>>> \n %s", ble_rx_buffer);
+            ble_rx_buffer[p_event->ble_event.write_report.report.len+1] = '\0';
+
+            if (char_handle == sg_ble_peripheral_info.char_handle[BLE_PROV_CHAR_INDEX]) {
+                TAL_PR_DEBUG("Write request on 1 characteristic");
+            } 
+            else if (char_handle == sg_ble_peripheral_info.char_handle[BLE_WIFI_CHAR_INDEX]) {
+                TAL_PR_DEBUG("Write request on 2 characteristic");
+                wifi_write_upcall(ble_rx_buffer, p_event->ble_event.write_report.report.len);
+            }
+            else if( char_handle == sg_ble_peripheral_info.char_handle[BLE_RESET_CHAR_INDEX]) {
+                TAL_PR_DEBUG("Write request on 3 characteristic");
+            }
+
+            // TAL_PR_DEBUG("Recieved >>>>>>>>>> \n %s", ble_rx_buffer);
+            // memset(ble_rx_buffer, 0, sizeof(ble_rx_buffer));
             break;
         }
         case TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY:
@@ -166,7 +189,7 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 TAL_PR_DEBUG("EVENT = TAL_BLE_EVT_READ_CHAR");
                 TAL_BLE_PEER_INFO_T peer_info = p_event->ble_event.data_report.peer;
                 TAL_BLE_DATA_T data_report = p_event->ble_event.data_report.report;
-
+                UINT16_T char_handle = peer_info.char_handle[BLE_DEVICE_INFO_SERIVCE_INDEX]; 
                 {
                     // Assuming the array has 6 elements as per your structure definition
                     TAL_PR_DEBUG("Characteristic Handles:\n");
@@ -176,17 +199,23 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 }
 
                 {
-                    TAL_PR_DEBUG("char handle is 1 = %d", ptkl_ble_service_char->handle);
-                    TAL_PR_DEBUG("char handle is 2 = %d", (ptkl_ble_service_char+1)->handle);
-                    TAL_PR_DEBUG("char handle is 3 = %d", (ptkl_ble_service_char+2)->handle);
-                    TAL_PR_DEBUG("char handle is 4 = %d", (ptkl_ble_service_char+3)->handle);
+                    TAL_PR_DEBUG("tal ble evt read char");
+                    for(int i = 0; i < 4; i++)
+                    {
+                        TAL_PR_DEBUG("sg %d", sg_ble_peripheral_info.char_handle[i]);
+                    }
                 }
 
-                char data[] = "hello world";
+                if(char_handle == sg_ble_peripheral_info.char_handle[BLE_DEVICE_INFO_READ_CHAR_INDEX])
+                {
+                    TAL_PR_DEBUG("READ request on 4 characteristic");
+                }
+
+                char data[] = "{\"device_info\":{\"firmware_version\":\"1.0.0\",\"firmware_build\":169,\"chip\":\"bk7231n\",\"uptime\":113,\"build_date\":1690548178,\"provisioned_status\":true,\"mac\":\"11:22:33:44:55:66\",\"serial\":105200426,\"ezlopi_device_type\":\"ezlopi_generic\",\"wifi_ssid\":\"eSpark Wifi\",\"wifi-connection_status\":1,\"internet_status\":1},\"api_version_info\":{\"api\":\"1.0.0\"},\"ezlopi_firmware_info\":{\"version\":\"3.4.7\",\"build\":185,\"build_date\":\"2024-02-29T18:46:33+545\"},\"mcu_chip_info\":{\"type\":\"BEKEN\",\"version\":\"1.00\"},\"mcu_halsdk_info\":{\"name\":\"TuyaOS\",\"version\":\"v3.9.0\"},\"ezlopi_current_device_status\":{\"uptime\":\"0d 0h 1m 51s\",\"boot_count\":13,\"boot_reason\":\"Power ON\",\"flash_size\":\"2MB\",\"wifi_mac\":\"EC:62:60:A7:1D:98\",\"ble_mac\":\"C8:47:8C:00:00:01\"},\"Serial_port_config\":{\"baud\":115200,\"parity\":\"N\",\"start_bits\":0,\"stop_bits\":1,\"frame_size\":8,\"flow_control\":\"DISABLED\"},\"ezlopi_cloud_info\":{\"provisioned\":true,\"uuid\":\"1b576400-8392-11ee-8889-0f56091e7639\",\"uuid_prov\":\"c2ea484b-6b31-446e-b42e-8ab7b5c36ce4\",\"type\":\"ezlopi_generic\",\"serial\":102002167,\"mac\":\"a2:f8:75:1c:3a:4c\"},\"oem_info\":{\"brand\":\"\",\"manufacturer\":\"\",\"model\":\"\"},\"network_info\":{\"ssid\":\"eSpark Wifi\",\"wifi_mode\":\"STA\",\"ip_sta\":\"192.168.18.194\",\"ip_nmask\":\"255.255.255.0\",\"ip_gw\":\"192.168.18.1\",\"wifi\":true,\"internet\":true,\"cloud\":true}}";
                 data_report.p_data = data;
                 data_report.len = strlen(data);
                 TAL_PR_DEBUG("data = %s, len = %d", data_report.p_data, data_report.len);
-                tal_ext_ble_server_common_read_update_ext(3, &data_report);
+                tal_ext_ble_server_common_read_update_ext(BLE_DEVICE_INFO_READ_CHAR_INDEX, &data_report);
             }
             break;
 
@@ -224,6 +253,10 @@ void ezlopi_core_ble_set_device_name(char* ble_device_name)
     memcpy(&scan_rsp_data_const[2], ble_device_name, 0x18);
 }
 
+void ezlopi_set_callback(write_upcall_t cb)
+{
+    wifi_write_upcall = cb;
+}
 
 TKL_BLE_SERVICE_PARAMS_T* ezlopi_core_ble_get_svc_ptr()
 {

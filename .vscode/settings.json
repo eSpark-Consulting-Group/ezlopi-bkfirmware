@@ -1,6 +1,9 @@
 {
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
-        "tal_bluetooth_ext.h": "c"
+        "tal_bluetooth_ext.h": "c",
+        "ezlopi_core_ble_config.h": "c",
+        "ezlopi_service_ble_ble_auth.h": "c",
+        "ezlopi_core_factory_info.h": "c"
     }
 }
