@@ -125,7 +125,22 @@
         "base_event.h": "c",
         "ezlopi_service_loop.h": "c",
         "ble_pub.h": "c",
-        "ezlopi_core_buffer.h": "c"
+        "ezlopi_core_buffer.h": "c",
+        "ezlopi_core_ble_profile.h": "c",
+        "ezlopi_core_ble_buffer.h": "c",
+        "ezlopi_core_ble_gap.h": "c",
+        "esp_gatt_common_api.h": "c",
+        "ezlopi_core_ble_config.h": "c",
+        "esp_gap_ble_api.h": "c",
+        "esp_bt_defs.h": "c",
+        "esp_gatts_api.h": "c",
+        "ezlopi_core_ble_gatt.h": "c",
+        "ezlopi_service_ble.h": "c",
+        "base64.h": "c",
+        "ezlopi_service_ble_ble_auth.h": "c",
+        "esp_bt.h": "c",
+        "queue.h": "c",
+        "portmacro.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

@@ -527,41 +527,41 @@ OPERATE_RET tal_ext_ble_bt_init(TAL_BLE_ROLE_E role, const TAL_BLE_EVT_FUNC_CB b
             .value_len = 244,
         };
 
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 4) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE402,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
+        // *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 4) = (TKL_BLE_CHAR_PARAMS_T){
+        //     .handle = TKL_BLE_GATT_INVALID_HANDLE,
+        //     .char_uuid =
+        //         {
+        //             .uuid_type = TKL_BLE_UUID_TYPE_16,
+        //             .uuid.uuid16 = 0xE402,
+        //         },
+        //     .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
+        //     .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
+        //     .value_len = 244,
+        // };
 
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 5) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE403,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
+        // *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 5) = (TKL_BLE_CHAR_PARAMS_T){
+        //     .handle = TKL_BLE_GATT_INVALID_HANDLE,
+        //     .char_uuid =
+        //         {
+        //             .uuid_type = TKL_BLE_UUID_TYPE_16,
+        //             .uuid.uuid16 = 0xE403,
+        //         },
+        //     .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
+        //     .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
+        //     .value_len = 244,
+        // };
 
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 6) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE404,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
+        // *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 6) = (TKL_BLE_CHAR_PARAMS_T){
+        //     .handle = TKL_BLE_GATT_INVALID_HANDLE,
+        //     .char_uuid =
+        //         {
+        //             .uuid_type = TKL_BLE_UUID_TYPE_16,
+        //             .uuid.uuid16 = 0xE404,
+        //         },
+        //     .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
+        //     .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
+        //     .value_len = 244,
+        // };
 
         /**< Add Notify Characteristic */
         // *(ptkl_ble_service_char + TAL_COMMON_NOTIFY_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){

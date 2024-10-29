@@ -18,6 +18,7 @@
 
 #include "ezlopi_core_wifi.h"
 #include "ezlopi_service_webprov.h"
+#include "ezlopi_service_ble.h"
 #include "ezlopi_service_broadcast.h"
 #include "ezlopi_util_trace.h"
 #include "ezlopi_core_ezlopi.h"
@@ -196,7 +197,7 @@ STATIC VOID user_main(VOID_T)
         TAL_PR_ERR("uart init failed", result);
     }
 
-    TUYA_CALL_ERR_LOG(tal_ext_ble_bt_init(TAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback));
+    // TUYA_CALL_ERR_LOG(tal_ext_ble_bt_init(TAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback));
 
     TAL_PR_DEBUG("hello Ash-----");
     THREAD_CFG_T thread_cfg = 
@@ -211,6 +212,7 @@ STATIC VOID user_main(VOID_T)
     }
 
     ezlopi_core_set_log_upcalls();
+    ezlopi_ble_service_init();
     // ezlopi_init();
     // ezlopi_service_broadcast_init();
     // ezlopi_service_web_provisioning_init();
