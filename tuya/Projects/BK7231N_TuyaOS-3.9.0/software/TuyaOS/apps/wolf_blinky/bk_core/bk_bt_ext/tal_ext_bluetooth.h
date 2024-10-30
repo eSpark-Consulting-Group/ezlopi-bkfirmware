@@ -12,6 +12,8 @@
 #define __TAL_EXT_BLUETOOTH_H__
 
 #include "tal_bluetooth_def.h"
+#include "tkl_bluetooth_def.h"
+#include "tkl_bluetooth.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -433,6 +435,12 @@ OPERATE_RET tal_ext_ble_vendor_command_control(USHORT_T opcode, VOID_T *user_dat
  */
 OPERATE_RET tal_ext_ble_cloud_func_register(TAL_BLE_LOG_SEQ_FUNC log_seq_func, TAL_BLE_PUBLISH_CB *publish_func);
 
+OPERATE_RET tal_ext_ble_server_common_read_update_ext(uint16_t index, TAL_BLE_DATA_T *p_data);
+
+void* tal_ext_ble_get_kernal_gatt_event_callback();
+void* tal_ext_ble_get_kernal_gap_event_callback();
+void tal_ext_ble_set_ble_event_callback(const TAL_BLE_EVT_FUNC_CB ble_event);
+void tal_ext_ble_set_char_param(TKL_BLE_CHAR_PARAMS_T *param);
 
 #ifdef __cplusplus
 }

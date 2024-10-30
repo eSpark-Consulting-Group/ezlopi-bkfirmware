@@ -1,11 +1,19 @@
 #include "esp_gatts_api.h"
 
+/* Saving static callbacks*/
+
+esp_gatts_cb_t __gatt_reg_callback_s;
 
 esp_err_t esp_ble_gatts_register_callback(esp_gatts_cb_t callback)
 {
+    __gatt_reg_callback_s = callback;
     return ESP_OK;
 }
 
+esp_gatts_cb_t esp_ble_gatts_get_callback(void)
+{
+    return (esp_gatts_cb_t)__gatt_reg_callback_s;
+}
 
 esp_err_t esp_ble_gatts_send_response(esp_gatt_if_t gatts_if, uint16_t conn_id, uint32_t trans_id,
                                       esp_gatt_status_t status, esp_gatt_rsp_t *rsp)
@@ -38,3 +46,9 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
 {
     return ESP_OK;
 }      
+
+
+esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
+{
+    return ESP_OK;
+}

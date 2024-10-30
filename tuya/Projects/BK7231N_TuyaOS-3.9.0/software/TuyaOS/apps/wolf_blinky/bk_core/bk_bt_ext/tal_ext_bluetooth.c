@@ -17,9 +17,7 @@
  */
 
 #include <string.h>
-#include "tal_bluetooth_def.h"
-#include "tkl_bluetooth_def.h"
-#include "tkl_bluetooth.h"
+#include "tal_ext_bluetooth.h"
 #include "tal_api.h"
 
 #define TAL_COMMON_SERVICE_INDEX (0)
@@ -1033,7 +1031,6 @@ OPERATE_RET tal_ext_ble_server_common_read_update_ext(uint16_t index, TAL_BLE_DA
 
     if (tkl_ble_common_connect_handle != TKL_BLE_GATT_INVALID_HANDLE &&
         ptkl_ble_service_char[index].handle != TKL_BLE_GATT_INVALID_HANDLE) {
-
         return tkl_ble_gatts_value_set(tkl_ble_common_connect_handle, ptkl_ble_service_char[index].handle,
                                        p_data->p_data, p_data->len);
     }
@@ -1142,5 +1139,24 @@ OPERATE_RET tal_ext_ble_client_exchange_mtu_request(const TAL_BLE_PEER_INFO_T pe
 
     return tkl_ble_gattc_exchange_mtu_request(conn_handle, client_mtu);
 }
-
 #endif
+
+void tal_ext_ble_set_ble_event_callback(const TAL_BLE_EVT_FUNC_CB ble_event)
+{
+    tal_ext_ble_event_callback = ble_event;
+}
+
+void* tal_ext_ble_get_kernal_gap_event_callback()
+{
+    return tkl_ble_kernel_gap_event_callback;
+}
+
+void* tal_ext_ble_get_kernal_gatt_event_callback()
+{
+    return tkl_ble_kernel_gatt_event_callback;
+}
+
+void tal_ext_ble_set_char_param(TKL_BLE_CHAR_PARAMS_T *param)
+{
+    ptkl_ble_service_char = param;
+}

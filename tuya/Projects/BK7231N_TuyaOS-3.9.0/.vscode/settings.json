@@ -140,7 +140,9 @@
         "ezlopi_service_ble_ble_auth.h": "c",
         "esp_bt.h": "c",
         "queue.h": "c",
-        "portmacro.h": "c"
+        "portmacro.h": "c",
+        "tal_wifi.h": "c",
+        "tal_ext_bluetooth.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

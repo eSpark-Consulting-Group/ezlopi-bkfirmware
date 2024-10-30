@@ -53,11 +53,8 @@ void ezlopi_ble_service_init(void)
     // ezlopi_ble_profile_print();
     ezlopi_ble_basic_init();
 
-    // CHECK_PRINT_ERROR(esp_ble_gatts_app_register(BLE_WIFI_SERVICE_HANDLE), "gatts 'wifi-app' register error");
-    // CHECK_PRINT_ERROR(esp_ble_gatts_app_register(BLE_SECURITY_SERVICE_HANDLE), "gatts 'security-app' register error");
-    // CHECK_PRINT_ERROR(esp_ble_gatts_app_register(BLE_PROVISIONING_ID_HANDLE), "gatts 'provisioning-app' register error");
-    // CHECK_PRINT_ERROR(esp_ble_gatts_app_register(BLE_DEVICE_INFO_ID_HANDLE), "gatts 'device-info-app' register error");
-    // CHECK_PRINT_ERROR(esp_ble_gatts_app_register(BLE_DYNAMIC_CONFIG_HANDLE), "gatts 'dynamic-config-app' register error");
+    CHECK_PRINT_ERROR(esp_ble_gatts_app_register(BLE_PROVISIONING_ID_HANDLE), "gatts 'provisioning-app' register error");
+    CHECK_PRINT_ERROR(esp_ble_gatts_app_register(BLE_DEVICE_INFO_ID_HANDLE), "gatts 'device-info-app' register error");
 
     // CHECK_PRINT_ERROR(esp_ble_gatt_set_local_mtu(517), "set local  MTU failed");
 
@@ -156,12 +153,6 @@ static void ezlopi_ble_basic_init(void)
     static esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     // ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
     CHECK_PRINT_ERROR(esp_bt_controller_init(&bt_cfg), "initialize controller failed");
-
-// #if defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32C3)
-//     CHECK_PRINT_ERROR(esp_bt_controller_enable(ESP_BT_MODE_BLE), "enable controller failed");
-// #elif defined(CONFIG_IDF_TARGET_ESP32)
-//     CHECK_PRINT_ERROR(esp_bt_controller_enable(ESP_BT_MODE_BLE), "enable controller failed");
-// #endif
 
 
     // CHECK_PRINT_ERROR(esp_bluedroid_init(), "init bluetooth failed");
