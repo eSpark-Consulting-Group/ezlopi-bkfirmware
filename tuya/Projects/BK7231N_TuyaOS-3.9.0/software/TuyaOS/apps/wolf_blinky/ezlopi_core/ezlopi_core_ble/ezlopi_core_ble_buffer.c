@@ -7,29 +7,38 @@
 
 #include "ezlopi_core_ble_buffer.h"
 #include "EZLOPI_USER_CONFIG.h"
+#include "esp_log.h"
+
+#define TAG "EZPI_CORE_BLE_BUFFER"
 
 s_linked_buffer_t* ezlopi_ble_buffer_create(esp_ble_gatts_cb_param_t* param)
 {
+    ESP_LOGI(TAG, "DEBUG Before Malloc");
     s_linked_buffer_t* linked_buffer = ezlopi_malloc(__FUNCTION__, sizeof(s_linked_buffer_t));
     if (linked_buffer)
     {
+        ESP_LOGI(TAG, "DEBUG buffer create");
         memset(linked_buffer, 0, sizeof(s_linked_buffer_t));
         if ((NULL != param->write.value) && (param->write.len > 0))
         {
+            ESP_LOGI(TAG, "DEBUG first IF");
             linked_buffer->buffer = ezlopi_malloc(__FUNCTION__, param->write.len);
             if (linked_buffer->buffer)
             {
+                ESP_LOGI(TAG, "DEBUG Second IF");
                 linked_buffer->len = param->write.len;
                 memcpy(linked_buffer->buffer, param->write.value, param->write.len);
             }
             else
             {
+                ESP_LOGI(TAG, "DEBUG Second else");
                 ezlopi_free(__FUNCTION__, linked_buffer);
                 linked_buffer = NULL;
             }
         }
         else
         {
+            ESP_LOGI(TAG, "DEBUG First else");
             ezlopi_free(__FUNCTION__, linked_buffer);
             linked_buffer = NULL;
         }

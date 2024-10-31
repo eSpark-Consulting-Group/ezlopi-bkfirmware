@@ -4,6 +4,7 @@
 
 #include <string.h>
 
+
 #include "esp_gatt_common_api.h"
 #include "esp_gatts_api.h"
 
@@ -12,6 +13,9 @@
 #include "ezlopi_core_ble_gap.h"
 #include "ezlopi_core_ble_profile.h"
 
+#include "esp_log.h"
+
+#define TAG "CORE_BLE_GATT"
 
 static uint16_t g_mtu_size = ESP_GATT_DEF_BLE_MTU_SIZE;
 
@@ -197,6 +201,7 @@ void ezlopi_ble_gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t ga
     }
     case ESP_GATTS_WRITE_EVT:
     {
+        // TRACE_I("ESP_GATTS_WRITE_EVT");
         ezlopi_ble_gatt_call_write_by_handle(gatts_if, param);
         break;
     }
@@ -216,15 +221,16 @@ void ezlopi_ble_gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t ga
 #endif
     case ESP_GATTS_DISCONNECT_EVT:
     {
-        TRACE_S("ESP_GATTS_DISCONNECT_EVT, disconnect reason 0x%x", param->disconnect.reason);
+        TRACE_S("ESP_GATTS_DISCONNECT_EVT ");
         ezlopi_ble_gap_start_advertising();
         break;
     }
     case ESP_GATTS_MTU_EVT: // 4
     {
-        ezlopi_ble_setup_adv_config();
+        // ezlopi_ble_setup_adv_config();
         TRACE_S("ESP_GATTS_MTU_EVT, MTU %d", param->mtu.mtu);
-        g_mtu_size = param->mtu.mtu;
+        // TRACE_S("ESP_GATTS_MTU_EVT,"); 
+        // g_mtu_size = param->mtu.mtu;
         break;
     }
     case ESP_GATTS_RESPONSE_EVT:
@@ -260,7 +266,8 @@ static f_upcall_t ezlopi_ble_gatt_call_by_handle(esp_gatt_if_t gatts_if, uint16_
                 }
                 case ESP_GATTS_WRITE_EVT:
                 {
-                    TRACE_S("Is a characteristic 'write'.");
+                    // TRACE_S("Is a characteristic 'write'.");
+                    ESP_LOGI(TAG, "Is a characteristic 'write'.");
                     return characteristic->write_upcall;
                 }
                 case ESP_GATTS_EXEC_WRITE_EVT:
@@ -345,6 +352,7 @@ static void ezlopi_ble_gatt_call_write_by_handle(esp_gatt_if_t gatts_if, esp_ble
                 esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
             }
         }
+        TRACE_D("DEBUGING GATT CALL WRITE BY HANDLE");
     }
 }
 

@@ -4,8 +4,35 @@
 
 static esp_gap_ble_cb_t __gap_reg_callback_s;
 
-static TAL_BLE_DATA_T p_adv_data;
-static TAL_BLE_DATA_T p_scan_rsp_data;
+STATIC UCHAR_T adv_data_const[31] =
+{
+    0x02,
+    0x01,
+    0x06,
+    0x03,
+    0x02,
+    0x50, 0xFD,
+    0x17,
+    0x16,
+    0x50, 0xFD,
+    0x41, 0x00,       //Frame Control
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+STATIC UCHAR_T scan_rsp_data_const[31] =
+{   
+    0x17,             // length
+    0xFF,
+    0xD0,
+    0x07,
+    0x00, //Encry Mode(8)
+    0x00,0x00, //communication way bit0-mesh bit1-wifi bit2-zigbee bit3-NB
+    0x00, //FLAG
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x05, //24
+    0x09,
+    0x4D, 0x61, 0x61, 0x7a
+};
 
 esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback)
 {
@@ -35,28 +62,19 @@ esp_err_t esp_ble_gap_set_scan_params(esp_ble_scan_params_t *scan_params)
 
 esp_err_t esp_ble_gap_start_advertising (esp_ble_adv_params_t *adv_params)
 {
-    //     typedef struct {
-    //     uint16_t                adv_int_min;        /*!< Minimum advertising interval for
-    //                                                 undirected and low duty cycle directed advertising.
-    //                                                 Range: 0x0020 to 0x4000 Default: N = 0x0800 (1.28 second)
-    //                                                 Time = N * 0.625 msec Time Range: 20 ms to 10.24 sec */
-    //     uint16_t                adv_int_max;        /*!< Maximum advertising interval for
-    //                                                 undirected and low duty cycle directed advertising.
-    //                                                 Range: 0x0020 to 0x4000 Default: N = 0x0800 (1.28 second)
-    //                                                 Time = N * 0.625 msec Time Range: 20 ms to 10.24 sec Advertising max interval */
-    //     esp_ble_adv_type_t      adv_type;           /*!< Advertising type */
-    //     esp_ble_addr_type_t     own_addr_type;      /*!< Owner bluetooth device address type */
-    //     esp_bd_addr_t           peer_addr;          /*!< Peer device bluetooth device address */
-    //     esp_ble_addr_type_t     peer_addr_type;     /*!< Peer device bluetooth device address type, only support public address type and random address type */
-    //     esp_ble_adv_channel_t   channel_map;        /*!< Advertising channel map */
-    //     esp_ble_adv_filter_t    adv_filter_policy;  /*!< Advertising filter policy */
-    // } esp_ble_adv_params_t;
 
+    TAL_BLE_DATA_T adv_data;
+    TAL_BLE_DATA_T rsp_data;
+
+    adv_data.p_data = adv_data_const;
+    adv_data.len = sizeof(adv_data_const);
+    rsp_data.p_data = scan_rsp_data_const;
+    rsp_data.len = sizeof(scan_rsp_data_const);
 
 
     ESP_LOGI(TAG, "%s", __FUNCTION__);
-    // tal_ext_ble_advertising_data_set(&adv_data, &rsp_data);
-    // tal_ext_ble_advertising_start(TUYAOS_BLE_DEFAULT_ADV_PARAM);
+    tal_ext_ble_advertising_data_set(&adv_data, &rsp_data);
+    tal_ext_ble_advertising_start(TUYAOS_BLE_DEFAULT_ADV_PARAM);
     return ESP_OK;
 }
 

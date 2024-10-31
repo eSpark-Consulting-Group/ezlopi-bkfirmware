@@ -47,7 +47,7 @@ static void ezlopi_ble_start_secure_gatt_server_open_pairing(void);
 
 void ezlopi_ble_service_init(void)
 {
-    // ezlopi_ble_service_provisioning_init();
+    ezlopi_ble_service_provisioning_init();
     ezlopi_ble_service_device_info_init();
 
     // ezlopi_ble_profile_print();

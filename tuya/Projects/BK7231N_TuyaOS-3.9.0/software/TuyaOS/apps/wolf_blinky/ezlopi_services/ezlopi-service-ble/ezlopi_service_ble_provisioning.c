@@ -30,6 +30,8 @@
 #include "EZLOPI_USER_CONFIG.h"
 #include "ezlopi_core_buffer.h"
 
+#include "esp_log.h"
+
 #define CJ_GET_STRING(name) cJSON_GetStringValue(cJSON_GetObjectItem( root, name))
 #define CJ_GET_NUMBER(name) cJSON_GetNumberValue(cJSON_GetObjectItem( root, name))
 static s_gatt_service_t *g_provisioning_service;
@@ -164,146 +166,148 @@ static void __provisioning_info_write_func(esp_gatt_value_t *value, esp_ble_gatt
 {
     // TRACE_D("Write function called!");
 
-    TRACE_D("GATT_WRITE_EVT value: %.*s", param->write.len, param->write.value);
+    // TRACE_D("GATT_WRITE_EVT value: %.*s", param->write.len, param->write.value);
+    ESP_LOGI("TAG","GATT_WRITE_EVT value: %.*s", param->write.len, param->write.value);
 
-    if (NULL == g_provisioning_linked_buffer)
-    {
-        g_provisioning_linked_buffer = ezlopi_ble_buffer_create(param);
-    }
-    else
-    {
-        ezlopi_ble_buffer_add_to_buffer(g_provisioning_linked_buffer, param);
-    }
+    // if (NULL == g_provisioning_linked_buffer)
+    // {
+    //     ESP_LOGI("DEBUGTAG", "%s checking debug", __FUNCTION__);
+    //    g_provisioning_linked_buffer = ezlopi_ble_buffer_create(param);
+    // }
+    // else
+    // {
+    //     ezlopi_ble_buffer_add_to_buffer(g_provisioning_linked_buffer, param);
+    // }
 
-    if (g_provisioning_linked_buffer)
-    {
-        if ((NULL != param->write.value) && (param->write.len > 0))
-        {
-            cJSON *root = cJSON_ParseWithLength( (const char *)param->write.value, param->write.len);
-            if (root)
-            {
-                uint32_t len = CJ_GET_NUMBER(ezlopi_len_str);
-                uint32_t tot_len = CJ_GET_NUMBER(ezlopi_total_len_str);
-                uint32_t sequence = CJ_GET_NUMBER(ezlopi_sequence_str);
+    // if (g_provisioning_linked_buffer)
+    // {
+    //     if ((NULL != param->write.value) && (param->write.len > 0))
+    //     {
+    //         cJSON *root = cJSON_ParseWithLength( (const char *)param->write.value, param->write.len);
+    //         if (root)
+    //         {
+    //             uint32_t len = CJ_GET_NUMBER(ezlopi_len_str);
+    //             uint32_t tot_len = CJ_GET_NUMBER(ezlopi_total_len_str);
+    //             uint32_t sequence = CJ_GET_NUMBER(ezlopi_sequence_str);
 
-                TRACE_D("Len: %d", len);
-                TRACE_D("tot_len: %d", tot_len);
-                TRACE_D("sequence: %d", sequence);
+    //             // TRACE_D("Len: %d", len);
+    //             // TRACE_D("tot_len: %d", tot_len);
+    //             // TRACE_D("sequence: %d", sequence);
 
-                if (sequence && len && tot_len)
-                {
-                    if (((sequence - 1) * 400 + len) >= tot_len)
-                    {
-                        char *decoded_data = __base64_decode_provisioning_info(tot_len); // uncommente f
-                        if (decoded_data)
-                        {
-                            cJSON *cj_config = cJSON_Parse( decoded_data);
+    //             if (sequence && len && tot_len)
+    //             {
+    //                 if (((sequence - 1) * 400 + len) >= tot_len)
+    //                 {
+    //                     char *decoded_data = __base64_decode_provisioning_info(tot_len); // uncommente f
+    //                     if (decoded_data)
+    //                     {
+    //                         cJSON *cj_config = cJSON_Parse( decoded_data);
 
-                            if (cj_config)
-                            {
-                                char user_id[32];
-                                CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_user_id_str, user_id);
+    //                         if (cj_config)
+    //                         {
+    //                             char user_id[32];
+    //                             CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_user_id_str, user_id);
 
-                                if (BLE_AUTH_SUCCESS == ezlopi_ble_auth_check_user_id(user_id))
-                                {
-                                    s_basic_factory_info_t *ezlopi_config_basic = ezlopi_malloc(__FUNCTION__, sizeof(s_basic_factory_info_t));
-                                    if (ezlopi_config_basic)
-                                    {
-                                        memset(ezlopi_config_basic, 0, sizeof(s_basic_factory_info_t));
+    //                             if (BLE_AUTH_SUCCESS == ezlopi_ble_auth_check_user_id(user_id))
+    //                             {
+    //                                 s_basic_factory_info_t *ezlopi_config_basic = ezlopi_malloc(__FUNCTION__, sizeof(s_basic_factory_info_t));
+    //                                 if (ezlopi_config_basic)
+    //                                 {
+    //                                     memset(ezlopi_config_basic, 0, sizeof(s_basic_factory_info_t));
 
-                                        char device_name[EZLOPI_FINFO_LEN_DEVICE_NAME];
-                                        char manufacturer[EZLOPI_FINFO_LEN_MANUF_NAME];
-                                        char brand[EZLOPI_FINFO_LEN_BRAND_NAME];
-                                        char model_number[EZLOPI_FINFO_LEN_MODEL_NAME];
-                                        char device_uuid[EZLOPI_FINFO_LEN_DEVICE_UUID];
-                                        char prov_uuid[EZLOPI_FINFO_LEN_PROV_UUID];
-                                        char device_mac[EZLOPI_FINFO_LEN_DEVICE_MAC];
-                                        char provision_server[EZLOPI_FINFO_LEN_PROVISIONING_SERVER_URL];
-                                        char cloud_server[EZLOPI_FINFO_LEN_CLOUD_SERVER_URL];
-                                        char provision_toke[EZLOPI_FINFO_LEN_PROVISIONING_TOKEN];
-                                        // char device_type[32];
+    //                                     char device_name[EZLOPI_FINFO_LEN_DEVICE_NAME];
+    //                                     char manufacturer[EZLOPI_FINFO_LEN_MANUF_NAME];
+    //                                     char brand[EZLOPI_FINFO_LEN_BRAND_NAME];
+    //                                     char model_number[EZLOPI_FINFO_LEN_MODEL_NAME];
+    //                                     char device_uuid[EZLOPI_FINFO_LEN_DEVICE_UUID];
+    //                                     char prov_uuid[EZLOPI_FINFO_LEN_PROV_UUID];
+    //                                     char device_mac[EZLOPI_FINFO_LEN_DEVICE_MAC];
+    //                                     char provision_server[EZLOPI_FINFO_LEN_PROVISIONING_SERVER_URL];
+    //                                     char cloud_server[EZLOPI_FINFO_LEN_CLOUD_SERVER_URL];
+    //                                     char provision_toke[EZLOPI_FINFO_LEN_PROVISIONING_TOKEN];
+    //                                     // char device_type[32];
 
-                                        memset(device_name, 0, EZLOPI_FINFO_LEN_DEVICE_NAME);
-                                        memset(manufacturer, 0, EZLOPI_FINFO_LEN_MANUF_NAME);
-                                        memset(brand, 0, EZLOPI_FINFO_LEN_BRAND_NAME);
-                                        memset(model_number, 0, EZLOPI_FINFO_LEN_MODEL_NAME);
-                                        memset(device_uuid, 0, EZLOPI_FINFO_LEN_DEVICE_UUID);
-                                        memset(prov_uuid, 0, EZLOPI_FINFO_LEN_PROV_UUID);
-                                        memset(device_mac, 0, EZLOPI_FINFO_LEN_DEVICE_MAC);
-                                        memset(provision_server, 0, EZLOPI_FINFO_LEN_PROVISIONING_SERVER_URL);
-                                        memset(cloud_server, 0, EZLOPI_FINFO_LEN_CLOUD_SERVER_URL);
-                                        memset(provision_toke, 0, EZLOPI_FINFO_LEN_PROVISIONING_TOKEN);
-                                        // memset(device_type, 0, sizeof(device_type));
+    //                                     memset(device_name, 0, EZLOPI_FINFO_LEN_DEVICE_NAME);
+    //                                     memset(manufacturer, 0, EZLOPI_FINFO_LEN_MANUF_NAME);
+    //                                     memset(brand, 0, EZLOPI_FINFO_LEN_BRAND_NAME);
+    //                                     memset(model_number, 0, EZLOPI_FINFO_LEN_MODEL_NAME);
+    //                                     memset(device_uuid, 0, EZLOPI_FINFO_LEN_DEVICE_UUID);
+    //                                     memset(prov_uuid, 0, EZLOPI_FINFO_LEN_PROV_UUID);
+    //                                     memset(device_mac, 0, EZLOPI_FINFO_LEN_DEVICE_MAC);
+    //                                     memset(provision_server, 0, EZLOPI_FINFO_LEN_PROVISIONING_SERVER_URL);
+    //                                     memset(cloud_server, 0, EZLOPI_FINFO_LEN_CLOUD_SERVER_URL);
+    //                                     memset(provision_toke, 0, EZLOPI_FINFO_LEN_PROVISIONING_TOKEN);
+    //                                     // memset(device_type, 0, sizeof(device_type));
 
-                                        CJSON_GET_VALUE_DOUBLE(cj_config, ezlopi_serial_str, ezlopi_config_basic->id);
-                                        CJSON_GET_VALUE_DOUBLE(cj_config, ezlopi_version_str, ezlopi_config_basic->config_version);
+    //                                     CJSON_GET_VALUE_DOUBLE(cj_config, ezlopi_serial_str, ezlopi_config_basic->id);
+    //                                     CJSON_GET_VALUE_DOUBLE(cj_config, ezlopi_version_str, ezlopi_config_basic->config_version);
 
-                                        CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_device_name_str, device_name);
-                                        CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_manufacturer_name_str, manufacturer);
-                                        CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_brand_str, brand);
-                                        CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_model_number_str, model_number);
-                                        CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_uuid_str, device_uuid);
-                                        CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_uuid_provisioning_str, prov_uuid);
-                                        CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_mac_str, device_mac);
-                                        CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_provision_server_str, provision_server);
-                                        CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_cloud_server_str, cloud_server);
-                                        CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_provision_token_str, provision_toke);
-                                        // CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_device_type_ezlopi_str, device_type);
+    //                                     CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_device_name_str, device_name);
+    //                                     CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_manufacturer_name_str, manufacturer);
+    //                                     CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_brand_str, brand);
+    //                                     CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_model_number_str, model_number);
+    //                                     CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_uuid_str, device_uuid);
+    //                                     CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_uuid_provisioning_str, prov_uuid);
+    //                                     CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_mac_str, device_mac);
+    //                                     CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_provision_server_str, provision_server);
+    //                                     CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_cloud_server_str, cloud_server);
+    //                                     CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_provision_token_str, provision_toke);
+    //                                     // CJSON_GET_VALUE_STRING_BY_COPY(cj_config, ezlopi_device_type_ezlopi_str, device_type);
 
-                                        ezlopi_config_basic->device_name = device_name;
-                                        ezlopi_config_basic->manufacturer = manufacturer;
-                                        ezlopi_config_basic->brand = brand;
-                                        ezlopi_config_basic->model_number = model_number;
-                                        ezlopi_config_basic->device_uuid = device_uuid;
-                                        ezlopi_config_basic->prov_uuid = prov_uuid;
-                                        ezlopi_config_basic->device_mac = device_mac;
-                                        ezlopi_config_basic->provision_server = provision_server;
-                                        ezlopi_config_basic->cloud_server = cloud_server;
-                                        ezlopi_config_basic->provision_token = provision_toke;
-                                        ezlopi_config_basic->device_type = NULL;
+    //                                     ezlopi_config_basic->device_name = device_name;
+    //                                     ezlopi_config_basic->manufacturer = manufacturer;
+    //                                     ezlopi_config_basic->brand = brand;
+    //                                     ezlopi_config_basic->model_number = model_number;
+    //                                     ezlopi_config_basic->device_uuid = device_uuid;
+    //                                     ezlopi_config_basic->prov_uuid = prov_uuid;
+    //                                     ezlopi_config_basic->device_mac = device_mac;
+    //                                     ezlopi_config_basic->provision_server = provision_server;
+    //                                     ezlopi_config_basic->cloud_server = cloud_server;
+    //                                     ezlopi_config_basic->provision_token = provision_toke;
+    //                                     ezlopi_config_basic->device_type = NULL;
 
-                                        ezlopi_factory_info_v3_set_basic(ezlopi_config_basic);
-                                        uint32_t version_no = ezlopi_nvs_config_info_version_number_get() + 1;
-                                        ezlopi_nvs_config_info_version_number_set(version_no);
+    //                                     ezlopi_factory_info_v3_set_basic(ezlopi_config_basic);
+    //                                     uint32_t version_no = ezlopi_nvs_config_info_version_number_get() + 1;
+    //                                     ezlopi_nvs_config_info_version_number_set(version_no);
 
-                                        time_t now;
-                                        time(&now);
-                                        TRACE_D("time now{size: %u}: %lu", sizeof(time_t), now);
-                                        ezlopi_nvs_config_info_update_time_set(now);
+    //                                     time_t now;
+    //                                     time(&now);
+    //                                     TRACE_D("time now{size: %u}: %lu", sizeof(time_t), now);
+    //                                     ezlopi_nvs_config_info_update_time_set(now);
 
-                                        ezlopi_free(__FUNCTION__, ezlopi_config_basic);
-                                    }
+    //                                     ezlopi_free(__FUNCTION__, ezlopi_config_basic);
+    //                                 }
 
-                                    ezlopi_factory_info_v3_set_ca_cert(cJSON_GetObjectItem( cj_config, ezlopi_signing_ca_certificate_str));
-                                    ezlopi_factory_info_v3_set_ssl_shared_key(cJSON_GetObjectItem( cj_config, ezlopi_ssl_shared_key_str));
-                                    ezlopi_factory_info_v3_set_ssl_private_key(cJSON_GetObjectItem( cj_config, ezlopi_ssl_private_key_str));
-                                }
-                                else
-                                {
-                                    TRACE_E("User verification failed!");
+    //                                 ezlopi_factory_info_v3_set_ca_cert(cJSON_GetObjectItem( cj_config, ezlopi_signing_ca_certificate_str));
+    //                                 ezlopi_factory_info_v3_set_ssl_shared_key(cJSON_GetObjectItem( cj_config, ezlopi_ssl_shared_key_str));
+    //                                 ezlopi_factory_info_v3_set_ssl_private_key(cJSON_GetObjectItem( cj_config, ezlopi_ssl_private_key_str));
+    //                             }
+    //                             else
+    //                             {
+    //                                 TRACE_E("User verification failed!");
 
-                                    char *curr_user_id = ezlopi_nvs_read_user_id_str();
-                                    if (curr_user_id)
-                                    {
-                                        TRACE_D("current user: %s", curr_user_id);
-                                        ezlopi_free(__FUNCTION__, curr_user_id);
-                                    }
-                                }
+    //                                 char *curr_user_id = ezlopi_nvs_read_user_id_str();
+    //                                 if (curr_user_id)
+    //                                 {
+    //                                     TRACE_D("current user: %s", curr_user_id);
+    //                                     ezlopi_free(__FUNCTION__, curr_user_id);
+    //                                 }
+    //                             }
 
-                                cJSON_Delete( cj_config);
-                            }
+    //                             cJSON_Delete( cj_config);
+    //                         }
 
-                            ezlopi_free(__FUNCTION__, decoded_data);
-                            decoded_data = NULL;
-                        }
+    //                         ezlopi_free(__FUNCTION__, decoded_data);
+    //                         decoded_data = NULL;
+    //                     }
 
-                        ezlopi_ble_buffer_free_buffer(g_provisioning_linked_buffer);
-                        g_provisioning_linked_buffer = NULL;
-                    }
-                }
-            }
-        }
-    }
+    //                     ezlopi_ble_buffer_free_buffer(g_provisioning_linked_buffer);
+    //                     g_provisioning_linked_buffer = NULL;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 #ifdef EZPI_SERV_BLE_ENABLE_READ_PROV
