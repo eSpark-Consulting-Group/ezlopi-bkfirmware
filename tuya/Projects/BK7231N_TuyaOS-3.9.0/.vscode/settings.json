@@ -142,7 +142,9 @@
         "queue.h": "c",
         "portmacro.h": "c",
         "tal_wifi.h": "c",
-        "tal_ext_bluetooth.h": "c"
+        "tal_ext_bluetooth.h": "c",
+        "esp_log.h": "c",
+        "bk_bt_hal.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

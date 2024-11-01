@@ -112,6 +112,7 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
             esp_ble_gatts_cb_param_t write_param = {0};
             write_param.write.len = sizeof(ble_rx_buffer);
             write_param.write.value = ble_rx_buffer; 
+            write_param.write.need_rsp = 0;
             {
                 TAL_PR_DEBUG("HANDLE = %d", p_event->ble_event.write_report.peer.char_handle[0]);
                 TAL_PR_DEBUG("HANDLE = %d", p_event->ble_event.write_report.peer.char_handle[1]);
