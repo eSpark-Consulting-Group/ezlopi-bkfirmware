@@ -21,6 +21,9 @@
 #include "tal_log.h"
 #include "tal_ext_bluetooth.h"
 
+#include "bt_event_stack.h"
+#include "bt_event_type.h"
+
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
 #include "esp_bt.h"
@@ -170,11 +173,18 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
     }
 }
 
+Stack* evt_stack;
+
 void bt_task()
 {
     // while(1)
+    if (evt_stack == NULL) {
+        return 1; // Exit if the stack could not be created
+    }
+
     {
         TAL_PR_DEBUG("bt_task running ......");
+        tal_system_sleep(10000);
         if(NULL == __esp_bt_gatts_callback && NULL == __esp_bt_gap_callback)
         {
             TAL_PR_DEBUG("Assigning esp_ gatt gap callbacks");
@@ -182,16 +192,34 @@ void bt_task()
             __esp_bt_gap_callback = esp_ble_gap_get_callback();
         }
         tal_ext_ble_bt_init_v2(TAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback);
-        tal_system_sleep(10000);
+        while(!isStackEmpty(evt_stack))
+        {
+            esp_bt_event_t __item = {0};
+            pop(evt_stack, &__item);
+            while(__item.num_handles > 1)
+            {
+                __esp_bt_gatts_callback(ESP_GATTS_ADD_CHAR_EVT, __item.gatt_if, NULL);
+                TAL_PR_DEBUG("calline __esp_bt_gatts_callback");
+                __item.num_handles -= 2;
+            }
+            TAL_PR_DEBUG("\n");
+
+        }
         TAL_PR_DEBUG("Registering services using APP IDs");
 
     }
+}
+
+void* esp_bt_get_event_stack_ptr()
+{
+    return (void*)evt_stack;
 }
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     esp_err_t err;
     uint32_t btdm_cfg_mask = 0;
+    evt_stack = createStack(10, sizeof(esp_bt_event_t));
 
     THREAD_HANDLE ezlopi_service_timer_task_handle = NULL;
     THREAD_CFG_T thread_cfg = {cfg->controller_task_stack_size, cfg->controller_task_prio,"bt_task"};

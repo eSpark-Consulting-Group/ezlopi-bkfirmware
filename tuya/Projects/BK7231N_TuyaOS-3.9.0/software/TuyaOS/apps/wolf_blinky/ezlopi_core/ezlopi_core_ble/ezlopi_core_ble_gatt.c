@@ -36,7 +36,7 @@ void ezlopi_ble_gatts_characteristic_notify(s_gatt_service_t* service, s_gatt_ch
 
 void ezlopi_ble_gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t* param)
 {
-    // TRACE_I("BLE GATT Event: %s, gatts_if: %d", ezlopi_ble_gatt_event_to_string(event), gatts_if);
+    TRACE_I("BLE GATT Event: %s, gatts_if: %d", ezlopi_ble_gatt_event_to_string(event), gatts_if);
 
     switch (event)
     {
@@ -83,25 +83,21 @@ void ezlopi_ble_gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t ga
         s_gatt_service_t* service = ezlopi_ble_profile_get_service_by_gatts_if(gatts_if);
         s_gatt_char_t* char_to_add = ezlopi_ble_profile_get_characterstics_to_init(service);
         
-        while(char_to_add)
+        if (char_to_add && service)
         {
-            if (char_to_add && service)
+            char_to_add->status = GATT_STATUS_PROCESSING;
+            esp_err_t err = esp_ble_gatts_add_char(service->service_handle, &char_to_add->uuid, char_to_add->permission, char_to_add->property, NULL, NULL);
+            // ezlopi_ble_gatt_print_characteristic(char_to_add);
+            if (err)
             {
-                char_to_add->status = GATT_STATUS_PROCESSING;
-                esp_err_t err = esp_ble_gatts_add_char(service->service_handle, &char_to_add->uuid, char_to_add->permission, char_to_add->property, NULL, NULL);
-                // ezlopi_ble_gatt_print_characteristic(char_to_add);
-                if (err)
-                {
-                    TRACE_E("esp_ble_gatts_add_char: %s", esp_err_to_name(err));
-                }
+                TRACE_E("esp_ble_gatts_add_char: %s", esp_err_to_name(err));
             }
-            else
-            {
-                TRACE_E("Characteristics or Service is null");
-            }
-            char_to_add = char_to_add->next;
         }
-        
+        else
+        {
+            TRACE_E("Characteristics or Service is null");
+        }
+       
         break;
     }
     case ESP_GATTS_ADD_CHAR_EVT:

@@ -1,16 +1,19 @@
 #include "esp_gatts_api.h"
 #include "esp_log.h"
 
+#include "bt_event_stack.h"
+#include "bt_event_type.h"
 #include "bk_bt_hal.h"
 
 #define TAG "esp_gatts_api"
 
 /* Saving static callbacks*/
 
-esp_gatts_cb_t __gatt_reg_callback_s;
+static esp_gatts_cb_t __gatt_reg_callback_s;
 
 esp_err_t esp_ble_gatts_register_callback(esp_gatts_cb_t callback)
 {
+    ESP_LOGI(TAG, "registering gatts callback");
     __gatt_reg_callback_s = callback;
     return ESP_OK;
 }
@@ -52,6 +55,8 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
     }
     __service_config.type = TKL_BLE_UUID_SERVICE_PRIMARY;
     bk_bt_hal_create_service(&__service_config);
+    push((Stack*)esp_bt_get_event_stack_ptr(), (void*)&((esp_bt_event_t){gatts_if, num_handle, "Add Characterstics Event"}));
+    printStack((Stack*)esp_bt_get_event_stack_ptr(), &bt_event_print);
     return ESP_OK;
 }                                     
 
@@ -109,9 +114,15 @@ esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
 {
     if(__gatt_reg_callback_s)
     {
-        
-        __gatt_reg_callback_s(ESP_GATTS_REG_EVT, (esp_gatt_if_t)app_id, &(esp_ble_gatts_cb_param_t){.reg.app_id = app_id});
-        __gatt_reg_callback_s(ESP_GATTS_START_EVT, (esp_gatt_if_t)app_id, NULL);
+        esp_ble_gatts_cb_param_t gatts_cb_param = {0};
+        gatts_cb_param.reg.status = ESP_GATT_INVALID_HANDLE;
+        gatts_cb_param.reg.app_id = app_id;
+
+        __gatt_reg_callback_s(ESP_GATTS_REG_EVT, (esp_gatt_if_t)app_id, &(gatts_cb_param));
+        {
+            gatts_cb_param.add_char.attr_handle =  ESP_GATT_INVALID_HANDLE;
+            // __gatt_reg_callback_s(ESP_GATTS_ADD_CHAR_EVT, (esp_gatt_if_t)app_id, &(gatts_cb_param));
+        }
     }
     return ESP_OK;
 }

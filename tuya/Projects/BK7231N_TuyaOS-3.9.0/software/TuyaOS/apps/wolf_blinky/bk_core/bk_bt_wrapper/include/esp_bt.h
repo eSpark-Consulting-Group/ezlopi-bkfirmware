@@ -136,7 +136,7 @@ typedef struct {
 }
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
-
+void* esp_bt_get_event_stack_ptr();
 
 #ifdef __cplusplus
 }
