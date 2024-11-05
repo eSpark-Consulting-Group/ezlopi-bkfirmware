@@ -9,6 +9,7 @@ typedef struct {
     USHORT_T handle;                  /**< After init, we will get the svc-handle */
     TKL_BLE_UUID_T svc_uuid;          /**< Service UUID */
     TKL_BLE_SERVICE_TYPE_E type;      /**< Service Type */
+    uint16_t num_chars;
 } bk_bt_service_config_t;
 
 // Structure for characteristic configuration
@@ -22,6 +23,7 @@ typedef struct {
 
 void bk_bt_hal_create_service(const bk_bt_service_config_t* config);
 void bk_bt_hal_create_characteristic(const bk_bt_char_config_t* config);
+void* bk_bt_hal_start_services();
 
 #ifdef __cplusplus
 }

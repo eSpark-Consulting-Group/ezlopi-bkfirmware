@@ -86,6 +86,7 @@ void ezlopi_ble_gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t ga
         if (char_to_add && service)
         {
             char_to_add->status = GATT_STATUS_PROCESSING;
+            // char_to_add->handle = 1;
             esp_err_t err = esp_ble_gatts_add_char(service->service_handle, &char_to_add->uuid, char_to_add->permission, char_to_add->property, NULL, NULL);
             // ezlopi_ble_gatt_print_characteristic(char_to_add);
             if (err)
@@ -140,6 +141,9 @@ void ezlopi_ble_gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t ga
                     service->status = GATT_STATUS_DONE;
                 }
             }
+        }
+        else{
+            TRACE_E("No initiating characterstic");
         }
 
         break;

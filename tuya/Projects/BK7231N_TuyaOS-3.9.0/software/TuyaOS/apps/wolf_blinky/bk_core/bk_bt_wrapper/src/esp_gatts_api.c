@@ -35,6 +35,7 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
     ESP_LOGI(TAG, "creating service with ID %d", gatts_if);
     bk_bt_service_config_t __service_config = {0};
     __service_config.handle = TKL_BLE_GATT_INVALID_HANDLE;
+    __service_config.num_chars = ((num_handle - 1)/2);
     switch (service_id->id.uuid.len)
     {
     case ESP_UUID_LEN_16:
@@ -62,6 +63,7 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
 
 esp_err_t esp_ble_gatts_start_service(uint16_t service_handle)
 {
+    bk_bt_hal_start_services();
     return ESP_OK;
 }
 

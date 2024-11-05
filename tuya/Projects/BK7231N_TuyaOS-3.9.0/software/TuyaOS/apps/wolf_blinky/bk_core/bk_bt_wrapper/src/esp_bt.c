@@ -24,6 +24,8 @@
 #include "bt_event_stack.h"
 #include "bt_event_type.h"
 
+#include "bk_bt_hal.h"
+
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
 #include "esp_bt.h"
@@ -116,6 +118,7 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
             write_param.write.len = sizeof(ble_rx_buffer);
             write_param.write.value = ble_rx_buffer; 
             write_param.write.need_rsp = 0;
+            // write_param.write.handle = p_event->ble_event.write_report.peer.char_handle[0];
             {
                 TAL_PR_DEBUG("HANDLE = %d", p_event->ble_event.write_report.peer.char_handle[0]);
                 TAL_PR_DEBUG("HANDLE = %d", p_event->ble_event.write_report.peer.char_handle[1]);
@@ -131,13 +134,16 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 break;
                 
                 case 5:
-                    __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 1, &write_param);
+                    __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 0, &write_param);
                 break;
                 
                 case 7:
-                    __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 2, &write_param);
+                    __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 0, &write_param);
                 break;
             }
+
+            // __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, p_event->ble_event.write_report.peer.char_handle[0], &write_param);
+
             break;
         }
         case TAL_BLE_EVT_CENTRAL_CONNECT_DISCOVERY:
@@ -191,20 +197,26 @@ void bt_task()
             __esp_bt_gatts_callback = esp_ble_gatts_get_callback();
             __esp_bt_gap_callback = esp_ble_gap_get_callback();
         }
-        tal_ext_ble_bt_init_v2(TAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback);
         while(!isStackEmpty(evt_stack))
         {
             esp_bt_event_t __item = {0};
             pop(evt_stack, &__item);
             while(__item.num_handles > 1)
             {
-                __esp_bt_gatts_callback(ESP_GATTS_ADD_CHAR_EVT, __item.gatt_if, NULL);
+                __esp_bt_gatts_callback(ESP_GATTS_START_EVT, __item.gatt_if, NULL);
+
+                // esp_ble_gatts_cb_param_t add_char = {0}; // Initialize the struct to zero
+                // add_char.add_char.attr_handle = 1;       // Set the desired field
+
+                // __esp_bt_gatts_callback(ESP_GATTS_ADD_CHAR_EVT, __item.gatt_if, &add_char);
+
                 TAL_PR_DEBUG("calline __esp_bt_gatts_callback");
                 __item.num_handles -= 2;
             }
             TAL_PR_DEBUG("\n");
 
         }
+        tal_ext_ble_bt_init_v2(TAL_BLE_ROLE_PERIPERAL, ___bal_ble_peripheral_event_callback);
         TAL_PR_DEBUG("Registering services using APP IDs");
 
     }
@@ -257,91 +269,8 @@ OPERATE_RET tal_ext_ble_bt_init_v2(TAL_BLE_ROLE_E role, const TAL_BLE_EVT_FUNC_C
         ble_stack_role |= TKL_BLE_ROLE_CLIENT;
     }
 
-    if (!ptkl_ble_service) {
-        ptkl_ble_service = tal_malloc(sizeof(TKL_BLE_SERVICE_PARAMS_T) * TKL_BLE_GATT_SERVICE_MAX_NUM);
-    }
-    if (!ptkl_ble_service_char) {
-        ptkl_ble_service_char = tal_malloc(sizeof(TKL_BLE_CHAR_PARAMS_T) * TKL_BLE_GATT_CHAR_MAX_NUM);
-        tal_ext_ble_set_char_param(ptkl_ble_service_char);
-    }
-
     if ((role & TAL_BLE_ROLE_PERIPERAL) == TAL_BLE_ROLE_PERIPERAL) {
-        TKL_BLE_GATTS_PARAMS_T *p_ble_services = &tkl_ble_gatt_service;
-        *p_ble_services = (TKL_BLE_GATTS_PARAMS_T){
-            .svc_num = 2,
-            .p_service = ptkl_ble_service,
-        };
-        *(ptkl_ble_service) = (TKL_BLE_SERVICE_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .svc_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0x00E3,
-                },
-            .type = TKL_BLE_UUID_SERVICE_PRIMARY,
-            .char_num = 3,
-            .p_char = ptkl_ble_service_char,
-        };
-        *(ptkl_ble_service + 1) = (TKL_BLE_SERVICE_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .svc_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0x00E4,
-                },
-            .type = TKL_BLE_UUID_SERVICE_PRIMARY,
-            .char_num = 1,
-            .p_char = (ptkl_ble_service_char + 3),
-        };
-
-        /**< Add Write Characteristic */
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE301,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
-
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 1) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE302,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
-
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 2) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE303,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_WRITE,
-            .permission = TKL_BLE_GATT_PERM_READ | TKL_BLE_GATT_PERM_WRITE,
-            .value_len = 244,
-        };
-
-        *(ptkl_ble_service_char + TAL_COMMON_WRITE_CHAR_INDEX + 3) = (TKL_BLE_CHAR_PARAMS_T){
-            .handle = TKL_BLE_GATT_INVALID_HANDLE,
-            .char_uuid =
-                {
-                    .uuid_type = TKL_BLE_UUID_TYPE_16,
-                    .uuid.uuid16 = 0xE401,
-                },
-            .property = TKL_BLE_GATT_CHAR_PROP_READ,
-            .permission = TKL_BLE_GATT_PERM_READ,
-            .value_len = 244,
-        };
+        TKL_BLE_GATTS_PARAMS_T *p_ble_services = bk_bt_hal_start_services();
 
         if (tkl_ble_gatts_service_add(p_ble_services) != 0) {
             return OPRT_OS_ADAPTER_BLE_INIT_FAILED;
