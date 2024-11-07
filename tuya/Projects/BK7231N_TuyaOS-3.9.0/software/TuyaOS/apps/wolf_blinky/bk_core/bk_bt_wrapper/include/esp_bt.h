@@ -132,7 +132,7 @@ typedef struct {
 
 
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                                              \
-    .controller_task_stack_size = 4*1024                                                   \
+    .controller_task_stack_size = 6*1024                                                   \
 }
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);

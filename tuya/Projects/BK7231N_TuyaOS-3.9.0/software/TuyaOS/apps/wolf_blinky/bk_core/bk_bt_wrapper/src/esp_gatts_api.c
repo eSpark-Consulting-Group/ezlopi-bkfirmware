@@ -26,6 +26,8 @@ esp_gatts_cb_t esp_ble_gatts_get_callback(void)
 esp_err_t esp_ble_gatts_send_response(esp_gatt_if_t gatts_if, uint16_t conn_id, uint32_t trans_id,
                                       esp_gatt_status_t status, esp_gatt_rsp_t *rsp)
 {
+    // TAL_BLE_DATA_T data = {.len = rsp->attr_value.len, .p_data = rsp->attr_value.value };
+    // tal_ext_ble_server_common_read_update_ext(10, &data);
     return ESP_OK;
 }                   
 
@@ -74,7 +76,7 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
 
     bk_bt_char_config_t __characterstic_config = {0};
 
-    __characterstic_config.handle = TKL_BLE_GATT_INVALID_HANDLE;
+    __characterstic_config.handle = 0;
 
 
     switch (char_uuid->len)

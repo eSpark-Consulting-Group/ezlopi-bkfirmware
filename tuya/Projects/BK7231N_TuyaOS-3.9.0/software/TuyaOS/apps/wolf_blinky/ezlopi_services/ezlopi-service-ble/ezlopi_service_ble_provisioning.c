@@ -50,6 +50,11 @@ static void __provisioning_status_read_func(esp_gatt_value_t *value, esp_ble_gat
 static void __provisioning_info_write_func(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param);
 static char *__base64_decode_provisioning_info(uint32_t total_size);
 
+static void __test_write_upcall(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
+{
+    ESP_LOGI("TAG", "__TEST UPCALL CALLED");
+}
+
 void ezlopi_ble_service_provisioning_init(void)
 {
     esp_bt_uuid_t uuid;
@@ -70,13 +75,13 @@ void ezlopi_ble_service_provisioning_init(void)
 #else                                                                                                                                                               // EZPI_SERV_BLE_ENABLE_READ_PROV
     permission = ESP_GATT_PERM_WRITE;
     properties = ESP_GATT_CHAR_PROP_BIT_WRITE;
-    ezlopi_ble_gatt_add_characteristic(g_provisioning_service, &uuid, permission, properties, NULL, __provisioning_info_write_func, NULL); // reliable-write is not implemented for now
+    ezlopi_ble_gatt_add_characteristic(g_provisioning_service, &uuid, permission, properties, NULL, __test_write_upcall, NULL); // reliable-write is not implemented for now
 #endif           
     uuid.uuid.uuid16 = BLE_PROVISIONING_WIFI_CHAR_UUID;
-    ezlopi_ble_gatt_add_characteristic(g_provisioning_service, &uuid, permission, properties, NULL, __provisioning_info_write_func, NULL); 
+    ezlopi_ble_gatt_add_characteristic(g_provisioning_service, &uuid, permission, properties, NULL, __test_write_upcall, NULL); 
     
     uuid.uuid.uuid16 = BLE_PROVISIONING_RESET_CHAR_UUID;
-    ezlopi_ble_gatt_add_characteristic(g_provisioning_service, &uuid, permission, properties, NULL, __provisioning_info_write_func, NULL);                                                                                                                                                    // EZPI_SERV_BLE_ENABLE_READ_PROV
+    ezlopi_ble_gatt_add_characteristic(g_provisioning_service, &uuid, permission, properties, NULL, __test_write_upcall, NULL);                                                                                                                                                    // EZPI_SERV_BLE_ENABLE_READ_PROV
 
 #ifdef EZPI_SERV_BLE_ENABLE_STAT_PROV
     uuid.uuid.uuid16 = BLE_PROVISIONING_STATUS_CHAR_UUID;

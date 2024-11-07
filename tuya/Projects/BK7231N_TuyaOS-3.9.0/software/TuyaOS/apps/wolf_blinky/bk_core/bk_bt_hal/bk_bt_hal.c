@@ -67,6 +67,15 @@ void bk_bt_hal_create_service(const bk_bt_service_config_t* config)
 // Function to create and initialize a BLE characteristic with configurable parameters
 void bk_bt_hal_create_characteristic(const bk_bt_char_config_t* config)
 {
+    bk_bt_hal_characteristic_t *__head_hal_char = __bk_ble_hal_characteristic;
+    while(__head_hal_char )
+    {
+        if(__head_hal_char->hal_char_params->char_uuid.uuid.uuid16 == config->char_uuid.uuid.uuid16)
+        {
+            return;
+        }
+        __head_hal_char =__head_hal_char->next;
+    }
     if (config == NULL) {
         TAL_PR_ERR("Invalid configuration provided for BLE characteristic");
         return;
@@ -109,8 +118,30 @@ void bk_bt_hal_create_characteristic(const bk_bt_char_config_t* config)
                  config->char_uuid.uuid.uuid16, config->property, config->permission, config->value_len);
 }
 
+void move_head_to_tail(bk_bt_hal_characteristic_t** head) {
+    /*move the first common service node to the last*/
+    bk_bt_hal_characteristic_t* __old_node_head =  __bk_ble_hal_characteristic;
+    bk_bt_hal_characteristic_t* __new_node_head =  __bk_ble_hal_characteristic->next;
+
+    bk_bt_hal_characteristic_t* __node_it = __new_node_head;
+    // Traverse to the last node in the list
+    while (__node_it->next != NULL) {
+        __node_it = __node_it->next;
+    }
+
+    // Link the last node to the old head node and set the old head’s next to NULL
+    __node_it->next = __old_node_head;
+    __old_node_head->next = NULL;
+
+    // Update the head pointer to the new head
+    __bk_ble_hal_characteristic = __new_node_head;
+}
+
+
 void* bk_bt_hal_start_services()
 {
+    move_head_to_tail(&__bk_ble_hal_characteristic);
+
     static services_started = false;
     static service_count = 0;
     static char_count = 0;
@@ -161,7 +192,7 @@ void* bk_bt_hal_start_services()
         // E3, E4
         while(svc_indx != service_count)
         {
-            __head_hal_service->hal_ptkl_ble_service->p_char = hal_ptkl_ble_service_char + (svc_indx * __head_hal_service->hal_ptkl_ble_service->char_num);
+            __head_hal_service->hal_ptkl_ble_service->p_char = hal_ptkl_ble_service_char + (svc_indx * 3);
             memcpy(hal_ptkl_ble_service + svc_indx, __head_hal_service->hal_ptkl_ble_service, sizeof(TKL_BLE_SERVICE_PARAMS_T));
             TAL_PR_DEBUG("SERVICE CREATED WITH UUID 0x%X", __head_hal_service->hal_ptkl_ble_service->svc_uuid.uuid.uuid16);
 

@@ -442,6 +442,9 @@ void* tal_ext_ble_get_kernal_gap_event_callback();
 void tal_ext_ble_set_ble_event_callback(const TAL_BLE_EVT_FUNC_CB ble_event);
 void tal_ext_ble_set_char_param(TKL_BLE_CHAR_PARAMS_T *param);
 
+void tal_ext_ble_set_service_ptr(TKL_BLE_SERVICE_PARAMS_T *p);
+void tal_ext_ble_set_char_ptr(TKL_BLE_CHAR_PARAMS_T *p);
+
 #ifdef __cplusplus
 }
 #endif

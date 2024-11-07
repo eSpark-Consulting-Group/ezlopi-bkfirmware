@@ -1160,3 +1160,19 @@ void tal_ext_ble_set_char_param(TKL_BLE_CHAR_PARAMS_T *param)
 {
     ptkl_ble_service_char = param;
 }
+
+/*
+static TKL_BLE_SERVICE_PARAMS_T *ptkl_ble_service = NULL;
+static TKL_BLE_CHAR_PARAMS_T *ptkl_ble_service_char = NULL;
+*/
+
+void tal_ext_ble_set_service_ptr(TKL_BLE_SERVICE_PARAMS_T *p)
+{
+    ptkl_ble_service = p;
+}
+
+void tal_ext_ble_set_char_ptr(TKL_BLE_CHAR_PARAMS_T *p)
+{
+    ptkl_ble_service_char = p;
+}
+

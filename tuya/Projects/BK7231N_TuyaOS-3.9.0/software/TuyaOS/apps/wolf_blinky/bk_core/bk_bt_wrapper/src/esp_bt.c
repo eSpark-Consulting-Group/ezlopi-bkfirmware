@@ -130,14 +130,17 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
             switch(p_event->ble_event.write_report.peer.char_handle[0])
             {
                 case 3:
+                    write_param.write.handle = 0;
                     __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 0, &write_param);
                 break;
                 
                 case 5:
+                    write_param.write.handle = 1;
                     __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 0, &write_param);
                 break;
                 
                 case 7:
+                    write_param.write.handle = 2;
                     __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 0, &write_param);
                 break;
             }
@@ -171,7 +174,13 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 TAL_PR_DEBUG("HANDLE = %d", peer_info.char_handle[3]);
                 TAL_PR_DEBUG("HANDLE = %d", peer_info.char_handle[4]);
                 TAL_PR_DEBUG("HANDLE = %d", peer_info.char_handle[5]);
-                tal_ext_ble_server_common_read_update_ext(3, &data_report);
+                esp_ble_gatts_cb_param_t read_param = {0};
+                read_param.read.handle = 0;
+                read_param.read.offset = 0;
+                __esp_bt_gatts_callback(ESP_GATTS_READ_EVT, 1, &read_param);
+
+                // tal_ext_ble_server_common_read_update_ext(3, &data_report);
+
             }
             break;
 
@@ -190,7 +199,7 @@ void bt_task()
 
     {
         TAL_PR_DEBUG("bt_task running ......");
-        tal_system_sleep(10000);
+        tal_system_sleep(3000);
         if(NULL == __esp_bt_gatts_callback && NULL == __esp_bt_gap_callback)
         {
             TAL_PR_DEBUG("Assigning esp_ gatt gap callbacks");
@@ -201,17 +210,19 @@ void bt_task()
         {
             esp_bt_event_t __item = {0};
             pop(evt_stack, &__item);
+            int item_index = 0;
             while(__item.num_handles > 1)
             {
                 __esp_bt_gatts_callback(ESP_GATTS_START_EVT, __item.gatt_if, NULL);
 
-                // esp_ble_gatts_cb_param_t add_char = {0}; // Initialize the struct to zero
-                // add_char.add_char.attr_handle = 1;       // Set the desired field
+                esp_ble_gatts_cb_param_t add_char = {0}; // Initialize the struct to zero
+                add_char.add_char.attr_handle = item_index;       // Set the desired field
 
-                // __esp_bt_gatts_callback(ESP_GATTS_ADD_CHAR_EVT, __item.gatt_if, &add_char);
+                __esp_bt_gatts_callback(ESP_GATTS_ADD_CHAR_EVT, __item.gatt_if, &add_char);
 
                 TAL_PR_DEBUG("calline __esp_bt_gatts_callback");
                 __item.num_handles -= 2;
+                item_index++;
             }
             TAL_PR_DEBUG("\n");
 
@@ -271,7 +282,8 @@ OPERATE_RET tal_ext_ble_bt_init_v2(TAL_BLE_ROLE_E role, const TAL_BLE_EVT_FUNC_C
 
     if ((role & TAL_BLE_ROLE_PERIPERAL) == TAL_BLE_ROLE_PERIPERAL) {
         TKL_BLE_GATTS_PARAMS_T *p_ble_services = bk_bt_hal_start_services();
-
+        tal_ext_ble_set_service_ptr(p_ble_services->p_service);
+        tal_ext_ble_set_char_ptr(p_ble_services->p_service->p_char);
         if (tkl_ble_gatts_service_add(p_ble_services) != 0) {
             return OPRT_OS_ADAPTER_BLE_INIT_FAILED;
         }

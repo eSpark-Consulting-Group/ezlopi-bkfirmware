@@ -689,7 +689,7 @@ static char *device_info_jsonify(void)
 
         cJSON_AddNumberToObject( root, ezlopi_internet_status_str, flag_internet_status);
 
-        device_info = cJSON_PrintBuffered(root, 4096, false);
+        device_info = cJSON_PrintBuffered(root, 1024, false);
         TRACE_D("length of 'device_info': %d", strlen(device_info));
 
         cJSON_Delete( root);
