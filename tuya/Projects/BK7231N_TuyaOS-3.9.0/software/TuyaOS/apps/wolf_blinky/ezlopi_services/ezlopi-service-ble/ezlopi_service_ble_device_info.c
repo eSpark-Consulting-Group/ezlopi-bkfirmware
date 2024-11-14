@@ -10,6 +10,7 @@
 #include "lwip/ip_addr.h"
 #include "mbedtls/base64.h"
 
+#include "tal_system.h"
 
 #include "ezlopi_core_wifi.h"
 #include "ezlopi_core_nvs.h"
@@ -36,6 +37,7 @@
 static s_gatt_service_t *g_device_info_service = NULL;
 
 static char *device_info_jsonify(void);
+static char *__device_info_base64(void);
 static void __add_factory_info_to_root(cJSON *root, char *key, char *value);
 
 static void device_info_read_func(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param);
@@ -592,50 +594,144 @@ static void EZPI_SERVICE_BLE_oem_info(esp_gatt_value_t *value, esp_ble_gatts_cb_
 static void device_info_read_func(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
 {
 #warning "This Characteristics is depricated, will be removed in future release later than 3.4.7"
-    static char *json_str_device_info;
+    TRACE_D("Read function called!");
 
-    if (NULL == json_str_device_info)
+    static const uint32_t _data_size = 180;
+    static char *g_provisioning_info_base64;
+    static uint32_t g_provisioning_sequence_no;
+    static SYS_TICK_T g_provisioning_last_read_time;
+    static uint32_t g_provisioning_number_of_sequence;
+
+    static const SYS_TICK_T gc_provisioning_read_timeout_s = 2000;
+    static const uint32_t g_required_ble_prov_buffer_size = 247 - 1;
+
+    // timeout logic
+    int status = -1; // success for non negative, failed for negative
+
+    SYS_TICK_T ticks_now = 0;
+    ticks_now = tal_system_get_tick_count();
+
+    if ((ticks_now - g_provisioning_last_read_time) >= gc_provisioning_read_timeout_s)
     {
-        json_str_device_info = device_info_jsonify();
+        g_provisioning_sequence_no = 0;
     }
+
+    TRACE_E("g_provisioning_sequence_no %d", g_provisioning_sequence_no);
+
+    // time(&g_provisioning_last_read_time);
+    g_provisioning_last_read_time = tal_system_get_tick_count();
 
     if (value)
     {
-        if (json_str_device_info)
+        if (NULL == g_provisioning_info_base64)
         {
-            uint32_t total_data_len = strlen(json_str_device_info);
-            uint32_t max_data_buffer_size = ezlopi_ble_gatt_get_max_data_size();
-            uint32_t copy_size = ((total_data_len - param->read.offset) < max_data_buffer_size) ? (total_data_len - param->read.offset) : max_data_buffer_size;
-            TRACE_D("ble - chunk size: %d", copy_size);
+            g_provisioning_info_base64 = __device_info_base64();
 
-            if ((0 != total_data_len) && (total_data_len > param->read.offset))
+            g_provisioning_sequence_no = 0;
+            g_provisioning_number_of_sequence = strlen(g_provisioning_info_base64) / ezlopi_ble_gatt_get_max_data_size();
+            g_provisioning_number_of_sequence = (strlen(g_provisioning_info_base64) % ezlopi_ble_gatt_get_max_data_size()) ? (g_provisioning_number_of_sequence + 1) : g_provisioning_number_of_sequence;
+        }
+
+        if (NULL != g_provisioning_info_base64)
+        {
+            if (ezlopi_ble_gatt_get_max_data_size() >= g_required_ble_prov_buffer_size)
             {
-                TRACE_D("Sending: [len = %d]\r\n%.*s", copy_size, copy_size, json_str_device_info + param->read.offset);
-                strncpy((char *)value->value, json_str_device_info + param->read.offset, copy_size);
-                value->len = copy_size;
+                uint32_t total_data_len = strlen(g_provisioning_info_base64);
+                uint32_t copy_size = total_data_len - (g_provisioning_sequence_no * _data_size);
+                copy_size = (copy_size > _data_size) ? _data_size : copy_size;
+
+                cJSON *cj_response = cJSON_CreateObject();
+                if (cj_response)
+                {
+                    char data_buffer[_data_size + 4];
+                    snprintf(data_buffer, sizeof(data_buffer), "%.*s", copy_size, g_provisioning_info_base64 + (g_provisioning_sequence_no * _data_size));
+
+                    cJSON_AddNumberToObject( cj_response, ezlopi_len_str, copy_size);
+                    cJSON_AddNumberToObject( cj_response, ezlopi_total_len_str, total_data_len);
+                    cJSON_AddNumberToObject( cj_response, ezlopi_sequence_str, g_provisioning_sequence_no);
+                    cJSON_AddStringToObject( cj_response, ezlopi_data_str, data_buffer);
+
+                    const uint32_t buffer_len = 512 + 5;
+                    char json_to_str_buffer[buffer_len];
+                    memset(json_to_str_buffer, 0, buffer_len);
+                    status = cJSON_PrintPreallocated( cj_response, json_to_str_buffer, buffer_len, false);
+                    cJSON_Minify( json_to_str_buffer);
+                    cJSON_Delete( cj_response);
+
+                    if (true == status)
+                    {
+                        // TRACE_D("data: %s", json_to_str_buffer);
+
+                        if ((0 != total_data_len) && (total_data_len >= ((g_provisioning_sequence_no * _data_size) + copy_size)))
+                        {
+                            value->len = strlen(json_to_str_buffer);
+                            strncpy((char *)value->value, json_to_str_buffer, value->len + 1);
+
+                            // TRACE_I("data: %s", (char *)value->value);
+
+                            g_provisioning_sequence_no += 1;
+                            status = 0;
+
+                            if (copy_size < _data_size) // Done reading
+                            {
+                                status = 1; // non negative for done reading
+                                ezlopi_free(__FUNCTION__, g_provisioning_info_base64);
+                                g_provisioning_info_base64 = NULL;
+                            }
+                        }
+                        else
+                        {
+                            TRACE_W("Check value: %d", ((g_provisioning_sequence_no * _data_size) + copy_size));
+                            TRACE_W("total_data_len: %d", total_data_len);
+                            status = -4;
+                        }
+                    }
+                    else
+                    {
+                        status = -3;
+                    }
+                }
+                else
+                {
+                    status = -2;
+                }
             }
             else
             {
+                TRACE_E("MTU size must be greater than %d!", g_required_ble_prov_buffer_size);
+                TRACE_W("call SET-MTU API from client stack!");
+
+                // CHECK_PRINT_ERROR(esp_ble_gatt_set_local_mtu(g_required_ble_prov_buffer_size), "set local  MTU failed");
+                status = -2;
+            }
+        }
+
+        if (status)
+        {
+            if (status < 0)
+            {
+                TRACE_E("Error found: %d", status);
                 value->len = 1;
                 value->value[0] = 0; // Read 0 if the device not provisioned yet.
             }
-
-            if ((param->read.offset + copy_size) >= total_data_len)
+            else
             {
-                ezlopi_free(__FUNCTION__, json_str_device_info);
-                json_str_device_info = NULL;
+                TRACE_S("Done Transmitting.");
             }
-        }
-        else
-        {
-            value->len = 1;
-            value->value[0] = 0; // Read 0 if the device not provisioned yet.
+
+            g_provisioning_sequence_no = 0;
+            g_provisioning_number_of_sequence = 0;
+
+            if (g_provisioning_info_base64)
+            {
+                ezlopi_free(__FUNCTION__, g_provisioning_info_base64);
+                g_provisioning_info_base64 = NULL;
+            }
         }
     }
     else
     {
-        ezlopi_free(__FUNCTION__, json_str_device_info);
-        json_str_device_info = NULL;
+        TRACE_E("VALUE IS NULL");
     }
 }
 
@@ -701,6 +797,37 @@ static char *device_info_jsonify(void)
     }
 
     return device_info;
+}
+
+static char *__device_info_base64(void)
+{
+    char *base64_data = NULL;
+    char *str_provisioning_data = device_info_jsonify();
+
+    if (str_provisioning_data)
+    {
+        const uint32_t base64_data_len = 6 * 1024;
+        base64_data = ezlopi_malloc(__FUNCTION__, base64_data_len);
+
+        if (base64_data)
+        {
+            uint32_t out_put_len = 0;
+            TRACE_D("str_provisioning_data[len: %d]: %s", strlen(str_provisioning_data), str_provisioning_data);
+
+            int ret = mbedtls_base64_encode((unsigned char *)base64_data, base64_data_len, &out_put_len,
+                                            (const unsigned char *)str_provisioning_data, strlen(str_provisioning_data));
+
+            if (0 == out_put_len)
+            {
+                ezlopi_free(__FUNCTION__, base64_data);
+                base64_data = NULL;
+            }
+        }
+
+        ezlopi_free(__FUNCTION__, str_provisioning_data);
+    }
+
+    return base64_data;
 }
 
 void __add_factory_info_to_root(cJSON *root, char *key, char *value)

@@ -236,7 +236,7 @@ void ezlopi_ble_gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t ga
         // ezlopi_ble_setup_adv_config();
         TRACE_S("ESP_GATTS_MTU_EVT, MTU %d", param->mtu.mtu);
         // TRACE_S("ESP_GATTS_MTU_EVT,"); 
-        // g_mtu_size = param->mtu.mtu;
+        g_mtu_size = param->mtu.mtu;
         break;
     }
     case ESP_GATTS_RESPONSE_EVT:

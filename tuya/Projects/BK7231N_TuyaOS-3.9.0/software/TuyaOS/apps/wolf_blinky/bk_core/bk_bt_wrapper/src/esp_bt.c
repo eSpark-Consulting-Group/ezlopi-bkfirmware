@@ -99,11 +99,9 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
             TAL_PR_DEBUG("MTU exchange request event.");
             TAL_PR_DEBUG("Get Response MTU Size = %d", p_event->ble_event.exchange_mtu.mtu);
 
-            /*//TODO: Crashing needs to be fixed
             esp_ble_gatts_cb_param_t mtu_param;
             mtu_param.mtu.mtu = p_event->ble_event.exchange_mtu.mtu;
             __esp_bt_gatts_callback(ESP_GATTS_MTU_EVT, 0, &mtu_param); 
-            */
             break;
         }
         case TAL_BLE_EVT_WRITE_REQ: {
@@ -164,22 +162,10 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 TAL_PR_DEBUG("EVENT = TAL_BLE_EVT_READ_CHAR");
                 TAL_BLE_PEER_INFO_T peer_info = p_event->ble_event.data_report.peer;
                 TAL_BLE_DATA_T data_report = p_event->ble_event.data_report.report;
-                char data[] = "hello world";
-                data_report.p_data = data;
-                data_report.len = strlen(data);
-                TAL_PR_DEBUG("data = %s, len = %d", data_report.p_data, data_report.len);
-                TAL_PR_DEBUG("HANDLE = %d", peer_info.char_handle[0]);
-                TAL_PR_DEBUG("HANDLE = %d", peer_info.char_handle[1]);
-                TAL_PR_DEBUG("HANDLE = %d", peer_info.char_handle[2]);
-                TAL_PR_DEBUG("HANDLE = %d", peer_info.char_handle[3]);
-                TAL_PR_DEBUG("HANDLE = %d", peer_info.char_handle[4]);
-                TAL_PR_DEBUG("HANDLE = %d", peer_info.char_handle[5]);
                 esp_ble_gatts_cb_param_t read_param = {0};
                 read_param.read.handle = 0;
                 read_param.read.offset = 0;
                 __esp_bt_gatts_callback(ESP_GATTS_READ_EVT, 1, &read_param);
-
-                // tal_ext_ble_server_common_read_update_ext(3, &data_report);
 
             }
             break;
