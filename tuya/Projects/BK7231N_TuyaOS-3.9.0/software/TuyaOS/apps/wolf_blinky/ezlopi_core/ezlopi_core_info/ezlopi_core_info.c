@@ -25,30 +25,30 @@ static const uint8_t EZPI_UART_SERV_FLW_CTRL_STR_SIZE = 10;
 //     return parity_val;
 // }
 
-// char EZPI_CORE_info_parity_to_name(const uart_parity_t parity_val)
-// {
-//     char parity = 'N';
-//     switch (parity_val)
-//     {
-//     case UART_PARITY_ODD:
-//     {
-//         parity = 'P';
-//         break;
-//     }
-//     case UART_PARITY_EVEN:
-//     {
-//         parity = 'E';
-//         break;
-//     }
-//     case UART_PARITY_DISABLE:
-//     default:
-//     {
-//         parity = 'N';
-//         break;
-//     }
-//     }
-//     return parity;
-// }
+char EZPI_CORE_info_parity_to_name(const uart_parity_t parity_val)
+{
+    char parity = 'N';
+    switch (parity_val)
+    {
+    case BK_PARITY_ODD:
+    {
+        parity = 'P';
+        break;
+    }
+    case BK_PARITY_EVEN:
+    {
+        parity = 'E';
+        break;
+    }
+    case BK_PARITY_NO:
+    default:
+    {
+        parity = 'N';
+        break;
+    }
+    }
+    return parity;
+}
 
 // void EZPI_CORE_info_get_flow_ctrl_to_name(uart_hw_flowcontrol_t flw_ctrl, char* flw_ctrl_str)
 // {

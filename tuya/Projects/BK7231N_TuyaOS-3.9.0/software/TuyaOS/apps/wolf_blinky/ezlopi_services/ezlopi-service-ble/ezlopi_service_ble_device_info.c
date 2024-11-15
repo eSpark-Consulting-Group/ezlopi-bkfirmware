@@ -42,6 +42,8 @@ static void __add_factory_info_to_root(cJSON *root, char *key, char *value);
 
 static void device_info_read_func(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param);
 
+static cJSON* __create_oem_info_cjson();
+
 static void EZPI_SERVICE_BLE_ezlopi_api_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param);
 static void EZPI_SERVICE_BLE_ezlopi_fmw_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param);
 static void EZPI_SERVICE_BLE_chip_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param);
@@ -292,59 +294,67 @@ static void EZPI_SERVICE_BLE_device_state_info(esp_gatt_value_t *value, esp_ble_
     }
 }
 
-// static void EZPI_SERVICE_BLE_serial_config_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
-// {
-//     if (value)
-//     {
-//         cJSON *cj_serial_config = cJSON_CreateObject();
-//         if (cj_serial_config)
-//         {
-//             uint32_t baud = EZPI_SERV_UART_BAUD_DEFAULT;
-//             uint32_t parity_val = EZPI_SERV_UART_PARITY_DEFAULT;
-//             uint32_t start_bits = EZPI_SERV_UART_START_BIT_DEFAULT;
-//             uint32_t stop_bits = EZPI_SERV_UART_STOP_BIT_DEFAULT;
-//             uint32_t frame_size = EZPI_SERV_UART_FRAME_SIZE_DEFAULT;
-//             uint32_t flow_control = EZPI_SERV_UART_FLOW_CTRL_DEFAULT;
-//             char parity[2];
+static cJSON* __create_serial_config_cjson()
+{
+    cJSON* root = cJSON_CreateObject();
+    if(root)
+    {
+        uint32_t baud = EZPI_SERV_UART_BAUD_DEFAULT;
+        uint32_t parity_val = EZPI_SERV_UART_PARITY_DEFAULT;
+        uint32_t start_bits = EZPI_SERV_UART_START_BIT_DEFAULT;
+        uint32_t stop_bits = EZPI_SERV_UART_STOP_BIT_DEFAULT;
+        uint32_t frame_size = EZPI_SERV_UART_FRAME_SIZE_DEFAULT;
+        uint32_t flow_control = EZPI_SERV_UART_FLOW_CTRL_DEFAULT;
+        char parity[2];
 
-//             char flw_ctrl_bffr[EZPI_UART_SERV_FLW_CTRL_STR_SIZE + 1];
-//             flw_ctrl_bffr[EZPI_UART_SERV_FLW_CTRL_STR_SIZE] = 0;
+        char flw_ctrl_bffr[EZPI_UART_SERV_FLW_CTRL_STR_SIZE + 1];
+        flw_ctrl_bffr[EZPI_UART_SERV_FLW_CTRL_STR_SIZE] = 0;
 
-//             EZPI_CORE_nvs_read_baud(&baud);
-//             cJSON_AddNumberToObject( cj_serial_config, ezlopi_baud_str, baud);
+        EZPI_CORE_nvs_read_baud(&baud);
+        cJSON_AddNumberToObject( root, ezlopi_baud_str, baud);
 
-//             EZPI_CORE_nvs_read_parity(&parity_val);
-//             parity[0] = EZPI_CORE_info_parity_to_name(parity_val);
-//             parity[1] = 0;
-//             cJSON_AddStringToObject( cj_serial_config, ezlopi_parity_str, parity);
+        EZPI_CORE_nvs_read_parity(&parity_val);
+        parity[0] = EZPI_CORE_info_parity_to_name(parity_val);
+        parity[1] = 0;
+        cJSON_AddStringToObject( root, ezlopi_parity_str, parity);
 
-//             EZPI_CORE_nvs_read_start_bits(&start_bits);
-//             cJSON_AddNumberToObject( cj_serial_config, ezlopi_start_bits_str, start_bits);
+        EZPI_CORE_nvs_read_start_bits(&start_bits);
+        cJSON_AddNumberToObject( root, ezlopi_start_bits_str, start_bits);
 
-//             EZPI_CORE_nvs_read_stop_bits(&stop_bits);
-//             cJSON_AddNumberToObject( cj_serial_config, ezlopi_stop_bits_str, stop_bits);
+        EZPI_CORE_nvs_read_stop_bits(&stop_bits);
+        cJSON_AddNumberToObject( root, ezlopi_stop_bits_str, stop_bits);
 
-//             EZPI_CORE_nvs_read_frame_size(&frame_size);
-//             cJSON_AddNumberToObject( cj_serial_config, ezlopi_frame_size_str, frame_size);
+        EZPI_CORE_nvs_read_frame_size(&frame_size);
+        cJSON_AddNumberToObject( root, ezlopi_frame_size_str, frame_size);
 
-//             EZPI_CORE_nvs_read_flow_control(&flow_control);
-//             EZPI_CORE_info_get_flow_ctrl_to_name(flow_control, flw_ctrl_bffr);
-//             cJSON_AddStringToObject( cj_serial_config, ezlopi_flow_control_str, flw_ctrl_bffr);
+        // EZPI_CORE_nvs_read_flow_control(&flow_control);
+        // EZPI_CORE_info_get_flow_ctrl_to_name(flow_control, flw_ctrl_bffr);
+        // cJSON_AddStringToObject( root, ezlopi_flow_control_str, flw_ctrl_bffr);
+    }
 
-//             ble_device_info_send_data(cj_serial_config, value, param);
+    return root;
+}
 
-//             cJSON_Delete( cj_serial_config);
-//         }
-//         else
-//         {
-//             TRACE_E("Couldn't allocate memory for device status");
-//         }
-//     }
-//     else
-//     {
-//         TRACE_E("Value is NULL");
-//     }
-// }
+static void EZPI_SERVICE_BLE_serial_config_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
+{
+    if (value)
+    {
+        cJSON *cj_serial_config = __create_serial_config_cjson();
+        if (cj_serial_config)
+        {
+            ble_device_info_send_data(cj_serial_config, value, param);
+            cJSON_Delete( cj_serial_config);
+        }
+        else
+        {
+            TRACE_E("Couldn't allocate memory for device status");
+        }
+    }
+    else
+    {
+        TRACE_E("Value is NULL");
+    }
+}
 
 // static void EZPI_SERVICE_BLE_serial_config_write(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
 // {
@@ -496,28 +506,35 @@ static void EZPI_SERVICE_BLE_ezlo_cloud_info(esp_gatt_value_t *value, esp_ble_ga
     }
 }
 
+static cJSON* __create_oem_info_cjson()
+{
+    cJSON* root = cJSON_CreateObject();
+    if(root)
+    {
+        char *device_model = ezlopi_factory_info_v3_get_model();
+        char *device_brand = ezlopi_factory_info_v3_get_brand();
+        char *device_manufacturer = ezlopi_factory_info_v3_get_manufacturer();
+
+        cJSON_AddStringToObject( root, ezlopi_brand_str, device_brand ? device_brand : "");
+        cJSON_AddStringToObject( root, ezlopi_manufacturer_str, device_manufacturer ? device_manufacturer : "");
+        cJSON_AddStringToObject( root, ezlopi_model_str, device_model ? device_model : "");
+        
+        ezlopi_factory_info_v3_free(device_model);
+        ezlopi_factory_info_v3_free(device_manufacturer);
+        ezlopi_factory_info_v3_free(device_brand);
+
+    }
+    return root;
+}
+
 static void EZPI_SERVICE_BLE_oem_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
 {
     if (value)
     {
-        cJSON *cj_oem = cJSON_CreateObject();
+        cJSON *cj_oem = __create_oem_info_cjson();
         if (cj_oem)
         {
-            char *device_model = ezlopi_factory_info_v3_get_model();
-            char *device_brand = ezlopi_factory_info_v3_get_brand();
-            char *device_manufacturer = ezlopi_factory_info_v3_get_manufacturer();
-
-            cJSON_AddStringToObject( cj_oem, ezlopi_brand_str, device_brand ? device_brand : "");
-            cJSON_AddStringToObject( cj_oem, ezlopi_manufacturer_str, device_manufacturer ? device_manufacturer : "");
-            cJSON_AddStringToObject( cj_oem, ezlopi_model_str, device_model ? device_model : "");
-
             ble_device_info_send_data(cj_oem, value, param);
-
-            ezlopi_factory_info_v3_free(device_model);
-            ezlopi_factory_info_v3_free(device_manufacturer);
-            ezlopi_factory_info_v3_free(device_brand);
-
-            cJSON_Delete( cj_oem);
         }
         else
         {
@@ -651,7 +668,7 @@ static void device_info_read_func(esp_gatt_value_t *value, esp_ble_gatts_cb_para
                     cJSON_AddNumberToObject( cj_response, ezlopi_sequence_str, g_provisioning_sequence_no);
                     cJSON_AddStringToObject( cj_response, ezlopi_data_str, data_buffer);
 
-                    const uint32_t buffer_len = 512 + 5;
+                    const uint32_t buffer_len = 247 + 5;
                     char json_to_str_buffer[buffer_len];
                     memset(json_to_str_buffer, 0, buffer_len);
                     status = cJSON_PrintPreallocated( cj_response, json_to_str_buffer, buffer_len, false);
@@ -735,13 +752,10 @@ static void device_info_read_func(esp_gatt_value_t *value, esp_ble_gatts_cb_para
     }
 }
 
-static char *device_info_jsonify(void)
+static cJSON* __create_device_info_cjson()
 {
-#warning "This info will be only available till Version 3.4.6 !"
-
-    char *device_info = NULL;
-    cJSON *root = cJSON_CreateObject();
-    if (root)
+    cJSON* root = cJSON_CreateObject();
+    if(root)
     {
         cJSON_AddStringToObject( root, ezlopi_firmware_version_str, VERSION_STR);
         cJSON_AddNumberToObject( root, ezlopi_build_str, BUILD);
@@ -784,6 +798,24 @@ static char *device_info_jsonify(void)
 #endif // CONFIG_EZPI_ENABLE_PING
 
         cJSON_AddNumberToObject( root, ezlopi_internet_status_str, flag_internet_status);
+    }
+    return root;
+}
+
+static char *device_info_jsonify(void)
+{
+#warning "This info will be only available till Version 3.4.6 !"
+
+    char *device_info = NULL;
+    cJSON *root = cJSON_CreateObject();
+    
+    if (root)
+    {
+        {
+            cJSON_AddItemToObject(root, "device_info", __create_device_info_cjson());
+            cJSON_AddItemToObject(root, "oem_info", __create_oem_info_cjson());
+            cJSON_AddItemToObject(root, "serial_config", __create_serial_config_cjson());
+        }
 
         device_info = cJSON_PrintBuffered(root, 1024, false);
         TRACE_D("length of 'device_info': %d", strlen(device_info));
@@ -803,10 +835,11 @@ static char *__device_info_base64(void)
 {
     char *base64_data = NULL;
     char *str_provisioning_data = device_info_jsonify();
+    // char *str_provisioning_data = strdup("{\"device_info\":{\"firmware_version\":\"4.1.4\",\"build\":194,\"chip\":\"esp32\",\"build_date\":1731601842,\"provisioned_status\":true,\"mac\":\"A8:80:55:0E:3D:9B\",\"ezlopi_device_type\":\"ezlopi_generic\",\"model\":\"Espark Model\",\"device_name\":\"Ezlo beken\",\"brand\":\"Espark Brand\",\"manufacturer\":\"Espark Man\",\"serial\":105200426,\"wifi_ssid\":\"eSpark Wifi\",\"wifi_connection_status\":\"\",\"internet_status\":0},\"oem_info\":{\"brand\":\"\",\"manufacturer\":\"someone\",\"model\":\"\"},\"serial_config\":{\"baud\":115200,\"parity\":\"N\",\"start_bits\":0,\"stop_bits\":1,\"frame_size\":8}}");
 
     if (str_provisioning_data)
     {
-        const uint32_t base64_data_len = 6 * 1024;
+        const uint32_t base64_data_len = 3 * 1024;
         base64_data = ezlopi_malloc(__FUNCTION__, base64_data_len);
 
         if (base64_data)

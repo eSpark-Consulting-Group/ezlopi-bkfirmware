@@ -2,6 +2,7 @@
 #define EZLOPI_CORE_INFO_H
 
 // #include "driver/uart.h"
+#include "uart_pub.h"
 // #include "esp_netif.h"
 // #include "esp_system.h"
 #include "tal_system.h"
@@ -11,7 +12,7 @@
 #include "sdkconfig.h"
 
 // uart_parity_t EZPI_CORE_info_name_to_parity(const char* parity);
-// char EZPI_CORE_info_parity_to_name(const uart_parity_t parity_val);
+char EZPI_CORE_info_parity_to_name(const uart_parity_t parity_val);
 // void EZPI_CORE_info_get_flow_ctrl_to_name(uart_hw_flowcontrol_t flw_ctrl, char* flw_ctrl_str);
 // uart_hw_flowcontrol_t EZPI_CORE_info_get_flw_ctrl_from_name(char* flw_ctrl_str);
 // uart_word_length_t EZPI_CORE_info_get_frame_size(const uint32_t frame_size);
