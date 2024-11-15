@@ -170,19 +170,27 @@ static void EZPI_SERVICE_BLE_ezlopi_api_info(esp_gatt_value_t *value, esp_ble_ga
     }
 }
 
+static cJSON* __create_fw_info_cjson()
+{
+    cJSON* root = cJSON_CreateObject();
+    if(root)
+    {
+        char build_time[64];
+        cJSON_AddStringToObject( root, ezlopi_version_str, VERSION_STR);
+        cJSON_AddNumberToObject( root, ezlopi_build_str, BUILD);
+        EZPI_CORE_sntp_epoch_to_iso8601(build_time, sizeof(build_time), (time_t)BUILD_DATE);
+        cJSON_AddStringToObject( root, ezlopi_build_date_str, build_time);
+    }
+    return root;
+}
+
 static void EZPI_SERVICE_BLE_ezlopi_fmw_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
 {
     if (value)
     {
-        cJSON *cj_firmware_info = cJSON_CreateObject();
+        cJSON *cj_firmware_info = __create_fw_info_cjson();
         if (cj_firmware_info)
         {
-            char build_time[64];
-            cJSON_AddStringToObject( cj_firmware_info, ezlopi_version_str, VERSION_STR);
-            cJSON_AddNumberToObject( cj_firmware_info, ezlopi_build_str, BUILD);
-            EZPI_CORE_sntp_epoch_to_iso8601(build_time, sizeof(build_time), (time_t)BUILD_DATE);
-            cJSON_AddStringToObject( cj_firmware_info, ezlopi_build_date_str, build_time);
-
             ble_device_info_send_data(cj_firmware_info, value, param);
             cJSON_Delete( cj_firmware_info);
         }
@@ -197,20 +205,30 @@ static void EZPI_SERVICE_BLE_ezlopi_fmw_info(esp_gatt_value_t *value, esp_ble_ga
     }
 }
 
+static cJSON* __create_chip_info_cjson()
+{
+    cJSON* root = cJSON_CreateObject();
+    if(root)
+    {
+        // esp_chip_info_t chip_info;
+        char chip_revision[10];
+        // esp_chip_info(&chip_info);
+        sprintf(chip_revision, "%.2f", 1.0);
+        // cJSON_AddStringToObject( root, "type", EZPI_CORE_info_get_chip_type_to_name(chip_info.model));
+        cJSON_AddStringToObject( root, "type", "bk7231n");
+        cJSON_AddStringToObject( root, "version", chip_revision);
+    }
+    return root;
+}
+
 static void EZPI_SERVICE_BLE_chip_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
 {
     if (value)
     {
-        cJSON *cj_chip = cJSON_CreateObject();
+        cJSON *cj_chip = __create_chip_info_cjson();
         if (cj_chip)
         {
-            // esp_chip_info_t chip_info;
-            char chip_revision[10];
-            // esp_chip_info(&chip_info);
-            sprintf(chip_revision, "%.2f", 1.0);
-            // cJSON_AddStringToObject( cj_chip, "type", EZPI_CORE_info_get_chip_type_to_name(chip_info.model));
-            cJSON_AddStringToObject( cj_chip, "type", "bk7231n");
-            cJSON_AddStringToObject( cj_chip, "version", chip_revision);
+
             ble_device_info_send_data(cj_chip, value, param);
             cJSON_Delete( cj_chip);
         }
@@ -225,15 +243,24 @@ static void EZPI_SERVICE_BLE_chip_info(esp_gatt_value_t *value, esp_ble_gatts_cb
     }
 }
 
+static __create_sdk_info_cjson()
+{
+    cJSON* root = cJSON_CreateObject();
+    if(root)
+    {
+        cJSON_AddStringToObject( root, "name", "TuyaOS");
+        cJSON_AddStringToObject( root, "version", "v3.9.0");
+    }   
+    return root;
+}
+
 static void EZPI_SERVICE_BLE_firmware_sdk_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
 {
     if (value)
     {
-        cJSON *cj_firmware_sdk = cJSON_CreateObject();
+        cJSON *cj_firmware_sdk = __create_sdk_info_cjson();
         if (cj_firmware_sdk)
         {
-            cJSON_AddStringToObject( cj_firmware_sdk, "name", "ESP-IDF");
-            cJSON_AddStringToObject( cj_firmware_sdk, "version", esp_get_idf_version());
             ble_device_info_send_data(cj_firmware_sdk, value, param);
             cJSON_Delete( cj_firmware_sdk);
         }
@@ -248,36 +275,45 @@ static void EZPI_SERVICE_BLE_firmware_sdk_info(esp_gatt_value_t *value, esp_ble_
     }
 }
 
+static cJSON* __create_device_state_info_cjson()
+{
+    cJSON* root = cJSON_CreateObject();
+    if(root)
+    {
+        char time_string[50];
+        uint32_t tick_count_ms = xTaskGetTickCount() / portTICK_PERIOD_MS;
+        EZPI_CORE_info_get_tick_to_time_name(time_string, sizeof(time_string), tick_count_ms);
+
+        cJSON_AddStringToObject( root, ezlopi_uptime_str, time_string);
+        cJSON_AddNumberToObject( root, "boot_count", ezlopi_system_info_get_boot_count());
+        // cJSON_AddStringToObject( root, "boot_reason", EZPI_CORE_info_get_esp_reset_reason_to_name(esp_reset_reason()));
+        cJSON_AddStringToObject( root, "boot_reason", "restart");
+
+        cJSON_AddStringToObject( root, ezlopi_flash_size_str, CONFIG_ESPTOOLPY_FLASHSIZE);
+
+        uint8_t mac[6];
+        ezlopi_wifi_get_wifi_mac(mac);
+        char mac_str[20];
+        memset(mac_str, 0, sizeof(mac_str));
+        snprintf(mac_str, 20, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        cJSON_AddStringToObject( root, "wifi_mac", mac_str);
+
+        memset(mac, 0, sizeof(mac));
+        ezlopi_ble_service_get_ble_mac(mac);
+        memset(mac_str, 0, sizeof(mac_str));
+        snprintf(mac_str, 20, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        cJSON_AddStringToObject( root, "ble_mac", mac_str);
+    }
+    return root;
+}
+
 static void EZPI_SERVICE_BLE_device_state_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
 {
     if (value)
     {
-        cJSON *cj_device_state = cJSON_CreateObject();
+        cJSON *cj_device_state = __create_device_state_info_cjson();
         if (cj_device_state)
         {
-
-            char time_string[50];
-            uint32_t tick_count_ms = xTaskGetTickCount() / portTICK_PERIOD_MS;
-            EZPI_CORE_info_get_tick_to_time_name(time_string, sizeof(time_string), tick_count_ms);
-
-            cJSON_AddStringToObject( cj_device_state, ezlopi_uptime_str, time_string);
-            cJSON_AddNumberToObject( cj_device_state, "boot_count", ezlopi_system_info_get_boot_count());
-            cJSON_AddStringToObject( cj_device_state, "boot_reason", EZPI_CORE_info_get_esp_reset_reason_to_name(esp_reset_reason()));
-
-            cJSON_AddStringToObject( cj_device_state, ezlopi_flash_size_str, CONFIG_ESPTOOLPY_FLASHSIZE);
-
-            uint8_t mac[6];
-            ezlopi_wifi_get_wifi_mac(mac);
-            char mac_str[20];
-            memset(mac_str, 0, sizeof(mac_str));
-            snprintf(mac_str, 20, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-            cJSON_AddStringToObject( cj_device_state, "wifi_mac", mac_str);
-
-            memset(mac, 0, sizeof(mac));
-            ezlopi_ble_service_get_ble_mac(mac);
-            memset(mac_str, 0, sizeof(mac_str));
-            snprintf(mac_str, 20, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-            cJSON_AddStringToObject( cj_device_state, "ble_mac", mac_str);
 
             ble_device_info_send_data(cj_device_state, value, param);
 
@@ -460,37 +496,45 @@ static void EZPI_SERVICE_BLE_serial_config_info(esp_gatt_value_t *value, esp_ble
 //     }
 // }
 
+static cJSON* __create_cloud_info_cjson()
+{
+    cJSON* root = cJSON_CreateObject();
+    if(root)
+    {
+        char *device_mac = ezlopi_factory_info_v3_get_ezlopi_mac();
+        char *controller_uuid = ezlopi_factory_info_v3_get_device_uuid();
+        char *provisioning_uuid = ezlopi_factory_info_v3_get_provisioning_uuid();
+        unsigned long long serial_id = ezlopi_factory_info_v3_get_id();
+        const char *device_type = ezlopi_factory_info_v3_get_device_type();
+
+        if (ezlopi_factory_info_v3_get_provisioning_status() != 1)
+        {
+            cJSON_AddFalseToObject( root, ezlopi_provisioned_str);
+        }
+        else
+        {
+            cJSON_AddTrueToObject( root, ezlopi_provisioned_str);
+        }
+        cJSON_AddStringToObject( root, ezlopi_uuid_str, controller_uuid ? controller_uuid : "");
+        cJSON_AddStringToObject( root, ezlopi_uuid_prov_str, provisioning_uuid ? provisioning_uuid : "");
+        cJSON_AddStringToObject( root, ezlopi_type_str, device_type ? device_type : "");
+        cJSON_AddNumberToObject( root, ezlopi_serial_str, serial_id);
+        cJSON_AddStringToObject( root, ezlopi_mac_str, device_mac ? device_mac : "");
+
+        ezlopi_factory_info_v3_free(device_mac);
+        ezlopi_factory_info_v3_free(controller_uuid);
+        ezlopi_factory_info_v3_free(provisioning_uuid);
+    }
+    return root;
+}
+
 static void EZPI_SERVICE_BLE_ezlo_cloud_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
 {
     if (value)
     {
-        cJSON *cj_ezlopi = cJSON_CreateObject();
+        cJSON *cj_ezlopi = __create_cloud_info_cjson();
         if (cj_ezlopi)
         {
-            char *device_mac = ezlopi_factory_info_v3_get_ezlopi_mac();
-            char *controller_uuid = ezlopi_factory_info_v3_get_device_uuid();
-            char *provisioning_uuid = ezlopi_factory_info_v3_get_provisioning_uuid();
-            unsigned long long serial_id = ezlopi_factory_info_v3_get_id();
-            const char *device_type = ezlopi_factory_info_v3_get_device_type();
-
-            if (ezlopi_factory_info_v3_get_provisioning_status() != 1)
-            {
-                cJSON_AddFalseToObject( cj_ezlopi, ezlopi_provisioned_str);
-            }
-            else
-            {
-                cJSON_AddTrueToObject( cj_ezlopi, ezlopi_provisioned_str);
-            }
-            cJSON_AddStringToObject( cj_ezlopi, ezlopi_uuid_str, controller_uuid ? controller_uuid : "");
-            cJSON_AddStringToObject( cj_ezlopi, ezlopi_uuid_prov_str, provisioning_uuid ? provisioning_uuid : "");
-            cJSON_AddStringToObject( cj_ezlopi, ezlopi_type_str, device_type ? device_type : "");
-            cJSON_AddNumberToObject( cj_ezlopi, ezlopi_serial_str, serial_id);
-            cJSON_AddStringToObject( cj_ezlopi, ezlopi_mac_str, device_mac ? device_mac : "");
-
-            ezlopi_factory_info_v3_free(device_mac);
-            ezlopi_factory_info_v3_free(controller_uuid);
-            ezlopi_factory_info_v3_free(provisioning_uuid);
-
             ble_device_info_send_data(cj_ezlopi, value, param);
 
             cJSON_Delete( cj_ezlopi);
@@ -547,66 +591,74 @@ static void EZPI_SERVICE_BLE_oem_info(esp_gatt_value_t *value, esp_ble_gatts_cb_
     }
 }
 
-// static void EZPI_SERVICE_BLE_net_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
-// {
-//     if (value)
-//     {
-//         cJSON *cj_network = cJSON_CreateObject();
-//         if (cj_network)
-//         {
-//             char *wifi_ssid = ezlopi_factory_info_v3_get_ssid();
-//             cJSON_AddStringToObject( cj_network, ezlopi_ssid_str, wifi_ssid ? wifi_ssid : "");
-//             ezlopi_factory_info_v3_free(wifi_ssid);
+static cJSON* __create_network_info_cjson()
+{
+    cJSON* root = cJSON_CreateObject();
+    if(root)
+    {
+        char *wifi_ssid = ezlopi_factory_info_v3_get_ssid();
+        cJSON_AddStringToObject( root, ezlopi_ssid_str, wifi_ssid ? wifi_ssid : "");
+        ezlopi_factory_info_v3_free(wifi_ssid);
 
-//             ezlopi_wifi_status_t *wifi_status = ezlopi_wifi_status();
-//             // if (wifi_status)
-//             {
-//                 char *wifi_mode = EZPI_CORE_info_get_wifi_mode_to_name(wifi_status->wifi_mode);
-//                 cJSON_AddStringToObject( cj_network, "wifi_mode", wifi_mode ? wifi_mode : "");
+        ezlopi_wifi_status_t *wifi_status = ezlopi_wifi_status();
+        // if (wifi_status)
+        {
+            char *wifi_mode = EZPI_CORE_info_get_wifi_mode_to_name(wifi_status->wifi_mode);
+            cJSON_AddStringToObject( root, "wifi_mode", wifi_mode ? wifi_mode : "");
 
-//                 char ip_str[20];
-//                 memset(ip_str, 0, 20);
-//                 snprintf(ip_str, 20, IPSTR, IP2STR(&wifi_status->ip_info->ip));
-//                 cJSON_AddStringToObject( cj_network, "ip_sta", ip_str);
+            char ip_str[20];
+            memset(ip_str, 0, 20);
+            // snprintf(ip_str, 20, IPSTR, IP2STR(&wifi_status->ip_info.nwipstr));
+            cJSON_AddStringToObject( root, "ip_sta", &wifi_status->ip_info->nwipstr);
 
-//                 memset(ip_str, 0, 20);
-//                 snprintf(ip_str, 20, IPSTR, IP2STR(&wifi_status->ip_info->netmask));
-//                 cJSON_AddStringToObject( cj_network, "ip_nmask", ip_str);
+            memset(ip_str, 0, 20);
+            // snprintf(ip_str, 20, IPSTR, IP2STR(&wifi_status->ip_info.nwmaskstr));
+            cJSON_AddStringToObject( root, "ip_nmask", &wifi_status->ip_info->nwmaskstr);
 
-//                 memset(ip_str, 0, 20);
-//                 snprintf(ip_str, 20, IPSTR, IP2STR(&wifi_status->ip_info->gw));
-//                 cJSON_AddStringToObject( cj_network, "ip_gw", ip_str);
+            memset(ip_str, 0, 20);
+            // snprintf(ip_str, 20, IPSTR, IP2STR(&wifi_status->ip_info.nwgwstr));
+            cJSON_AddStringToObject( root, "ip_gw", &wifi_status->ip_info->nwgwstr);
 
-//                 cJSON_AddBoolToObject( cj_network, "wifi", wifi_status->wifi_connection);
+            cJSON_AddBoolToObject( root, "wifi", wifi_status->wifi_connection);
 
-//                 e_ezlopi_event_t events = ezlopi_get_event_bit_status();
-//                 bool cloud_connection_status = (EZLOPI_EVENT_NMA_REG & events) == EZLOPI_EVENT_NMA_REG;
+            e_ezlopi_event_t events = ezlopi_get_event_bit_status();
+            bool cloud_connection_status = (EZLOPI_EVENT_NMA_REG & events) == EZLOPI_EVENT_NMA_REG;
 
-// #ifdef CONFIG_EZPI_ENABLE_PING
-//                 e_ping_status_t ping_status = ezlopi_ping_get_internet_status();
-//                 cJSON_AddBoolToObject( cj_network, ezlopi_internet_str, ping_status == EZLOPI_PING_STATUS_LIVE);
-// #else  // CONFIG_EZPI_ENABLE_PING
-//                 cJSON_AddBoolToObject( cj_network, ezlopi_internet_str, cloud_connection_status);
-// #endif // CONFIG_EZPI_ENABLE_PING
+#ifdef CONFIG_EZPI_ENABLE_PING
+            e_ping_status_t ping_status = ezlopi_ping_get_internet_status();
+            cJSON_AddBoolToObject( root, ezlopi_internet_str, ping_status == EZLOPI_PING_STATUS_LIVE);
+#else  // CONFIG_EZPI_ENABLE_PING
+            cJSON_AddBoolToObject( root, ezlopi_internet_str, cloud_connection_status);
+#endif // CONFIG_EZPI_ENABLE_PING
 
-//                 cJSON_AddBoolToObject( cj_network, "cloud", cloud_connection_status);
+            cJSON_AddBoolToObject( root, "cloud", cloud_connection_status);
+        }
+        ezlopi_free(__FUNCTION__, wifi_status);
+    }
+    return root;
+}
 
-//                 ble_device_info_send_data(cj_network, value, param);
+static void EZPI_SERVICE_BLE_net_info(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
+{
+    if (value)
+    {
+        cJSON *cj_network = __create_network_info_cjson();
+        if (cj_network)
+        {
+                ble_device_info_send_data(cj_network, value, param);
 
-//                 cJSON_Delete( cj_network);
-//                 ezlopi_free(__FUNCTION__, wifi_status);
-//             }
-//         }
-//         else
-//         {
-//             TRACE_E("Couldn't allocate memory for device status");
-//         }
-//     }
-//     else
-//     {
-//         TRACE_E("Value is NULL");
-//     }
-// }
+                cJSON_Delete( cj_network);
+        }
+        else
+        {
+            TRACE_E("Couldn't allocate memory for device status");
+        }
+    }
+    else
+    {
+        TRACE_E("Value is NULL");
+    }
+}
 
 static void device_info_read_func(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
 {
@@ -752,6 +804,22 @@ static void device_info_read_func(esp_gatt_value_t *value, esp_ble_gatts_cb_para
     }
 }
 
+/*
+    "api_version_info": {
+        "api": "1.0.0"
+    },
+
+*/
+static cJSON* __create_api_info_json()
+{
+    cJSON* root = cJSON_CreateObject();
+    if(root)
+    {
+        cJSON_AddStringToObject(root, "api", "1.0.0");
+    }
+    return root;
+}
+
 static cJSON* __create_device_info_cjson()
 {
     cJSON* root = cJSON_CreateObject();
@@ -813,8 +881,16 @@ static char *device_info_jsonify(void)
     {
         {
             cJSON_AddItemToObject(root, "device_info", __create_device_info_cjson());
+            cJSON_AddItemToObject(root, "api_version_info", __create_api_info_json());
+            cJSON_AddItemToObject(root, "ezlopi_firmware_info", __create_fw_info_cjson());
+            cJSON_AddItemToObject(root, "mcu_chip_info", __create_chip_info_cjson());
+            cJSON_AddItemToObject(root, "mcu_halsdk_info", __create_sdk_info_cjson());
+            cJSON_AddItemToObject(root, "ezlopi_current_device_status", __create_device_state_info_cjson());
+            cJSON_AddItemToObject(root, "serial_port_config", __create_serial_config_cjson());
+            cJSON_AddItemToObject(root, "ezlopi_cloud_info", __create_cloud_info_cjson());
             cJSON_AddItemToObject(root, "oem_info", __create_oem_info_cjson());
-            cJSON_AddItemToObject(root, "serial_config", __create_serial_config_cjson());
+            cJSON_AddItemToObject(root, "ezlopi_network_info", __create_network_info_cjson());
+            // cJSON_AddStringToObject(root, "test string", "{\"total_len\":1264,\"len\":180,\"sequence\":1,\"data\":\":44:55:66\",\"serial\":100004961,\"ezlopi_device_type\":\"ezlopi_generic\",\"wifi_ssid\":\"eSpark Wifi\",\"wifi-connection_status\":1,\"internet_status\":1},\"api_version_info\":{\"\"}");
         }
 
         device_info = cJSON_PrintBuffered(root, 1024, false);
@@ -824,7 +900,7 @@ static char *device_info_jsonify(void)
 
         if (device_info)
         {
-            TRACE_S("Created device info: %s", device_info);
+            TAL_PR_DEBUG("Created device info: %s", device_info);
         }
     }
 
@@ -845,7 +921,7 @@ static char *__device_info_base64(void)
         if (base64_data)
         {
             uint32_t out_put_len = 0;
-            TRACE_D("str_provisioning_data[len: %d]: %s", strlen(str_provisioning_data), str_provisioning_data);
+            // TRACE_D("str_provisioning_data[len: %d]: %s", strlen(str_provisioning_data), str_provisioning_data);
 
             int ret = mbedtls_base64_encode((unsigned char *)base64_data, base64_data_len, &out_put_len,
                                             (const unsigned char *)str_provisioning_data, strlen(str_provisioning_data));

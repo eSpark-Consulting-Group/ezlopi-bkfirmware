@@ -27,7 +27,7 @@ esp_err_t esp_ble_gatts_send_response(esp_gatt_if_t gatts_if, uint16_t conn_id, 
                                       esp_gatt_status_t status, esp_gatt_rsp_t *rsp)
 {
     TAL_BLE_DATA_T data = {.len = rsp->attr_value.len, .p_data = rsp->attr_value.value };
-    tal_ext_ble_server_common_read_update_ext(3, &data);
+    tal_ext_ble_server_common_read_update_ext(3, &data); //FIXME: Memory leak
     return ESP_OK;
 }                   
 

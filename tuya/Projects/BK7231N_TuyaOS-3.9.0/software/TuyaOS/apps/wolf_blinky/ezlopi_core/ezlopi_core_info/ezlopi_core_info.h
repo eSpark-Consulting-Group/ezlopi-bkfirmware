@@ -8,6 +8,7 @@
 #include "tal_system.h"
 // #include "driver/gpio.h"
 // #include "esp_idf_version.h"
+#include "ezlopi_core_wifi.h"
 #include "ezlopi_util_version.h"
 #include "sdkconfig.h"
 
@@ -18,7 +19,7 @@ char EZPI_CORE_info_parity_to_name(const uart_parity_t parity_val);
 // uart_word_length_t EZPI_CORE_info_get_frame_size(const uint32_t frame_size);
 // char* EZPI_CORE_info_get_esp_reset_reason_to_name(esp_reset_reason_t reason);
 // char* EZPI_CORE_info_get_chip_type_to_name(int chip_type);
-// char* EZPI_CORE_info_get_wifi_mode_to_name(const wifi_mode_t mode_val);
+char* EZPI_CORE_info_get_wifi_mode_to_name(const wifi_mode_t mode_val);
 void EZPI_CORE_info_get_tick_to_time_name(char* time_buff, uint32_t buff_len, uint32_t ms);
 // int EZPI_CORE_info_get_ble_mac(uint8_t mac[6]);
 

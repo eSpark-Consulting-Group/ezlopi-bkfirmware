@@ -80,11 +80,11 @@ STATIC VOID user_main(VOID_T)
 
     ezlopi_core_set_log_upcalls();
     ezlopi_ble_service_init();
-    // vTaskDelay(4000/portTICK_PERIOD_MS);
-    // ezlopi_init();
-    // ezlopi_service_broadcast_init();
-    // ezlopi_service_web_provisioning_init();
-    // ezlopi_nvs_set_boot_count(ezlopi_system_info_get_boot_count() + 1);
+    vTaskDelay(4000/portTICK_PERIOD_MS);
+    ezlopi_init();
+    ezlopi_service_broadcast_init();
+    ezlopi_service_web_provisioning_init();
+    ezlopi_nvs_set_boot_count(ezlopi_system_info_get_boot_count() + 1);
 
    return;
 }

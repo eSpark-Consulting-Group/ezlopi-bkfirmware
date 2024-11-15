@@ -159,6 +159,18 @@ void ezlopi_wifi_read_mac(uint8_t* mac_addr, WF_IF_E mode)
     tal_wifi_get_mac(mode, mac_addr);
 }
 
+int ezlopi_wifi_get_wifi_mac(uint8_t mac[6])
+{
+    tal_wifi_get_mac(WF_STATION, mac);
+}
+
+ezlopi_wifi_status_t* ezlopi_wifi_status(void)
+{
+    ezlopi_wifi_status_t* wifi_status_ptr = (ezlopi_wifi_status_t*)malloc(sizeof(ezlopi_wifi_status_t));
+    memset(wifi_status_ptr, 0 ,sizeof(ezlopi_wifi_status_t));
+    wifi_status_ptr->ip_info = ezlopi_wifi_get_ip_infos();
+    return wifi_status_ptr;
+}
 #if 0
 void ezlopi_wifi_scan_start()
 {

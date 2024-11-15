@@ -184,33 +184,33 @@ char EZPI_CORE_info_parity_to_name(const uart_parity_t parity_val)
 //     }
 // }
 
-// char* EZPI_CORE_info_get_wifi_mode_to_name(const wifi_mode_t mode_val)
-// {
-//     char* mode = NULL;
-//     switch (mode_val)
-//     {
-//     case WIFI_MODE_STA:
-//     {
-//         mode = "STA";
-//         break;
-//     }
-//     case WIFI_MODE_AP:
-//     {
-//         mode = "AP";
-//         break;
-//     }
-//     case WIFI_MODE_APSTA:
-//     {
-//         mode = "APSTA";
-//         break;
-//     }
-//     default:
-//     {
-//         break;
-//     }
-//     }
-//     return mode;
-// }
+char* EZPI_CORE_info_get_wifi_mode_to_name(const wifi_mode_t mode_val)
+{
+    char* mode = NULL;
+    switch (mode_val)
+    {
+    case WF_AP:
+    {
+        mode = "STA";
+        break;
+    }
+    case WF_STATION:
+    {
+        mode = "AP";
+        break;
+    }
+    // case WIFI_MODE_APSTA:
+    // {
+    //     mode = "APSTA";
+    //     break;
+    // }
+    default:
+    {
+        break;
+    }
+    }
+    return mode;
+}
 
 void EZPI_CORE_info_get_tick_to_time_name(char* time_buff, uint32_t buff_len, uint32_t ms)
 {
