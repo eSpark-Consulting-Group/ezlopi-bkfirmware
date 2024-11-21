@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BLE JSON Upload</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Upload JSON to BLE Device</h1>
+    <form action="/upload/" method="post" enctype="multipart/form-data">
+        <label for="mac_address">MAC Address:</label>
+        <input type="text" id="mac_address" name="mac_address" required>
+        
+        <label for="file">JSON File:</label>
+        <input type="file" id="file" name="file" required>
+        
+        <input type="submit" value="Send Data">
+    </form>
+
+    <h1>Set WiFi Credentials</h1>
+    <form action="/set_wifi/" method="post">
+        <label for="mac_address">MAC Address:</label>
+        <input type="text" id="mac_address" name="mac_address" required>
+        
+        <label for="wifi_ssid">WiFi SSID:</label>
+        <input type="text" id="wifi_ssid" name="wifi_ssid" required>
+        
+        <label for="wifi_password">WiFi Password:</label>
+        <input type="password" id="wifi_password" name="wifi_password" required>
+        
+        <label for="user_id">User ID:</label>
+        <input type="text" id="user_id" name="user_id" required>
+        
+        <input type="submit" value="Set WiFi">
+    </form>
+
+    <footer>
+        <p>Powered by <a href="https://fastapi.tiangolo.com/" target="_blank">FastAPI</a></p>
+    </footer>
+</body>
+</html>

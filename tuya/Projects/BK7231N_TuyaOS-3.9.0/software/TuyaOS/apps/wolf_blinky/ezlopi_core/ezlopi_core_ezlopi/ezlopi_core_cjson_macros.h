@@ -64,6 +64,20 @@
         }                                                                                               \
     }
 
+#define CJSON_GET_VALUE_STRING_BY_COPY_V2(root, item_name, item_val)                                       \
+    {                                                                                                   \
+        cJSON *o_item = cJSON_GetObjectItem(root, item_name);                                              \
+        if (o_item && o_item->valuestring && strlen(o_item->valuestring))                                   \
+        {                                                                                                  \
+            size_t len = strlen(o_item->valuestring) + 1;                                                  \
+            item_val = (char*)malloc(len);                                                                  \
+            if (item_val)                                                                                  \
+            {                                                                                                \
+                snprintf(item_val, len, "%s", o_item->valuestring);                                        \
+            }                                                                                                \
+        }                                                                                              \
+    }
+
 #define ASSIGN_DEVICE_NAME_V2(device, dev_name)                          \
     {                                                                    \
         if ((NULL != dev_name) && ('\0' != dev_name[0]))                 \

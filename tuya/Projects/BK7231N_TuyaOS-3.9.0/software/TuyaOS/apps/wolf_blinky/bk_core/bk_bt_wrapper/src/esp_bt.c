@@ -107,14 +107,14 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
         case TAL_BLE_EVT_WRITE_REQ: {
             INT_T i = 0;
             TAL_PR_DEBUG("Get Device-Write Char Request");
-            for ( i = 0; i < p_event->ble_event.write_report.report.len; i++) {
-                TAL_PR_DEBUG("devicr send  data[%d]: %d", i, p_event->ble_event.write_report.report.p_data[i]);
-                ble_rx_buffer[i] = (char)p_event->ble_event.write_report.report.p_data[i];
-            }
+            // for ( i = 0; i < p_event->ble_event.write_report.report.len; i++) {
+                // TAL_PR_DEBUG("devicr send  data[%d]: %d", i, p_event->ble_event.write_report.report.p_data[i]);
+                // ble_rx_buffer[i] = (char)p_event->ble_event.write_report.report.p_data[i];
+            // }
             TAL_PR_DEBUG("Recieved >>>>>>>>>> \n %s", ble_rx_buffer);
             esp_ble_gatts_cb_param_t write_param = {0};
-            write_param.write.len = sizeof(ble_rx_buffer);
-            write_param.write.value = ble_rx_buffer; 
+            write_param.write.value = p_event->ble_event.write_report.report.p_data; 
+            write_param.write.len = p_event->ble_event.write_report.report.len;
             write_param.write.need_rsp = 0;
             // write_param.write.handle = p_event->ble_event.write_report.peer.char_handle[0];
             {
@@ -127,17 +127,17 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
             }
             switch(p_event->ble_event.write_report.peer.char_handle[0])
             {
-                case 3:
+                case 7:
                     write_param.write.handle = 0;
                     __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 0, &write_param);
                 break;
                 
-                case 5:
+                case 3:
                     write_param.write.handle = 1;
                     __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 0, &write_param);
-                break;
+                break;  
                 
-                case 7:
+                case 5:
                     write_param.write.handle = 2;
                     __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 0, &write_param);
                 break;

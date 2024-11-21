@@ -78,9 +78,26 @@ STATIC VOID user_main(VOID_T)
         tal_thread_create_and_start(&free_heap_thrd, NULL, NULL, __free_heap_task, NULL, &thread_cfg);
     }
 
+    int free_heap = tal_system_get_free_heap_size();
+    float free_heap_kb = free_heap/1024.0f;
+    TAL_PR_DEBUG("FREE HEAP %.4f", free_heap_kb);
+    // while( free_heap_kb >= 75)
+    // {
+    //     free_heap = tal_system_get_free_heap_size();
+    //     free_heap_kb = free_heap/1024.0f;
+    //     char* dummyBuffer = (char*)malloc(5*1024);
+    //     if(dummyBuffer == NULL)
+    //     {
+    //         TRACE_I("Memory Allocation Failed!");
+    //     }
+    //     TAL_PR_DEBUG("FREE HEAP %.4f", free_heap_kb);
+    //     vTaskDelay(200/portTICK_PERIOD_MS);
+    // }
+
+
     ezlopi_core_set_log_upcalls();
     ezlopi_ble_service_init();
-    vTaskDelay(4000/portTICK_PERIOD_MS);
+    vTaskDelay(5000/portTICK_PERIOD_MS);
     ezlopi_init();
     ezlopi_service_broadcast_init();
     ezlopi_service_web_provisioning_init();
@@ -118,7 +135,8 @@ STATIC VOID __free_heap_task(PVOID_T args)
         TRACE_I("----------------------------------------------");
         if(free_heap <= 5*1024)
         {
-            tal_system_reset();
+            // tal_system_reset();
+            TRACE_W("-----Critical Heap------");
         }
          
         uint32_t tick_count_ms = xTaskGetTickCount() / portTICK_PERIOD_MS;
