@@ -111,7 +111,7 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 // TAL_PR_DEBUG("devicr send  data[%d]: %d", i, p_event->ble_event.write_report.report.p_data[i]);
                 // ble_rx_buffer[i] = (char)p_event->ble_event.write_report.report.p_data[i];
             // }
-            TAL_PR_DEBUG("Recieved >>>>>>>>>> \n %s", ble_rx_buffer);
+            TAL_PR_DEBUG("Recieved >>>>>>>>>> \n %s", p_event->ble_event.write_report.report.p_data);
             esp_ble_gatts_cb_param_t write_param = {0};
             write_param.write.value = p_event->ble_event.write_report.report.p_data; 
             write_param.write.len = p_event->ble_event.write_report.report.len;

@@ -27,6 +27,12 @@ struct http_header_handle {
 
 typedef struct http_header_handle http_header_handle_t;
 
+typedef struct {
+    char* host;
+    char* path;
+    int port;
+} ParsedURL;
+
 /**
  * HTTP Buffer
  */
@@ -118,58 +124,20 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if(NULL != client->url)
     {
-        // Skip the protocol (e.g., "https://")
-        const char* start_of_host = strstr(config->url, "://");
-        if (start_of_host != NULL) 
-        {
-            start_of_host += 3;  // Move past "://"
-        } 
-        else 
-        {
-            start_of_host = config->url;  // No protocol found, assume the URL starts with the host
-        }
+        ParsedURL parsed;
+        if (parse_url(client->url, &parsed) == 0) {
+            printf("Host: %s\n", parsed.host);
+            printf("Port: %d\n", parsed.port);
+            printf("Path: %s\n", parsed.path);
 
-        // Find the position of the first '/'
-        const char* slash = strchr(start_of_host, '/');
-        
-        if (slash != NULL) 
-        {
-            TAL_PR_DEBUG("Slash found started parsing!\n");
-            // Length of the host is the distance from the start of the host to the slash
-            size_t host_len = slash - start_of_host;  
-            
-            // Allocate memory for host and path
-            client->host = (char*)malloc(host_len + 1);
-            client->path = (char*)malloc(strlen(slash) + 1);  // The path is from the slash to the end of the URL
-            if(NULL == client->host || NULL == client->path)
-            {
-                TAL_PR_ERR("ERROR: Unable to malloc path and host");
-                goto error;
-            }
-            
-            // Copy the host and path
-            strncpy((char*)client->host, start_of_host, host_len);
-            ((char*)client->host)[host_len] = '\0';  // Null-terminate the host string
+            client->host = strdup(parsed.host);
+            client->path = strdup(parsed.path);
 
-            strcpy((char*)client->path, slash);    // Copy the path including the slash
-            
-            // Print the results for debugging
-            TAL_PR_DEBUG("Host: %s\n", client->host);
-            TAL_PR_DEBUG("Path: %s\n", client->path);
-        } 
-        else 
-        {
-            size_t url_len = strlen(start_of_host);
-            TAL_PR_DEBUG("Invalid URL format or path not found!\n");
-            client->host = (char*)malloc(url_len + 1);
-            strncpy((char*)client->host, start_of_host, url_len);
-            ((char*)client->host)[url_len] = '\0';  // Null-terminate the host string
-            client->path = (char*)malloc(2 * sizeof(char));
-            strcpy((char*)client->path, "/");
-
-            // Print the results for debugging
-            TAL_PR_DEBUG("Host: %s\n", client->host);
-            TAL_PR_DEBUG("Path: %s\n", client->path);
+            // Free allocated memory
+            free(parsed.host);
+            free(parsed.path);
+        } else {
+            printf("Error parsing URL.\n");
         }
     }
 
@@ -617,3 +585,60 @@ void parse_headers(char *response, esp_http_client_event_t *http_event, esp_http
     }
 }
 #endif
+
+int parse_url(const char* url, ParsedURL* result) {
+    // Skip the protocol (e.g., "https://")
+    const char* start_of_host = strstr(url, "://");
+    if (start_of_host != NULL) {
+        start_of_host += 3;  // Move past "://"
+    } else {
+        start_of_host = url;  // No protocol found, assume the URL starts with the host
+    }
+
+    // Find the position of the first '/'
+    const char* slash = strchr(start_of_host, '/');
+    const char* colon = strchr(start_of_host, ':');  // Look for a port colon
+
+    if (slash != NULL) {
+        // The host is before the slash
+        size_t host_len = slash - start_of_host;
+        
+        // Check if there's a colon for port
+        if (colon != NULL && colon < slash) {
+            // The port starts after the colon
+            size_t host_with_port_len = colon - start_of_host;
+            result->host = (char*)malloc(host_with_port_len + 1);
+            strncpy(result->host, start_of_host, host_with_port_len);
+            result->host[host_with_port_len] = '\0';
+
+            // Parse the port
+            result->port = atoi(colon + 1);
+
+            // The path is after the slash
+            result->path = (char*)malloc(strlen(slash) + 1);
+            strcpy(result->path, slash);
+        } else {
+            // No port, just the host and path
+            result->host = (char*)malloc(host_len + 1);
+            strncpy(result->host, start_of_host, host_len);
+            result->host[host_len] = '\0';
+            result->port = 80; // Default port for HTTP
+
+            // The path is after the slash
+            result->path = (char*)malloc(strlen(slash) + 1);
+            strcpy(result->path, slash);
+        }
+    } else {
+        // No path, just the host
+        size_t url_len = strlen(start_of_host);
+        result->host = (char*)malloc(url_len + 1);
+        strncpy(result->host, start_of_host, url_len);
+        result->host[url_len] = '\0';
+        result->path = (char*)malloc(2);
+        strcpy(result->path, "/");
+
+        result->port = 80; // Default port for HTTP
+    }
+
+    return 0;
+}

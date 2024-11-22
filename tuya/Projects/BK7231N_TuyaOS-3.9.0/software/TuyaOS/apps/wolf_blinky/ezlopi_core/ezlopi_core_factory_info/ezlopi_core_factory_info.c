@@ -745,7 +745,7 @@ int ezlopi_factory_info_v3_set_ssl_private_key(cJSON * cj_data)
     int ret = 0;
     if (cj_data && cj_data->valuestring && strlen(cj_data->valuestring))
     {
-        ret = ezlopi_factory_info_v3_set_4kb(cj_data->valuestring, ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_SSL_PRIVATE_KEY, E_EZLOPI_FACTORY_INFO_CONN_DATA), strlen(cj_data->valuestring));
+        ret = ezlopi_factory_info_v3_set_4kb(cj_data->valuestring, ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_SSL_PRIVATE_KEY, E_EZLOPI_FACTORY_INFO_CONN_DATA), EZLOPI_FINFO_LEN_SSL_PRIVATE_KEY);
     }
     return ret;
 }
@@ -755,7 +755,7 @@ int ezlopi_factory_info_v3_set_ssl_public_key(cJSON * cj_data)
     int ret = 0;
     if (cj_data && cj_data->valuestring && strlen(cj_data->valuestring))
     {
-        ret = ezlopi_factory_info_v3_set_4kb(cj_data->valuestring, ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_SSL_SHARED_KEY, E_EZLOPI_FACTORY_INFO_CONN_DATA), strlen(cj_data->valuestring));
+        ret = ezlopi_factory_info_v3_set_4kb(cj_data->valuestring, ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_SSL_SHARED_KEY, E_EZLOPI_FACTORY_INFO_CONN_DATA), EZLOPI_FINFO_LEN_SSL_SHARED_KEY);
     }
     return ret;
 }
@@ -765,7 +765,7 @@ int ezlopi_factory_info_v3_set_ssl_shared_key(cJSON * cj_data)
     int ret = 0;
     if (cj_data && cj_data->valuestring && strlen(cj_data->valuestring))
     {
-        ret = ezlopi_factory_info_v3_set_4kb(cj_data->valuestring, ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_SSL_SHARED_KEY, E_EZLOPI_FACTORY_INFO_CONN_DATA), strlen(cj_data->valuestring));
+        ret = ezlopi_factory_info_v3_set_4kb(cj_data->valuestring, ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_SSL_SHARED_KEY, E_EZLOPI_FACTORY_INFO_CONN_DATA), EZLOPI_FINFO_LEN_SSL_SHARED_KEY);
     }
     return ret;
 }
@@ -775,7 +775,7 @@ int ezlopi_factory_info_v3_set_ca_cert(cJSON * cj_data)
     int ret = 0;
     if (cj_data && cj_data->valuestring && strlen(cj_data->valuestring))
     {
-        ret = ezlopi_factory_info_v3_set_4kb(cj_data->valuestring, ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_CA_CERTIFICATE, E_EZLOPI_FACTORY_INFO_CONN_DATA), strlen(cj_data->valuestring));
+        ret = ezlopi_factory_info_v3_set_4kb(cj_data->valuestring, ezlopi_factory_info_v3_get_abs_address(EZLOPI_FINFO_REL_OFFSET_CA_CERTIFICATE, E_EZLOPI_FACTORY_INFO_CONN_DATA), EZLOPI_FINFO_LEN_CA_CERTIFICATE);
     }
     return ret;
 }

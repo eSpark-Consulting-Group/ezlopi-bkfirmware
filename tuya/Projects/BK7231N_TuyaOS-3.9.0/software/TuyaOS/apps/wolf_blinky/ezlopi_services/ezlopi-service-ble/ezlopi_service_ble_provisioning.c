@@ -50,6 +50,7 @@ static void __provisioning_status_read_func(esp_gatt_value_t *value, esp_ble_gat
 
 static void __provisioning_info_write_func(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param);
 static void wifi_creds_write_func(esp_gatt_value_t* value, esp_ble_gatts_cb_param_t* param);
+static void ezlopi_serv_ble_factory_reset_write_func(esp_gatt_value_t* value, esp_ble_gatts_cb_param_t* param);
 static char *__base64_decode_provisioning_info(uint32_t total_size);
 
 static void __test_write_upcall1(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
@@ -91,7 +92,7 @@ void ezlopi_ble_service_provisioning_init(void)
     ezlopi_ble_gatt_add_characteristic(g_provisioning_service, &uuid, permission, properties, NULL, wifi_creds_write_func, NULL); 
     
     uuid.uuid.uuid16 = BLE_PROVISIONING_RESET_CHAR_UUID;
-    ezlopi_ble_gatt_add_characteristic(g_provisioning_service, &uuid, permission, properties, NULL, __test_write_upcall3, NULL);                                                                                                                                                    // EZPI_SERV_BLE_ENABLE_READ_PROV
+    ezlopi_ble_gatt_add_characteristic(g_provisioning_service, &uuid, permission, properties, NULL, ezlopi_serv_ble_factory_reset_write_func, NULL);                                                                                                                                                    // EZPI_SERV_BLE_ENABLE_READ_PROV
 
 #ifdef EZPI_SERV_BLE_ENABLE_STAT_PROV
     uuid.uuid.uuid16 = BLE_PROVISIONING_STATUS_CHAR_UUID;
@@ -380,11 +381,20 @@ static void __provisioning_info_write_func(esp_gatt_value_t *value, esp_ble_gatt
                                         ezlopi_free(__FUNCTION__, ezlopi_config_basic);
                                     }
 
-                                    #if 0 //commented out for testing purposes.
-                                    // ezlopi_factory_info_v3_set_ca_cert(cJSON_GetObjectItem( cj_config, ezlopi_signing_ca_certificate_str));
-                                    // ezlopi_factory_info_v3_set_ssl_shared_key(cJSON_GetObjectItem( cj_config, ezlopi_ssl_shared_key_str));
-                                    // ezlopi_factory_info_v3_set_ssl_private_key(cJSON_GetObjectItem( cj_config, ezlopi_ssl_private_key_str));
+                                    #if 1 //commented out for testing purposes.
+                                    ezlopi_factory_info_v3_set_ca_cert(cJSON_GetObjectItem( cj_config, ezlopi_signing_ca_certificate_str));
+                                    ezlopi_factory_info_v3_set_ssl_shared_key(cJSON_GetObjectItem( cj_config, ezlopi_ssl_shared_key_str));
+                                    ezlopi_factory_info_v3_set_ssl_private_key(cJSON_GetObjectItem( cj_config, ezlopi_ssl_private_key_str));
                                     #endif 
+
+                                    cJSON* prov_ca_cert = cJSON_GetObjectItem( cj_config, ezlopi_signing_ca_certificate_str);   
+                                    ESP_LOGI(TAG, "%s", prov_ca_cert->valuestring);
+
+                                    cJSON* prov_shared_key = cJSON_GetObjectItem( cj_config, ezlopi_ssl_shared_key_str);   
+                                    ESP_LOGI(TAG, "%s", prov_shared_key->valuestring);
+
+                                    cJSON* prov_pvt_key = cJSON_GetObjectItem( cj_config, ezlopi_ssl_private_key_str);   
+                                    ESP_LOGI(TAG, "%s", prov_pvt_key->valuestring);
                                 }
                                 else
                                 {
@@ -553,6 +563,44 @@ static void __provisioning_info_read_func(esp_gatt_value_t *value, esp_ble_gatts
 }
 
 #endif // EZPI_SERV_BLE_ENABLE_READ_PROV
+
+static void ezlopi_serv_ble_factory_reset_write_func(esp_gatt_value_t* value, esp_ble_gatts_cb_param_t* param)
+{
+    if (param && param->write.len && param->write.value)
+    {
+        cJSON* root = cJSON_ParseWithLength( (const char*)param->write.value, param->write.len);
+        if (root)
+        {
+            cJSON* cj_sub_cmd = cJSON_GetObjectItem( root, ezlopi_sub_cmd_str);
+            if (cj_sub_cmd)
+            {
+                uint8_t sub_cmd = cj_sub_cmd->valuedouble;
+                switch (sub_cmd)
+                {
+                case 0:
+                {
+                    TRACE_E("Factory restore command");
+                    EZPI_CORE_reset_factory_restore();
+                    break;
+                }
+                case 1:
+                {
+                    TRACE_E("Reboot only command");
+                    EZPI_CORE_reset_reboot();
+                    break;
+                }
+                default:
+                {
+                    break;
+                }
+                }
+                cJSON_Delete( cj_sub_cmd);
+            }
+
+            cJSON_Delete( root);
+        }
+    }
+}
 
 static char *__base64_decode_provisioning_info(uint32_t total_size)
 {
