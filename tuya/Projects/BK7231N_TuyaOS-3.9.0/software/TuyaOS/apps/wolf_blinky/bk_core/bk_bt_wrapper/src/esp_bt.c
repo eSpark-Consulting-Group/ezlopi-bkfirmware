@@ -48,6 +48,7 @@ STATIC char ble_rx_buffer[2 * 1024] = {0};
 
 STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event)
 {
+    static USHORT_T array[6];
     TAL_PR_DEBUG("----------ble_peripheral event callback-------");
     TAL_PR_DEBUG("ble_peripheral event is : %d", p_event->type);
     switch(p_event->type) {
@@ -61,23 +62,27 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
         }
         case TAL_BLE_EVT_PERIPHERAL_CONNECT: {
             TAL_PR_DEBUG("ble_peripheral starts to connect...");
-            //FIXME: Commented out this as it is making no difference in functionality. should be fixed in future
-            // if(p_event->ble_event.connect.result == 0) {
-            //     TAL_BLE_DATA_T read_data;
-            //     UCHAR_T read_buffer[512];
+            if(p_event->ble_event.connect.result == 0) {
 
-            //     memcpy(&sg_ble_peripheral_info, &p_event->ble_event.connect.peer, sizeof(TAL_BLE_PEER_INFO_T));
-            //     memcpy(read_buffer, adv_data_const, sizeof(adv_data_const));
-            //     memcpy(&read_buffer[sizeof(adv_data_const)], scan_rsp_data_const, sizeof(scan_rsp_data_const));
+                memcpy(&sg_ble_peripheral_info, &p_event->ble_event.connect.peer, sizeof(TAL_BLE_PEER_INFO_T));
+                // TAL_BLE_DATA_T read_data;
+                // UCHAR_T read_buffer[512];
+                // memcpy(read_buffer, adv_data_const, sizeof(adv_data_const));
+                // memcpy(&read_buffer[sizeof(adv_data_const)], scan_rsp_data_const, sizeof(scan_rsp_data_const));
 
-            //     read_data.p_data = read_buffer;
-            //     read_data.len = sizeof(adv_data_const) + sizeof(scan_rsp_data_const);
+                // read_data.p_data = read_buffer;
+                // read_data.len = sizeof(adv_data_const) + sizeof(scan_rsp_data_const);
 
-            //     // Verify Read Char
-            //     tal_ext_ble_server_common_read_update(&read_data);
-            // } else {
-            //     memset(&sg_ble_peripheral_info, 0, sizeof(TAL_BLE_PEER_INFO_T));
-            // }
+                // // Verify Read Char
+                // tal_ext_ble_server_common_read_update(&read_data);
+            } else {
+                memset(&sg_ble_peripheral_info, 0, sizeof(TAL_BLE_PEER_INFO_T));
+            }
+            for(int i = 0; i < 6; i++)
+            {
+                TAL_PR_DEBUG("CHAR HANDLE VALUE %d", sg_ble_peripheral_info.char_handle[i]);
+                array[i] = sg_ble_peripheral_info.char_handle[i];
+            }
             break;
         }
         case TAL_BLE_EVT_DISCONNECT: {
@@ -125,22 +130,16 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 TAL_PR_DEBUG("HANDLE = %d", p_event->ble_event.write_report.peer.char_handle[4]);
                 TAL_PR_DEBUG("HANDLE = %d", p_event->ble_event.write_report.peer.char_handle[5]);
             }
-            switch(p_event->ble_event.write_report.peer.char_handle[0])
+
+            for (uint8_t i = 0; i <= sizeof(array)/ sizeof(array[0]); i++)
             {
-                case 7:
-                    write_param.write.handle = 0;
+                if (array[i] == p_event->ble_event.write_report.peer.char_handle[0])
+                {
+                    write_param.write.handle = i+1;
                     __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 0, &write_param);
-                break;
+                    break;
+                }
                 
-                case 3:
-                    write_param.write.handle = 1;
-                    __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 0, &write_param);
-                break;  
-                
-                case 5:
-                    write_param.write.handle = 2;
-                    __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, 0, &write_param);
-                break;
             }
 
             // __esp_bt_gatts_callback(ESP_GATTS_WRITE_EVT, p_event->ble_event.write_report.peer.char_handle[0], &write_param);
@@ -163,7 +162,7 @@ STATIC VOID_T ___bal_ble_peripheral_event_callback(TAL_BLE_EVT_PARAMS_T *p_event
                 TAL_BLE_PEER_INFO_T peer_info = p_event->ble_event.data_report.peer;
                 TAL_BLE_DATA_T data_report = p_event->ble_event.data_report.report;
                 esp_ble_gatts_cb_param_t read_param = {0};
-                read_param.read.handle = 0;
+                read_param.read.handle = 1;
                 read_param.read.offset = 0;
                 __esp_bt_gatts_callback(ESP_GATTS_READ_EVT, 1, &read_param);
 
@@ -196,7 +195,7 @@ void bt_task()
         {
             esp_bt_event_t __item = {0};
             pop(evt_stack, &__item);
-            int item_index = 0;
+            int item_index = 1; //0 will be identified as characterstic is not initialized
             while(__item.num_handles > 1)
             {
                 __esp_bt_gatts_callback(ESP_GATTS_START_EVT, __item.gatt_if, NULL);
@@ -206,7 +205,7 @@ void bt_task()
 
                 __esp_bt_gatts_callback(ESP_GATTS_ADD_CHAR_EVT, __item.gatt_if, &add_char);
 
-                TAL_PR_DEBUG("calline __esp_bt_gatts_callback");
+                TAL_PR_DEBUG("calline __esp_bt_gatts_callback %d HANDLE NUMBER SET %d", __item.gatt_if, item_index);
                 __item.num_handles -= 2;
                 item_index++;
             }

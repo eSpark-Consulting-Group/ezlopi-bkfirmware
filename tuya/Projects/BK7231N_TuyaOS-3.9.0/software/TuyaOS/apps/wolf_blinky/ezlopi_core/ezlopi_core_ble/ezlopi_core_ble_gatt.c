@@ -112,6 +112,7 @@ void ezlopi_ble_gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t ga
         if (char_initiating && service)
         {
             char_initiating->handle = param->add_char.attr_handle;
+            TRACE_W("Initiating characterstic handle: %d, UUID %X", char_initiating->handle, char_initiating->uuid.uuid.uuid16);
             s_gatt_descr_t* desc_to_init = ezlopi_ble_profile_get_descriptor_to_init(char_initiating);
             if (desc_to_init)
             {
@@ -129,6 +130,7 @@ void ezlopi_ble_gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t ga
                 if (char_to_add)
                 {
                     char_to_add->status = GATT_STATUS_PROCESSING;
+                    TRACE_W("Adding characterstic handle: %d, UUID %X", char_to_add->handle, char_to_add->uuid.uuid.uuid16);
                     esp_err_t err = esp_ble_gatts_add_char(service->service_handle, &char_to_add->uuid, char_to_add->permission,
                         char_to_add->property, NULL, NULL);
                     if (err)
@@ -256,6 +258,7 @@ static f_upcall_t ezlopi_ble_gatt_call_by_handle(esp_gatt_if_t gatts_if, uint16_
         s_gatt_char_t* characteristic = service->characteristics;
         while (characteristic)
         {
+            TRACE_S("Characterstic handle : %d, UUID: %X", handle, characteristic->uuid.uuid.uuid16);
             if (ESP_GATTS_EXEC_WRITE_EVT == event)
             {
                 return characteristic->write_exce_upcall;

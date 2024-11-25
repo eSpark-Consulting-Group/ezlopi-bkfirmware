@@ -58,7 +58,7 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
     }
     __service_config.type = TKL_BLE_UUID_SERVICE_PRIMARY;
     bk_bt_hal_create_service(&__service_config);
-    push((Stack*)esp_bt_get_event_stack_ptr(), (void*)&((esp_bt_event_t){gatts_if, num_handle, "Add Characterstics Event"}));
+    push((Stack*)esp_bt_get_event_stack_ptr(), (void*)&((esp_bt_event_t){gatts_if, num_handle}));
     printStack((Stack*)esp_bt_get_event_stack_ptr(), &bt_event_print);
     return ESP_OK;
 }                                     

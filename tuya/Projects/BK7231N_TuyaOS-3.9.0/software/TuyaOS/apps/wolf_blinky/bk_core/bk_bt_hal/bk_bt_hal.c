@@ -114,8 +114,8 @@ void bk_bt_hal_create_characteristic(const bk_bt_char_config_t* config)
         temp->next = new_char;
     }
 
-    TAL_PR_DEBUG("BLE characteristic created and added to list with UUID: 0x%X, property: %u, permission: %u, value length: %u", 
-                 config->char_uuid.uuid.uuid16, config->property, config->permission, config->value_len);
+    TAL_PR_DEBUG("BLE characteristic created and added to list with UUID: 0x%X, property: %u, permission: %u, value length: %u, handle: %d", 
+                 config->char_uuid.uuid.uuid16, config->property, config->permission, config->value_len, config->handle);
 }
 
 void move_head_to_tail(bk_bt_hal_characteristic_t** head) {
