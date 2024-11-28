@@ -1,6 +1,9 @@
 {
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
-        "tal_bluetooth_ext.h": "c"
+        "tal_bluetooth_ext.h": "c",
+        "tal_wifi.h": "c",
+        "esp_system.h": "c",
+        "tal_system.h": "c"
     }
 }

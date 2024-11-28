@@ -11,27 +11,20 @@ STATIC UCHAR_T adv_data_const[31] =
     0x06,
     0x03,
     0x02,
-    0x50, 0xFD,
+    0xF0, 0x05,
     0x17,
     0x16,
-    0x50, 0xFD,
+    0xF0, 0x05,
     0x41, 0x00,       //Frame Control
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 STATIC UCHAR_T scan_rsp_data_const[31] =
 {   
-    0x17,             // length
-    0xFF,
-    0xD0,
-    0x07,
-    0x00, //Encry Mode(8)
-    0x00,0x00, //communication way bit0-mesh bit1-wifi bit2-zigbee bit3-NB
-    0x00, //FLAG
-    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x05, //24
+	0x1E, //24
     0x09,
-    0x4D, 0x61, 0x61, 0x7a
+    'e', 'z', 'l', 'o', 'p', 'i', '_', 'g', 'e', 'n', 'e', 'r', 'i', 'c', '_', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X',
+    // '_', 'b', 'k', '7', '2'
 };
 
 esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback)
@@ -94,5 +87,50 @@ esp_err_t esp_ble_gap_stop_advertising(void)
 {
     ESP_LOGI(TAG, "%s", __FUNCTION__);
     return ESP_OK;
+}
+
+#define MAX_SCAN_RSP_DATA_LEN 31
+
+void update_ble_adv_name(UCHAR_T *src, const char *new_name) {
+    // Find the name field (AD type 0x09) in the scan response data
+    for (int i = 0; i < MAX_SCAN_RSP_DATA_LEN; ) {
+        UCHAR_T length = src[i];
+        if (length == 0 || i + length >= MAX_SCAN_RSP_DATA_LEN) {
+            break; // End of valid data
+        }
+
+        if (src[i + 1] == 0x09) { // Check if the AD type is "Complete Local Name" (0x09)
+            // Update the name
+            size_t name_len = length - 1; // Length minus AD type byte
+            size_t new_name_len = strlen(new_name);
+
+            // Ensure the new name fits within the length field
+            if (new_name_len > name_len) {
+                new_name_len = name_len;
+            }
+
+            memcpy(&src[i + 2], new_name, new_name_len);
+
+            // Pad with zeros if the new name is shorter
+            if (new_name_len < name_len) {
+                memset(&src[i + 2 + new_name_len], 0, name_len - new_name_len);
+            }
+
+            break; // Name updated, exit loop
+        }
+
+        i += length + 1; // Move to the next AD structure
+    }
+}
+
+esp_err_t esp_ble_gap_set_device_name(const char *name)
+{
+    ESP_LOGI(TAG, "%s", __FUNCTION__);
+
+    esp_err_t ret = ESP_FAIL;
+
+    update_ble_adv_name(scan_rsp_data_const, name);
+
+    return ret;
 }
                                  

@@ -1877,18 +1877,18 @@ esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params);
 //                                                                  uint16_t min_conn_int, uint16_t max_conn_int,
 //                                                                  uint16_t slave_latency, uint16_t supervision_tout);
 // #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
-// /**
-//  * @brief           Set device name to the local device
-//  *                  Note: This API don't affect the advertising data
-//  *
-//  * @param[in]       name   -  device name.
-//  *
-//  * @return
-//  *                  - ESP_OK : success
-//  *                  - other  : failed
-//  *
-//  */
-// esp_err_t esp_ble_gap_set_device_name(const char *name);
+/**
+ * @brief           Set device name to the local device
+ *                  Note: This API don't affect the advertising data
+ *
+ * @param[in]       name   -  device name.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_set_device_name(const char *name);
 
 // /**
 //  * @brief           Get device name of the local device
