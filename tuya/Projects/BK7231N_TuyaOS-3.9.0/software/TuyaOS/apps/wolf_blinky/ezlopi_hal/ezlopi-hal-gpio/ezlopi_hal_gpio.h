@@ -2,7 +2,7 @@
 #define _EZLOPI_HAL_GPIO_H_
 
 #include <stdio.h>
-#include "tkl_gpio.h"
+#include "gpio.h"
 
 typedef TUYA_GPIO_NUM_E e_ezlopi_gpio_num_t;
 typedef TUYA_GPIO_DRCT_E e_ezlopi_gpio_mode_t;

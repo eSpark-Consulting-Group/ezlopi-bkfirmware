@@ -2,7 +2,7 @@
 #define _EZLOPI_CORE_DEVICES_LIST_INCLUDES_H_
 
 #include "device_0001_digitalOut_generic.h"
-// #include "device_0002_digitalOut_relay.h"
+#include "device_0002_digitalOut_relay.h"
 // #include "device_0003_digitalOut_plug.h"
 // #include "device_0004_digitalIn_generic.h"
 
