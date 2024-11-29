@@ -20,6 +20,7 @@
 #include "ezlopi_service_webprov.h"
 #include "ezlopi_service_ble.h"
 #include "ezlopi_service_broadcast.h"
+#include "ezlopi_service_uart.h"
 #include "ezlopi_util_trace.h"
 #include "ezlopi_core_ezlopi.h"
 #include "ezlopi_core_factory_info.h"
@@ -96,9 +97,13 @@ STATIC VOID user_main(VOID_T)
 
 
     ezlopi_core_set_log_upcalls();
+    ezlopi_service_loop_init();
     ezlopi_ble_service_init();
     vTaskDelay(5000/portTICK_PERIOD_MS);
     ezlopi_init();
+    #ifdef CONFIG_EZPI_ENABLE_UART_PROVISIONING
+    EZPI_SERV_uart_init();
+    #endif
     ezlopi_service_broadcast_init();
     ezlopi_service_web_provisioning_init();
     ezlopi_nvs_set_boot_count(ezlopi_system_info_get_boot_count() + 1);
@@ -144,7 +149,7 @@ STATIC VOID __free_heap_task(PVOID_T args)
         last_tick_count = tick_count_ms;
         if(ezlopi_event_group_wait_for_event(EZLOPI_EVENT_WS_CONNECT, 0 ,false) && !ezlopi_event_group_wait_for_event(EZLOPI_EVENT_LOOP_INIT, 0 ,false))
         {
-            ezlopi_service_loop_init();
+            // ezlopi_service_loop_init();
             ezlopi_event_group_set_event(EZLOPI_EVENT_LOOP_INIT);
         }
         vTaskDelay(5000 / portTICK_PERIOD_MS);

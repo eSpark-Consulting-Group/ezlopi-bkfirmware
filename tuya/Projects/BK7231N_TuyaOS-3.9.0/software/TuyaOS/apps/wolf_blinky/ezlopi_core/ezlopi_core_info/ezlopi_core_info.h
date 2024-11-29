@@ -12,7 +12,7 @@
 #include "ezlopi_util_version.h"
 #include "sdkconfig.h"
 
-// uart_parity_t EZPI_CORE_info_name_to_parity(const char* parity);
+uart_parity_t EZPI_CORE_info_name_to_parity(const char* parity);
 char EZPI_CORE_info_parity_to_name(const uart_parity_t parity_val);
 // void EZPI_CORE_info_get_flow_ctrl_to_name(uart_hw_flowcontrol_t flw_ctrl, char* flw_ctrl_str);
 // uart_hw_flowcontrol_t EZPI_CORE_info_get_flw_ctrl_from_name(char* flw_ctrl_str);

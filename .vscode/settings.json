@@ -4,6 +4,14 @@
         "tal_bluetooth_ext.h": "c",
         "tal_wifi.h": "c",
         "esp_system.h": "c",
-        "tal_system.h": "c"
+        "tal_system.h": "c",
+        "ezlopi_service_loop.h": "c",
+        "ezlopi_hal_system_info.h": "c",
+        "ezlopi_hal_uart.h": "c",
+        "ezlopi_cloud_info.h": "c",
+        "ezlopi_service_ble.h": "c",
+        "ezlopi_service_uart.h": "c",
+        "ezlopi_cloud_constants.h": "c",
+        "ezlopi_user_config.h": "c"
     }
 }
