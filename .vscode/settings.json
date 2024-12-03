@@ -22,6 +22,7 @@
         "ezlopi_cloud_items.h": "c",
         "ezlopi_cloud_constants.h": "c",
         "ezlopi_core_nvs.h": "c",
-        "device_0001_digitalout_generic.h": "c"
+        "device_0001_digitalout_generic.h": "c",
+        "tkl_gpio.h": "c"
     }
 }

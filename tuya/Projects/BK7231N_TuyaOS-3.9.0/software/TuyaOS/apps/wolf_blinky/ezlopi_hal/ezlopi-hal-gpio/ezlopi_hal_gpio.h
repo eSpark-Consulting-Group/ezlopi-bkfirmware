@@ -2,17 +2,12 @@
 #define _EZLOPI_HAL_GPIO_H_
 
 #include <stdio.h>
-#include "gpio.h"
+#include "driver/gpio.h"
 
-typedef TUYA_GPIO_NUM_E e_ezlopi_gpio_num_t;
-typedef TUYA_GPIO_DRCT_E e_ezlopi_gpio_mode_t;
-typedef TUYA_GPIO_MODE_E e_ezlopi_gpio_pull_mode_t;
-typedef TUYA_GPIO_IRQ_E e_ezlopi_gpio_interrupt_t;
-
-#define GPIO_IS_VALID_OUTPUT_GPIO(x) true //fixme
-#define GPIO_IS_VALID_GPIO(x) true //fixme
-#define GPIO_MODE_OUTPUT TUYA_GPIO_OUTPUT
-#define GPIO_MODE_INPUT TUYA_GPIO_INPUT
+typedef gpio_num_t e_ezlopi_gpio_num_t;
+typedef gpio_mode_t e_ezlopi_gpio_mode_t;
+typedef gpio_pull_mode_t e_ezlopi_gpio_pull_mode_t;
+typedef gpio_int_type_t e_ezlopi_gpio_interrupt_t;
 
 typedef enum e_ezlopi_gpio_value
 {
