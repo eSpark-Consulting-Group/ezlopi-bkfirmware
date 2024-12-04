@@ -390,7 +390,7 @@ void ezlopi_device_prepare(void)
 #if (EZLOPI_DEVICE_TYPE_TEST_DEVICE == EZLOPI_DEVICE_TYPE)
     // char* config_string = ezlopi_config_test;
     // char* config_string = "{\"cmd\":3,\"dev_detail\":[{\"dev_type\":1,\"dev_name\":\"switch\",\"id_room\":\"\",\"id_item\":1,\"gpio_in\":24,\"gpio_out\":26,\"pullup_ip\":false,\"pullup_op\":false,\"is_ip\":false,\"ip_inv\":false,\"op_inv\":false,\"val_ip\":false,\"val_op\":false}],\"config_id\":\"1234567\",\"config_time\":1696508363,\"config_name\":\"My moisture sensor\",\"chipset\":\"ESP32\"}";
-    char* config_string = "{\"cmd\":3,\"dev_detail\":[{\"dev_type\":1,\"dev_name\":\"switch\",\"id_room\":\"\",\"id_item\":1,\"gpio_in\":24,\"gpio_out\":26,\"pullup_ip\":false,\"pullup_op\":false,\"is_ip\":false,\"ip_inv\":false,\"op_inv\":false,\"val_ip\":false,\"val_op\":false},{\"dev_type\":7,\"dev_name\":\"relay\",\"id_room\":\"\",\"id_item\":2,\"gpio_out\":12}],\"config_id\":\"1234567\",\"config_time\":1696508363,\"config_name\":\"My moisture sensor\",\"chipset\":\"ESP32\"}";
+    char* config_string = "{\"cmd\":3,\"dev_detail\":[{\"dev_type\":1,\"dev_name\":\"switch\",\"id_room\":\"\",\"id_item\":1,\"gpio_in\":24,\"gpio_out\":26,\"pullup_ip\":false,\"pullup_op\":false,\"is_ip\":false,\"ip_inv\":false,\"op_inv\":false,\"val_ip\":false,\"val_op\":false},{\"dev_type\":7,\"dev_name\":\"relay\",\"id_room\":\"\",\"id_item\":2,\"gpio_out\":29}],\"config_id\":\"1234567\",\"config_time\":1696508363,\"config_name\":\"My moisture sensor\",\"chipset\":\"ESP32\"}";
 #else
     char* config_string = ezlopi_factory_info_v3_get_ezlopi_config();
 #endif

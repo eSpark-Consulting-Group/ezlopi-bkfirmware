@@ -117,7 +117,7 @@
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C2 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                      1U
-#define SOC_GPIO_PIN_COUNT                 21
+#define SOC_GPIO_PIN_COUNT                 60
 #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
 #define SOC_GPIO_FILTER_CLK_SUPPORT_APB    1
 

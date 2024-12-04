@@ -14,6 +14,8 @@
         "ezlopi_core_devices.h": "c",
         "ezlopi_core_buffer.h": "c",
         "ezlopi_core_ezlopi.h": "c",
-        "uart.h": "c"
+        "uart.h": "c",
+        "ezlopi_core_info.h": "c",
+        "ezlopi_core_nvs.h": "c"
     }
 }
