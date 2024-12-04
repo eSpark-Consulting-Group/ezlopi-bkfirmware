@@ -363,9 +363,9 @@ static cJSON* __create_serial_config_cjson()
         EZPI_CORE_nvs_read_frame_size(&frame_size);
         cJSON_AddNumberToObject( root, ezlopi_frame_size_str, frame_size);
 
-        // EZPI_CORE_nvs_read_flow_control(&flow_control);
-        // EZPI_CORE_info_get_flow_ctrl_to_name(flow_control, flw_ctrl_bffr);
-        // cJSON_AddStringToObject( root, ezlopi_flow_control_str, flw_ctrl_bffr);
+        EZPI_CORE_nvs_read_flow_control(&flow_control);
+        EZPI_CORE_info_get_flow_ctrl_to_name(flow_control, flw_ctrl_bffr);
+        cJSON_AddStringToObject( root, ezlopi_flow_control_str, flw_ctrl_bffr);
     }
 
     return root;

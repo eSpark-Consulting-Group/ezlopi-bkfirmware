@@ -7,7 +7,8 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
-// #include "driver/uart.h"
+#include "tal_uart.h"
+#include "uart_pub.h"
 #include "esp_err.h"
 #include "EZLOPI_USER_CONFIG.h"
 

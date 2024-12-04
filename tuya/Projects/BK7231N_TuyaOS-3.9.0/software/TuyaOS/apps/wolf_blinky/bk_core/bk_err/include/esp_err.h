@@ -1,6 +1,16 @@
 #ifndef ESP_ERR_H
 #define ESP_ERR_H
 
+#include "tal_log.h"
+
+#define ESP_ERROR_CHECK(x) do {                                         \
+        esp_err_t err_rc_ = (x);                                        \
+        if ((err_rc_ != ESP_OK)) {                              \
+            TAL_PR_ERROR(err_rc_, __FILE__, __LINE__,        \
+                                    __FUNCTION__, #x);                 \
+        }                                                               \
+    } while(0)
+
 typedef enum {
     ESP_OK = 0,
     ESP_ERR,

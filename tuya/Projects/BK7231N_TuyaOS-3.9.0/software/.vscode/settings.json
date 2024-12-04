@@ -1,0 +1,19 @@
+{
+    "files.associations": {
+        "esp_check.h": "c",
+        "esp_err.h": "c",
+        "ezlopi_hal_uart.h": "c",
+        "ezlopi_user_config.h": "c",
+        "tal_uart.h": "c",
+        "queue.h": "c",
+        "*.def": "c",
+        "variant": "c",
+        "rtos_error.h": "c",
+        "tal_memory.h": "c",
+        "tkl_init_common.h": "c",
+        "ezlopi_core_devices.h": "c",
+        "ezlopi_core_buffer.h": "c",
+        "ezlopi_core_ezlopi.h": "c",
+        "uart.h": "c"
+    }
+}

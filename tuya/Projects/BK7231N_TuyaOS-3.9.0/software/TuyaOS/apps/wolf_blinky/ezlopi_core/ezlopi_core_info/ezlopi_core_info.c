@@ -50,31 +50,31 @@ char EZPI_CORE_info_parity_to_name(const uart_parity_t parity_val)
     return parity;
 }
 
-// void EZPI_CORE_info_get_flow_ctrl_to_name(uart_hw_flowcontrol_t flw_ctrl, char* flw_ctrl_str)
-// {
-//     switch (flw_ctrl)
-//     {
-//     case UART_HW_FLOWCTRL_DISABLE:
-//         strncpy(flw_ctrl_str, "DISABLED", EZPI_UART_SERV_FLW_CTRL_STR_SIZE);
-//         break;
-//     case UART_HW_FLOWCTRL_RTS:
-//         strncpy(flw_ctrl_str, "RTS", EZPI_UART_SERV_FLW_CTRL_STR_SIZE);
-//         break;
-//     case UART_HW_FLOWCTRL_CTS:
-//         strncpy(flw_ctrl_str, "CTS", EZPI_UART_SERV_FLW_CTRL_STR_SIZE);
-//         break;
-//     case UART_HW_FLOWCTRL_CTS_RTS:
-//         strncpy(flw_ctrl_str, "CTS_RTS", EZPI_UART_SERV_FLW_CTRL_STR_SIZE);
-//         break;
-//     default:
-//         strncpy(flw_ctrl_str, "DISABLED", EZPI_UART_SERV_FLW_CTRL_STR_SIZE);
-//         break;
-//     }
-// }
+void EZPI_CORE_info_get_flow_ctrl_to_name(uart_flow_control_t flw_ctrl, char* flw_ctrl_str)
+{
+    switch (flw_ctrl)
+    {
+    case FLOW_CTRL_DISABLED:
+        strncpy(flw_ctrl_str, "DISABLED", EZPI_UART_SERV_FLW_CTRL_STR_SIZE);
+        break;
+    case FLOW_CTRL_RTS:
+        strncpy(flw_ctrl_str, "RTS", EZPI_UART_SERV_FLW_CTRL_STR_SIZE);
+        break;
+    case FLOW_CTRL_CTS:
+        strncpy(flw_ctrl_str, "CTS", EZPI_UART_SERV_FLW_CTRL_STR_SIZE);
+        break;
+    case FLOW_CTRL_RTS_CTS:
+        strncpy(flw_ctrl_str, "CTS_RTS", EZPI_UART_SERV_FLW_CTRL_STR_SIZE);
+        break;
+    default:
+        strncpy(flw_ctrl_str, "DISABLED", EZPI_UART_SERV_FLW_CTRL_STR_SIZE);
+        break;
+    }
+}
 
-// uart_hw_flowcontrol_t EZPI_CORE_info_get_flw_ctrl_from_name(char* flw_ctrl_str)
+// uart_flow_control_t EZPI_CORE_info_get_flw_ctrl_from_name(char* flw_ctrl_str)
 // {
-//     uart_hw_flowcontrol_t flw_ctrl = UART_HW_FLOWCTRL_DISABLE;
+//     uart_flow_control_t flw_ctrl = UART_HW_FLOWCTRL_DISABLE;
 //     if (strncmp(flw_ctrl_str, "DISABLED", EZPI_UART_SERV_FLW_CTRL_STR_SIZE) == 0)
 //     {
 //         flw_ctrl = UART_HW_FLOWCTRL_DISABLE;
@@ -98,23 +98,27 @@ char EZPI_CORE_info_parity_to_name(const uart_parity_t parity_val)
 //     return flw_ctrl;
 // }
 
-// uart_word_length_t EZPI_CORE_info_get_frame_size(const uint32_t frame_size)
-// {
-//     uart_word_length_t frame_size_val = UART_DATA_8_BITS;
-//     if (5 == frame_size)
-//     {
-//         frame_size_val = UART_DATA_5_BITS;
-//     }
-//     else if (6 == frame_size)
-//     {
-//         frame_size_val = UART_DATA_6_BITS;
-//     }
-//     else if (7 == frame_size)
-//     {
-//         frame_size_val = UART_DATA_7_BITS;
-//     }
-//     return frame_size_val;
-// }
+uart_data_width_t EZPI_CORE_info_get_frame_size(const uint32_t frame_size)
+{   
+    //TODO: come up with a better implementation
+    uart_data_width_t frame_size_val = 0x08;
+    if (5 == frame_size)
+    {
+        // frame_size_val = DATA_WIDTH_5BIT;
+        frame_size_val = 0x05;
+    }
+    else if (6 == frame_size)
+    {
+        // frame_size_val = DATA_WIDTH_6BIT;
+        frame_size_val = 0x06;
+    }
+    else if (7 == frame_size)
+    {
+        // frame_size_val = DATA_WIDTH_7BIT;
+        frame_size_val = 0x07;
+    }
+    return frame_size_val;
+}
 
 // char* EZPI_CORE_info_get_esp_reset_reason_to_name(esp_reset_reason_t reason)
 // {

@@ -467,7 +467,7 @@ uint8_t ezlopi_nvs_read_int32(int32_t* i, const char* key_name)
 uint8_t ezlopi_nvs_write_uint32(uint32_t i, const char* key_name)
 {
     uint8_t ret = 0;
-    if (ezlopi_nvs_handle)
+    if (ezlopi_nvs_init())
     {
         esp_err_t err = nvs_set_u32(ezlopi_nvs_handle, key_name, (uint32_t)i);
         if (ESP_OK != err)
@@ -495,7 +495,7 @@ uint8_t ezlopi_nvs_write_uint32(uint32_t i, const char* key_name)
 uint8_t ezlopi_nvs_read_uint32(uint32_t* i, const char* key_name)
 {
     uint8_t ret = 0;
-    if (ezlopi_nvs_handle)
+    if (ezlopi_nvs_init())
     {
         esp_err_t err = nvs_get_u32(ezlopi_nvs_handle, key_name, i);
         if (ESP_OK == err)

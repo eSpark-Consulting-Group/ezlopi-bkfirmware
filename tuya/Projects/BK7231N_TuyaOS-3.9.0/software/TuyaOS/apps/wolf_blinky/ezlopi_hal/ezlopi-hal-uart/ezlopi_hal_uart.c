@@ -1,24 +1,24 @@
 
-// #include <string.h>
+#include <string.h>
 
-// #include "freertos/FreeRTOS.h"
-// #include "freertos/queue.h"
+#include "FreeRTOS.h"
+#include "queue.h"
 
-// #include "esp_err.h"
-// #include "esp_check.h"
+#include "esp_err.h"
+#include "esp_check.h"
 
-// #include "ezlopi_core_nvs.h"
-// #include "ezlopi_core_info.h"
+#include "ezlopi_core_nvs.h"
+#include "ezlopi_core_info.h"
 
-// #include "ezlopi_util_trace.h"
+#include "ezlopi_util_trace.h"
 
-// #include "ezlopi_core_processes.h"
+#include "ezlopi_core_processes.h"
 
-// #include "ezlopi_hal_uart.h"
-// #include "EZLOPI_USER_CONFIG.h"
+#include "ezlopi_hal_uart.h"
+#include "EZLOPI_USER_CONFIG.h"
 
-// static void ezlopi_uart_channel_task(void* args);
-// static ezlo_uart_channel_t get_available_channel();
+static void ezlopi_uart_channel_task(void* args);
+static ezlo_uart_channel_t get_available_channel();
 
 // s_ezlopi_uart_object_handle_t ezlopi_uart_init(uint32_t baudrate, uint32_t tx, uint32_t rx, __uart_upcall upcall, void* arg)
 // {
@@ -35,12 +35,12 @@
 //     {
 //         uart_config_t uart_config = {
 //             .baud_rate = baudrate,
-//             .data_bits = UART_DATA_8_BITS,
-//             .parity = UART_PARITY_DISABLE,
-//             .stop_bits = UART_STOP_BITS_1,
-//             .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-//             .rx_flow_ctrl_thresh = 0,
-//             .source_clk = UART_SCLK_APB,
+//             .data_width = DATA_WIDTH_8BIT,
+//             .parity = BK_PARITY_NO,
+//             .stop_bits = BK_STOP_BITS_1,
+//             .flow_control = FLOW_CTRL_DISABLED,
+//             // .rx_flow_ctrl_thresh = 0,
+//             // .source_clk = UART_SCLK_APB,
 //         };
 
 //         if (EZLOPI_UART_CHANNEL_1 == channel)
@@ -153,75 +153,73 @@
 //     return ezlopi_uart_object_handle->ezlopi_uart.channel;
 // }
 
-// void EZPI_HAL_uart_init(void)
-// {
-//     uint32_t baud = EZPI_SERV_UART_BAUD_DEFAULT;
-//     uint32_t parity_val = EZPI_SERV_UART_PARITY_DEFAULT;
-//     uint32_t start_bits = EZPI_SERV_UART_START_BIT_DEFAULT;
-//     uint32_t stop_bits = EZPI_SERV_UART_STOP_BIT_DEFAULT;
-//     uint32_t frame_size = EZPI_SERV_UART_FRAME_SIZE_DEFAULT;
-//     uint32_t flow_control = EZPI_SERV_UART_FLOW_CTRL_DEFAULT;
+void EZPI_HAL_uart_init(void)
+{
+    uint32_t baud = EZPI_SERV_UART_BAUD_DEFAULT;
+    uint32_t parity_val = EZPI_SERV_UART_PARITY_DEFAULT;
+    uint32_t start_bits = EZPI_SERV_UART_START_BIT_DEFAULT;
+    uint32_t stop_bits = EZPI_SERV_UART_STOP_BIT_DEFAULT;
+    uint32_t frame_size = EZPI_SERV_UART_FRAME_SIZE_DEFAULT;
+    uint32_t flow_control = EZPI_SERV_UART_FLOW_CTRL_DEFAULT;
+    uart_data_width_t frame_size_val = EZPI_SERV_UART_FRAME_SIZE_DEFAULT;
 
-//     if (EZPI_CORE_nvs_read_baud(&baud))
-//     {
-//         EZPI_CORE_nvs_write_baud(EZPI_SERV_UART_BAUD_DEFAULT);
-//     }
-//     vTaskDelay(1 / portTICK_RATE_MS);
-//     if (EZPI_CORE_nvs_read_parity(&parity_val))
-//     {
-//         EZPI_CORE_nvs_write_parity(EZPI_SERV_UART_PARITY_DEFAULT);
-//     }
-//     vTaskDelay(1 / portTICK_RATE_MS);
-//     if (EZPI_CORE_nvs_read_start_bits(&start_bits))
-//     {
-//         EZPI_CORE_nvs_write_start_bits(EZPI_SERV_UART_START_BIT_DEFAULT);
-//     }
-//     vTaskDelay(1 / portTICK_RATE_MS);
-//     if (EZPI_CORE_nvs_read_stop_bits(&stop_bits))
-//     {
-//         EZPI_CORE_nvs_write_stop_bits(EZPI_SERV_UART_STOP_BIT_DEFAULT);
-//     }
-//     vTaskDelay(1 / portTICK_RATE_MS);
-//     if (EZPI_CORE_nvs_read_frame_size(&frame_size))
-//     {
-//         EZPI_CORE_nvs_write_frame_size(EZPI_SERV_UART_FRAME_SIZE_DEFAULT);
-//     }
-//     vTaskDelay(1 / portTICK_RATE_MS);
-//     if (EZPI_CORE_nvs_read_flow_control(&flow_control))
-//     {
-//         EZPI_CORE_nvs_write_flow_control(EZPI_SERV_UART_FLOW_CTRL_DEFAULT);
-//     }
-//     vTaskDelay(1 / portTICK_RATE_MS);
-//     uart_word_length_t frame_size_val = EZPI_CORE_info_get_frame_size(frame_size);
+    if (EZPI_CORE_nvs_read_baud(&baud))
+    {
+        EZPI_CORE_nvs_write_baud(EZPI_SERV_UART_BAUD_DEFAULT);
+    }
+    vTaskDelay(1 / portTICK_RATE_MS);
+    if (EZPI_CORE_nvs_read_parity(&parity_val))
+    {
+        EZPI_CORE_nvs_write_parity(EZPI_SERV_UART_PARITY_DEFAULT);
+    }
+    vTaskDelay(1 / portTICK_RATE_MS);
+    if (EZPI_CORE_nvs_read_start_bits(&start_bits))
+    {
+        EZPI_CORE_nvs_write_start_bits(EZPI_SERV_UART_START_BIT_DEFAULT);
+    }
+    vTaskDelay(1 / portTICK_RATE_MS);
+    if (EZPI_CORE_nvs_read_stop_bits(&stop_bits))
+    {
+        EZPI_CORE_nvs_write_stop_bits(EZPI_SERV_UART_STOP_BIT_DEFAULT);
+    }
+    vTaskDelay(1 / portTICK_RATE_MS);
+    if (EZPI_CORE_nvs_read_frame_size(&frame_size))
+    {
+        EZPI_CORE_nvs_write_frame_size(EZPI_SERV_UART_FRAME_SIZE_DEFAULT);
+    }
+    vTaskDelay(1 / portTICK_RATE_MS);
+    if (EZPI_CORE_nvs_read_flow_control(&flow_control))
+    {
+        EZPI_CORE_nvs_write_flow_control(EZPI_SERV_UART_FLOW_CTRL_DEFAULT);
+    }
+    vTaskDelay(1 / portTICK_RATE_MS);
+    frame_size_val = EZPI_CORE_info_get_frame_size(frame_size);
 
-//     char flw_ctrl_bffr[EZPI_UART_SERV_FLW_CTRL_STR_SIZE + 1];
-//     EZPI_CORE_info_get_flow_ctrl_to_name(flow_control, flw_ctrl_bffr);
+    char flw_ctrl_bffr[EZPI_UART_SERV_FLW_CTRL_STR_SIZE + 1];
+    EZPI_CORE_info_get_flow_ctrl_to_name(flow_control, flw_ctrl_bffr);
 
-//     TRACE_I("Serial Configuration:");
-//     TRACE_I("  Baud Rate: %d", baud);
-//     TRACE_I("  Parity: %d", parity_val);
-//     TRACE_I("  Start Bits: %d", start_bits);
-//     TRACE_I("  Stop Bits: %d", stop_bits);
-//     TRACE_I("  Frame Size: %d", frame_size);
-//     TRACE_I("  Flow Control: %s", flw_ctrl_bffr);
+    TRACE_I("Serial Configuration:");
+    TRACE_I("  Baud Rate: %d", baud);
+    TRACE_I("  Parity: %d", parity_val);
+    TRACE_I("  Start Bits: %d", start_bits);
+    TRACE_I("  Stop Bits: %d", stop_bits);
+    TRACE_I("  Frame Size: %d", frame_size);
+    TRACE_I("  Flow Control: %s", flw_ctrl_bffr);
 
-//     vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_RATE_MS);
 
-//     const uart_config_t uart_config = {
-//         .baud_rate = baud,
-//         .data_bits = frame_size_val,
-//         .parity = (uart_parity_t)parity_val,
-//         .stop_bits = (uart_stop_bits_t)stop_bits,
-//         .flow_ctrl = (uart_hw_flowcontrol_t)flow_control,
-//         .source_clk = UART_SCLK_APB,
-//     };
-
-//     // Uninstall previous initialized drivers 
-//     // uart_driver_delete(EZPI_SERV_UART_NUM_DEFAULT);
-//     // vTaskDelay(10);
-//     // We won't use a buffer for sending data.
-//     uart_driver_install(EZPI_SERV_UART_NUM_DEFAULT, EZPI_SERV_UART_RX_BUFFER_SIZE * 2, 0, 0, NULL, 0);
-//     vTaskDelay(10);
-//     uart_param_config(EZPI_SERV_UART_NUM_DEFAULT, &uart_config);
-//     uart_set_pin(EZPI_SERV_UART_NUM_DEFAULT, EZPI_SERV_UART_TXD_PIN, EZPI_SERV_UART_RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-// }
+    {
+        INT_T result = OPRT_OK;
+        TAL_UART_CFG_T cfg = {0};
+        cfg.base_cfg.baudrate = baud;
+        cfg.base_cfg.databits = frame_size_val;
+        cfg.base_cfg.stopbits = stop_bits;
+        cfg.base_cfg.parity = parity_val;
+        cfg.rx_buffer_size = 256;
+        cfg.open_mode = O_BLOCK;
+        result = tal_uart_init(TUYA_UART_NUM_0, &cfg);
+        if (OPRT_OK != result) {
+            TAL_PR_ERR("uart init failed", result);
+        }
+    }
+}

@@ -53,20 +53,24 @@ STATIC VOID user_main(VOID_T)
 
     TUYA_CALL_ERR_LOG(tuya_iot_init("./"));
 
-    INT_T result = OPRT_OK;
-    TAL_UART_CFG_T cfg = {0};
-    cfg.base_cfg.baudrate = 115200;
-    cfg.base_cfg.databits = TUYA_UART_DATA_LEN_8BIT;
-    cfg.base_cfg.stopbits = TUYA_UART_STOP_LEN_1BIT;
-    cfg.base_cfg.parity = TUYA_UART_PARITY_TYPE_NONE;
-    cfg.rx_buffer_size = 256;
-    cfg.open_mode = O_BLOCK;
-    result = tal_uart_init(TUYA_UART_NUM_0, &cfg);
-    if (OPRT_OK != result) {
-        TAL_PR_ERR("uart init failed", result);
-    }
+    // INT_T result = OPRT_OK;
+    // TAL_UART_CFG_T cfg = {0};
+    // cfg.base_cfg.baudrate = 115200;
+    // cfg.base_cfg.databits = TUYA_UART_DATA_LEN_8BIT;
+    // cfg.base_cfg.stopbits = TUYA_UART_STOP_LEN_1BIT;
+    // cfg.base_cfg.parity = TUYA_UART_PARITY_TYPE_NONE;
+    // cfg.rx_buffer_size = 256;
+    // cfg.open_mode = O_BLOCK;
+    // result = tal_uart_init(TUYA_UART_NUM_0, &cfg);
+    // if (OPRT_OK != result) {
+    //     TAL_PR_ERR("uart init failed", result);
+    // }
+    // TAL_PR_DEBUG("hello Ash-----");
+
+    // EZPI_HAL_uart_init();
 
     TAL_PR_DEBUG("hello Ash-----");
+
     THREAD_CFG_T thread_cfg = 
     {
         .thrdname = "free_heap",
@@ -93,6 +97,8 @@ STATIC VOID user_main(VOID_T)
     //     TAL_PR_DEBUG("FREE HEAP %.4f", free_heap_kb);
     //     vTaskDelay(200/portTICK_PERIOD_MS);
     // }
+
+
 
 
     ezlopi_core_set_log_upcalls();

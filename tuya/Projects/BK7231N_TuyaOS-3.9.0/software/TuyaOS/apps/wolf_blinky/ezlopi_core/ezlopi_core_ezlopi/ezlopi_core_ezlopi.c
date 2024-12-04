@@ -5,6 +5,7 @@
 #include "ezlopi_core_sntp.h"
 #include "ezlopi_core_event_group.h"
 #include "ezlopi_core_wifi.h"
+#include "ezlopi_hal_uart.h"
 
 #if defined(DEVICE_PROVISION_BOOT)
 #include "cert.h"
@@ -15,6 +16,7 @@ static void ezlopi_initialize_devices_v3(void);
 void ezlopi_init()
 {
     ezlopi_event_group_create();
+    EZPI_HAL_uart_init();
     #define CONFIG_EZPI_CORE_STATIC_BUFFER_SIZE 5*1024 //FIXME_AUTO
     ezlopi_core_buffer_init(CONFIG_EZPI_CORE_STATIC_BUFFER_SIZE); // allocate 10kB
     ezlopi_factory_info_v3_init();
