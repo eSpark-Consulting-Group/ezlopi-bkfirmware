@@ -53,7 +53,7 @@ async def send_large_json(client, json_data, chunk_size, characteristic_uuid):
     encoded_data = base64.b64encode(json.dumps(json_data).encode()).decode()
     total_len = len(encoded_data)
 
-    for sequence, start in enumerate(range(0, total_len, chunk_size)):
+    for sequence, start in enumerate(range(0, total_len, chunk_size), start=1):
         chunk_data = encoded_data[start:start + chunk_size]
         payload = {
             "total_len": total_len,
